@@ -1,0 +1,40 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body {
+  background-color: #FAF8F3;
+  color: #1C2B44;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* thin, quiet scrollbars for scrollable panels */
+.thin-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.thin-scroll::-webkit-scrollbar-thumb {
+  background: #EDE8DE;
+  border-radius: 20px;
+}
+
+/* Persian (default) uses Vazirmatn everywhere, including headings —
+   Fraunces has no Persian glyphs. English keeps the Fraunces/Inter pairing. */
+html[dir="rtl"] body {
+  font-family: var(--font-vazir), var(--font-inter), sans-serif;
+}
+
+html[dir="rtl"] h1,
+html[dir="rtl"] h2,
+html[dir="rtl"] h3,
+html[dir="rtl"] .serif {
+  font-family: var(--font-vazir), sans-serif;
+}
+
+html[dir="ltr"] body {
+  font-family: var(--font-inter), sans-serif;
+}
