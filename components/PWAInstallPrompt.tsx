@@ -4,30 +4,46 @@ import { useEffect, useState } from "react";
 import { X, Download, Smartphone, Monitor } from "lucide-react";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 
+type BeforeInstallPromptEvent = Event & {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
+};
+
 export default function PWAInstallPrompt() {
   const { t } = useLanguage();
   const pwa = t("pwa");
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [deferredPrompt, setDeferredPrompt] =
+    useState<BeforeInstallPromptEvent | null>(null);
   const [showPrompt, setShowPrompt] = useState(false);
   const [dismissed, setDismissed] = useState(false);
 
   useEffect(() => {
-    const handler = (e: Event) => {
+    const wasDismissed = localStorage.getItem("pwa-install-dismissed");
+    const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    const isIosStandalone =
+      (navigator as Navigator & { standalone?: boolean }).standalone === true;
+    const isStandalone =
+      window.matchMedia("(display-mode: standalone)").matches || isIosStandalone;
+
+    if (isStandalone) {
+      setDismissed(true);
+      return;
+    }
+
+    if (!wasDismissed && isMobile) {
+      setShowPrompt(true);
+    }
+
+    const handler = (event: Event) => {
+      const e = event as BeforeInstallPromptEvent;
       e.preventDefault();
       setDeferredPrompt(e);
-      // Only show if not previously dismissed
-      const wasDismissed = localStorage.getItem('pwa-install-dismissed');
       if (!wasDismissed) {
         setShowPrompt(true);
       }
     };
 
     window.addEventListener('beforeinstallprompt', handler);
-
-    // Check if it's already installed
-    if (window.matchMedia('(display-mode: standalone)').matches) {
-      setDismissed(true);
-    }
 
     return () => {
       window.removeEventListener('beforeinstallprompt', handler);
