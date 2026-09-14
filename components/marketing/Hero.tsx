@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, Play, Check, GraduationCap, Users, Smile, Sparkle, BookOpen, TrendingUp, Award, Target } from "lucide-react";
+import { ArrowRight, Play, Check, GraduationCap, Users, Smile, Sparkle, BookOpen, TrendingUp, Award, Target, Globe, MessageCircle } from "lucide-react";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 
 export default function Hero() {
@@ -10,8 +10,8 @@ export default function Hero() {
   const levels: string[] = t("home.levels");
   const levelDescriptions: string[] = t("home.levelDescriptions");
 
-  const levelIcons = [BookOpen, TrendingUp, Award, Target];
-  const levelColors = ["bg-green-100 text-green-700", "bg-blue-100 text-blue-700", "bg-purple-100 text-purple-700", "bg-orange-100 text-orange-700"];
+  const levelIcons = [BookOpen, TrendingUp, Award, Target, Globe, MessageCircle, Sparkle, Users];
+  const levelColors = ["bg-green-100 text-green-700", "bg-blue-100 text-blue-700", "bg-purple-100 text-purple-700", "bg-orange-100 text-orange-700", "bg-pink-100 text-pink-700", "bg-cyan-100 text-cyan-700", "bg-yellow-100 text-yellow-700", "bg-red-100 text-red-700"];
 
   return (
     <section className="max-w-7xl mx-auto px-5 sm:px-8 pt-12 sm:pt-16 pb-10">

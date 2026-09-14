@@ -1,0 +1,41 @@
+{
+  "name": "SE ONE Academy",
+  "short_name": "SE ONE",
+  "description": "Learn English and German with SE ONE Academy - Modern language learning platform",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#182163",
+  "theme_color": "#182163",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/images/logo.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/images/logo.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["education", "language"],
+  "shortcuts": [
+    {
+      "name": "Courses",
+      "short_name": "Courses",
+      "description": "Browse all courses",
+      "url": "/courses",
+      "icons": [{ "src": "/images/logo.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Contact",
+      "short_name": "Contact",
+      "description": "Contact us",
+      "url": "/contact",
+      "icons": [{ "src": "/images/logo.png", "sizes": "96x96" }]
+    }
+  ]
+}

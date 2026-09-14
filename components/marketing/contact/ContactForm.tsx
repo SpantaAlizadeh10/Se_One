@@ -25,7 +25,7 @@ export default function ContactForm() {
       <form onSubmit={submit} className="flex flex-col gap-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <input type="text" required placeholder={f.name} className={fieldClass} />
-          <input type="email" required dir="ltr" placeholder={f.email} className={fieldClass} />
+          <input type="email" required placeholder={f.email} className={fieldClass} />
         </div>
         <input type="text" placeholder={f.subject} className={fieldClass} />
         <textarea required placeholder={f.message} rows={6} className={`${fieldClass} resize-y`} />

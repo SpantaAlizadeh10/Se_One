@@ -21,13 +21,13 @@ export default function ContactHero() {
           <p className="text-ink70 text-[15px] sm:text-[16px] leading-relaxed max-w-[460px] mb-6">{c.lead}</p>
 
           <div className="flex flex-wrap gap-3 mb-7">
-            <div className="flex items-center gap-2.5 bg-[#EDEAE0] rounded-full px-4.5 py-2.5 text-[13px] font-semibold text-ink70">
+            <div className="flex items-center gap-2.5 bg-[#EDEAE0] rounded-full px-6 py-2.5 text-[13px] font-semibold text-ink70">
               <Phone size={15} className="text-blue" /> {c.phone}
             </div>
-            <div className="flex items-center gap-2.5 bg-[#EDEAE0] rounded-full px-4.5 py-2.5 text-[13px] font-semibold text-ink70">
+            <div className="flex items-center gap-2.5 bg-[#EDEAE0] rounded-full px-6 py-2.5 text-[13px] font-semibold text-ink70">
               <Mail size={15} className="text-blue" /> {c.email}
             </div>
-            <div className="flex items-center gap-2.5 bg-[#EDEAE0] rounded-full px-4.5 py-2.5 text-[13px] font-semibold text-ink70">
+            <div className="flex items-center gap-2.5 bg-[#EDEAE0] rounded-full px-6 py-2.5 text-[13px] font-semibold text-ink70">
               <MapPin size={15} className="text-blue" /> {c.place}
             </div>
           </div>

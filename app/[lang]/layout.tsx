@@ -8,42 +8,65 @@ import CookieConsent from "@/components/shared/CookieConsent";
 const fraunces = Fraunces({
   subsets: ["latin"],
   weight: ["500", "600", "700"],
-  variable: "--font-fraunces"
+  variable: "--font-fraunces",
 });
 
 const inter = Inter({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700", "800"],
-  variable: "--font-inter"
+  variable: "--font-inter",
 });
 
 const vazir = Vazirmatn({
   subsets: ["arabic"],
   weight: ["400", "500", "600", "700", "800"],
-  variable: "--font-vazir"
+  variable: "--font-vazir",
 });
 
 export function generateStaticParams() {
   return locales.map((lang) => ({ lang }));
 }
 
-export function generateMetadata({ params }: { params: { lang: string } }): Metadata {
+export function generateMetadata({
+  params,
+}: {
+  params: { lang: string };
+}): Metadata {
   const lang = isLocale(params.lang) ? params.lang : defaultLocale;
   const isFa = lang === "fa";
   return {
     title: {
-      default: isFa ? "SE ONE — یادگیری انگلیسی با اعتمادبه‌نفس" : "SE ONE — Learn English with Confidence",
-      template: "%s | SE ONE"
+      default: isFa
+        ? "SE ONE — یادگیری انگلیسی با اعتمادبه‌نفس"
+        : "SE ONE — Learn English with Confidence",
+      template: "%s | SE ONE",
     },
     description: isFa
       ? "با درس‌های تعاملی، مدرسان باتجربه و مسیرهای یادگیری شخصی‌سازی‌شده، انگلیسی را یاد بگیرید."
-      : "Master English through interactive lessons, experienced teachers, and personalized learning paths."
+      : "Master English through interactive lessons, experienced teachers, and personalized learning paths.",
+    icons: {
+      icon: "/images/logo.png",
+      apple: "/images/logo.png",
+    },
+    manifest: "/manifest.json",
+    themeColor: "#182163",
+    viewport: {
+      width: "device-width",
+      initialScale: 1,
+      maximumScale: 1,
+      userScalable: false,
+    },
+    appleWebApp: {
+      capable: true,
+      statusBarStyle: "default",
+      title: "SE ONE",
+    },
   };
 }
 
 export default function LangLayout({
   children,
-  params
+  params,
 }: {
   children: React.ReactNode;
   params: { lang: string };
@@ -53,7 +76,9 @@ export default function LangLayout({
 
   return (
     <html lang={lang} dir={dir}>
-      <body className={`${fraunces.variable} ${inter.variable} ${vazir.variable} font-sans antialiased bg-cream text-ink`}>
+      <body
+        className={`${fraunces.variable} ${inter.variable} ${vazir.variable} font-sans antialiased bg-cream text-ink`}
+      >
         <LanguageProvider initialLang={lang}>
           {children}
           <CookieConsent />

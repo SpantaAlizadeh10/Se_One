@@ -25,7 +25,7 @@ export default function NewsletterCTA() {
         <h2 className="font-serif text-[26px] sm:text-[32px] font-semibold text-white mb-3 mt-6">{t("home.newsletter.title")}</h2>
         <p className="text-white/85 text-[14px] sm:text-[15px] max-w-[480px] mx-auto mb-8">{t("home.newsletter.lead")}</p>
 
-        <form onSubmit={submit} className="flex flex-col sm:flex-row gap-3 max-w-[460px] mx-auto">
+        <form onSubmit={submit} className="flex flex-col sm:flex-row gap-4 max-w-[460px] mx-auto">
           <input
             type="email"
             required
@@ -33,11 +33,11 @@ export default function NewsletterCTA() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder={t("home.newsletter.placeholder")}
-            className="flex-1 min-w-0 bg-white rounded-full px-5 py-3.5 text-[14px] outline-none placeholder:text-muted"
+            className="flex-1 min-w-0 bg-white rounded-full px-6 py-3.5 text-[14px] outline-none placeholder:text-muted"
           />
           <button
             type="submit"
-            className="bg-gold text-white px-6 py-3.5 rounded-full text-[14px] font-semibold hover:bg-goldDeep transition-colors inline-flex items-center justify-center gap-2 shrink-0"
+            className="bg-gold text-white px-8 py-6.5 rounded-full text-[14px] font-semibold hover:bg-goldDeep transition-colors inline-flex items-center justify-center gap-2 shrink-0"
           >
             {sent ? t("home.newsletter.sent") : t("home.newsletter.send")}
             {!sent && <Send size={14} />}

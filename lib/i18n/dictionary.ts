@@ -5,21 +5,28 @@ export const dictionary = {
     nav: {
       home: "خانه",
       courses: "دوره‌ها",
-      teacher: "مدرس",
+      teacher: "مدرسین",
       contact: "تماس با ما",
       about: "درباره ما",
+      blog: "وبلاگ",
       logIn: "ورود",
     },
     footer: {
       desc: "کمک به زبان‌آموزان برای یادگیری مطمئن انگلیسی با روش‌های آموزشی مدرن و تجربه‌ی عملی.",
-      courses: "دوره‌ها",
+      courses: "دوره‌های انگلیسی",
+      germanCourses: "دوره‌های آلمانی",
       about: "درباره ما",
       resources: "منابع",
       courseLinks: [
         "آمادگی آیلتس",
         "آمادگی تافل",
         "انگلیسی کودکان",
-        "انگلیسی تجاری",
+      ],
+      germanLinks: [
+        "آلمانی A1",
+        "آلمانی A2",
+        "آلمانی B1",
+        "فری دیسکاشن",
       ],
       aboutLinks: ["داستان ما", "مدرسان", "فرصت‌های شغلی", "تماس با ما"],
       resourceLinks: [
@@ -40,6 +47,84 @@ export const dictionary = {
       loading: "در حال ارسال...",
       noCoursesFound: "دوره‌ای با این عبارت پیدا نشد.",
     },
+    pwa: {
+      installTitle: "نصب اپلیکیشن SE ONE",
+      installMessage: "اپلیکیشن را نصب کنید تا دسترسی سریع‌تر و تجربه بهتری داشته باشید.",
+      install: "نصب",
+      later: "بعداً",
+      understood: "متوجه شدم",
+      android: "Android:",
+      androidInstructions: "روی منوی مرورگر (سه نقطه) ضربه بزنید و گزینه Add to Home Screen را انتخاب کنید.",
+      ios: "iOS (iPhone/iPad):",
+      iosInstructions: "روی دکمه Share (یک مربع با فلش به بالا) ضربه بزنید و گزینه Add to Home Screen را انتخاب کنید.",
+      desktop: "Desktop:",
+      desktopInstructions: "روی آیکون نصب در نوار آدرس مرورگر کلیک کنید و دستورالعمل‌ها را دنبال کنید.",
+    },
+    blog: {
+      hero: {
+        title1: "آخرین مقالات و",
+        title2: "نکات آموزشی",
+        lead: "با مقالات کاربردی، نکات زبانی و راهنماهای یادگیری، مسیر انگلیسی خود را بهبود دهید.",
+      },
+      readMore: "ادامه مطلب",
+      newsletter: {
+        title: "از آخرین مقالات باخبر شوید",
+        lead: "با عضویت در خبرنامه، جدیدترین مقالات، نکات آموزشی و منابع یادگیری را مستقیم در ایمیل خود دریافت کنید.",
+        placeholder: "ایمیل خود را وارد کنید",
+        send: "عضویت",
+        sent: "عضو شدید!",
+      },
+      posts: {
+        1: {
+          title: "چگونه انگلیسی را سریع‌تر یاد بگیریم؟",
+          excerpt: "در این مقاله ۵ روش موثر برای تسریع یادگیری انگلیسی را بررسی می‌کنیم و تکنیک‌های عملی برای تقویت مهارت‌های زبانی ارائه می‌دهیم.",
+          author: "سارا محمدی",
+          date: "۱۵ اردیبهشت ۱۴۰۳",
+          readTime: "۵ دقیقه",
+          category: "نکات آموزشی"
+        },
+        2: {
+          title: "مهم‌ترین اشتباهات در یادگیری انگلیسی",
+          excerpt: "آشنایی با اشتباهات رایج زبان‌آموزان و راهکارهای ساده برای جلوگیری از آنها. این مقاله به شما کمک می‌کند مسیر یادگیری صحیح‌تری را طی کنید.",
+          author: "علی رضایی",
+          date: "۱۰ اردیبهشت ۱۴۰۳",
+          readTime: "۷ دقیقه",
+          category: "راهنمای یادگیری"
+        },
+        3: {
+          title: "تکنیک‌های تقویت مکالمه انگلیسی",
+          excerpt: "روش‌های عملی برای بهبود مهارت مکالمه، از تمرین با خود تا پیدا کردن شریک مطالعه. نکات کاربردی برای صحبت روان‌تر.",
+          author: "مریم کریمی",
+          date: "۵ اردیبهشت ۱۴۰۳",
+          readTime: "۶ دقیقه",
+          category: "مکالمه"
+        },
+        4: {
+          title: "منابع رایگان برای یادگیری انگلیسی",
+          excerpt: "معرفی بهترین اپلیکیشن‌ها، وب‌سایت‌ها و کانال‌های یوتیوب برای یادگیری رایگان انگلیسی. لیست کامل منابع با ارزش.",
+          author: "سارا محمدی",
+          date: "۳۰ فروردین ۱۴۰۳",
+          readTime: "۸ دقیقه",
+          category: "منابع"
+        },
+        5: {
+          title: "آمادگی برای آزمون آیلتس",
+          excerpt: "راهنمای کامل برای آمادگی آزمون آیلتس، از چهار مهارت اصلی تا نکات مهم روز آزمون. استراتژی‌های موفقیت در آیلتس.",
+          author: "علی رضایی",
+          date: "۲۵ فروردین ۱۴۰۳",
+          readTime: "۱۰ دقیقه",
+          category: "آزمون‌ها"
+        },
+        6: {
+          title: "ایجاد عادت مطالعه روزانه انگلیسی",
+          excerpt: "چگونه عادت مطالعه روزانه انگلیسی را ایجاد کنیم و حفظ کنیم. تکنیک‌های ساده اما موثر برای پیشرفت مداوم.",
+          author: "مریم کریمی",
+          date: "۲۰ فروردین ۱۴۰۳",
+          readTime: "۵ دقیقه",
+          category: "عادت‌ها"
+        }
+      }
+    },
     home: {
       hero: {
         title1: "روشی هوشمندتر برای",
@@ -52,7 +137,7 @@ export const dictionary = {
           satisfied: "رضایت",
         },
       },
-      levels: ["مبتدی", "متوسط", "پیشرفته", "آماده آیلتس"],
+      levels: ["مبتدی", "متوسط", "پیشرفته", "آماده آیلتس", "آلمانی A1", "آلمانی A2", "آلمانی B1", "فری دیسکاشن"],
       levelDescriptions: [
         "شروع از صفر با مفاهیم پایه",
         "تقویت مهارت‌های روزمره",
@@ -191,6 +276,42 @@ export const dictionary = {
         students: 230,
         price: "۶,۰۰۰,۰۰۰ تومان",
       },
+      {
+        id: "german-a1",
+        title: "آلمانی سطح A1",
+        level: "آلمانی A1",
+        desc: "شروع یادگیری زبان آلمانی از پایه با مفاهیم اساسی و مکالمات ساده.",
+        lessons: 25,
+        students: 80,
+        price: "۱,۴۰۰,۰۰۰ تومان",
+      },
+      {
+        id: "german-a2",
+        title: "آلمانی سطح A2",
+        level: "آلمانی A2",
+        desc: "تقویت مهارت‌های آلمانی برای مکالمات روزمره و موقعیت‌های ساده.",
+        lessons: 30,
+        students: 65,
+        price: "۱,۶۰۰,۰۰۰ تومان",
+      },
+      {
+        id: "german-b1",
+        title: "آلمانی سطح B1",
+        level: "آلمانی B1",
+        desc: "مکالمه پیشرفته آلمانی برای موقعیت‌های حرفه‌ای و روزمره.",
+        lessons: 35,
+        students: 50,
+        price: "۲,۰۰۰,۰۰۰ تومان",
+      },
+      {
+        id: "free-discussion",
+        title: "کلاس فری دیسکاشن",
+        level: "فری دیسکاشن",
+        desc: "بهبود مهارت مکالمه انگلیسی از طریق بحث آزاد و تبادل نظر با سایر زبان‌آموزان.",
+        lessons: 12,
+        students: 90,
+        price: "۸۰۰,۰۰۰ تومان",
+      },
     ],
     coursesPage: {
       hero: {
@@ -200,7 +321,7 @@ export const dictionary = {
         searchPlaceholder: "جستجوی دوره‌ها...",
         find: "جستجوی دوره‌ها",
       },
-      popular: { heading: "دوره‌های محبوب", signUp: "همین حالا ثبت‌نام کنید" },
+      popular: { heading: "تمامی دوره‌ها", signUp: "همین حالا ثبت‌نام کنید" },
       level: {
         heading: "سطح انگلیسی",
         eyebrow: "نمی‌دانید از کجا شروع کنید؟",
@@ -210,6 +331,16 @@ export const dictionary = {
         beginner: "مبتدی",
         intermediate: "متوسط",
         advanced: "پیشرفته",
+      },
+      germanLevel: {
+        heading: "سطح آلمانی",
+        eyebrow: "آلمانی یاد بگیرید",
+        title: "سطح آلمانی خود را انتخاب کنید",
+        lead: "دوره‌های آلمانی را برای همه سطوح ببینید. از سطح A1 تا B1 با مدرسان متخصص یاد بگیرید.",
+        cta: "ثبت‌نام در دوره آلمانی",
+        a1: "مبتدی",
+        a2: "متوسط",
+        b1: "پیشرفته",
       },
       why: {
         heading: "چرا با SE ONE یاد بگیریم؟",
@@ -624,35 +755,43 @@ export const dictionary = {
         "این متن یک الگوی استاندارد است و باید پیش از راه‌اندازی رسمی سایت توسط مشاور حقوقی بررسی و بومی‌سازی شود.",
       privacy: {
         title: "حریم خصوصی",
-        lastUpdated: "آخرین به‌روزرسانی: مرداد ۱۴۰۵",
+        lastUpdated: "آخرین به‌روزرسانی: شهریور ۱۴۰۵",
         sections: [
           {
-            heading: "چه اطلاعاتی جمع‌آوری می‌کنیم",
-            body: "هنگام ثبت‌نام، نام، ایمیل، شماره موبایل و اطلاعات پرداخت را جمع‌آوری می‌کنیم. همچنین اطلاعاتی درباره‌ی نحوه‌ی استفاده‌ی شما از دوره‌ها و کلاس‌ها برای بهبود خدمات ثبت می‌شود.",
+            heading: "معرفی",
+            body: "در آکادمی SE ONE، حفظ حریم خصوصی و امنیت اطلاعات دانشجویان و مدرسان اولویت اصلی ماست. این سیاست حریم خصوصی توضیح می‌دهد که چه اطلاعاتی جمع‌آوری می‌کنیم، چگونه از آن استفاده می‌کنیم و چه گزینه‌هایی برای کنترل اطلاعات خود دارید.",
           },
           {
-            heading: "چگونه از اطلاعات شما استفاده می‌کنیم",
-            body: "از اطلاعات شما برای ارائه‌ی خدمات آموزشی، ارتباط با شما درباره‌ی کلاس‌ها و رزروها، پردازش پرداخت‌ها و بهبود پلتفرم استفاده می‌کنیم. اطلاعات شما هرگز بدون اجازه به شخص ثالث فروخته نمی‌شود.",
+            heading: "اطلاعاتی که جمع‌آوری می‌کنیم",
+            body: "ما اطلاعاتی مانند نام، نام خانوادگی، ایمیل، شماره تماس، تاریخ تولد و عکس پروفایل را هنگام ثبت‌نام جمع‌آوری می‌کنیم. همچنین اطلاعات مربوط به پرداخت، پیشرفت تحصیلی، شرکت در کلاس‌ها و تعاملات در پلتفرم را ثبت می‌کنیم.",
           },
           {
-            heading: "کوکی‌ها",
-            body: "برای بهبود تجربه‌ی کاربری، به‌خاطرسپاری زبان انتخابی و تحلیل ترافیک سایت از کوکی استفاده می‌کنیم. می‌توانید کوکی‌ها را از طریق تنظیمات مرورگر خود مدیریت کنید.",
+            heading: "نحوه استفاده از اطلاعات",
+            body: "اطلاعات شما برای ارائه خدمات آموزشی، مدیریت کلاس‌ها، پردازش پرداخت‌ها، ارسال اطلاعیه‌های مهم، بهبود کیفیت آموزش و تجربه کاربری استفاده می‌شود. ما اطلاعات شما را بدون اجازه صریح شما به شخص ثالث فروخته یا اجاره نمی‌دهیم.",
           },
           {
-            heading: "اشتراک‌گذاری با اشخاص ثالث",
-            body: "برای پردازش پرداخت و ارسال ایمیل ممکن است اطلاعات محدودی با سرویس‌دهندگان معتبر (مانند درگاه پرداخت) به اشتراک گذاشته شود، صرفاً در حد لازم برای ارائه‌ی خدمات.",
+            heading: "کوکی‌ها و تکنولوژی‌های مشابه",
+            body: "برای بهبود تجربه کاربری، ذخیره تنظیمات زبان، حفظ وضعیت ورود و تحلیل ترافیک سایت از کوکی‌ها استفاده می‌کنیم. می‌توانید کوکی‌ها را از طریق تنظیمات مرورگر خود غیرفعال کنید، اما این ممکن است عملکرد برخی بخش‌های سایت را محدود کند.",
+          },
+          {
+            heading: "اشتراک‌گذاری اطلاعات",
+            body: "اطلاعات شما فقط در موارد زیر به اشتراک گذاشته می‌شود: برای پردازش پرداخت‌ها با درگاه‌های بانکی معتبر، برای ارسال ایمیل و اطلاعیه‌ها با سرویس‌های ایمیل، و در صورت الزام قانونی با مقامات ذیصلاح. ما اطلاعات حساس شما را بدون اجازه شما با اشخاص ثالث به اشتراک نمی‌گذاریم.",
           },
           {
             heading: "امنیت اطلاعات",
-            body: "از رمزنگاری و استانداردهای امنیتی متداول برای محافظت از اطلاعات شما استفاده می‌کنیم، هرچند هیچ روش انتقال اطلاعات از طریق اینترنت صد‌درصد ایمن نیست.",
+            body: "ما از استانداردهای پیشرفته امنیتی، رمزنگاری SSL، فایروال‌ها و روش‌های حفاظتی دیگر برای محافظت از اطلاعات شما استفاده می‌کنیم. با این حال، هیچ روش انتقال یا ذخیره‌سازی اینترنتی صددرصد ایمن نیست و ما نمی‌توانیم امنیت مطلق را تضمین کنیم.",
           },
           {
-            heading: "حقوق شما",
-            body: "شما می‌توانید در هر زمان درخواست مشاهده، ویرایش یا حذف اطلاعات شخصی خود را از طریق صفحه‌ی تماس با ما ارسال کنید.",
+            heading: "حقوق دانشجویان",
+            body: "شما حق دارید در هر زمان به اطلاعات شخصی خود دسترسی داشته باشید، آن را اصلاح کنید یا درخواست حذف کنید. می‌توانید با مراجعه به بخش تنظیمات پروفایل، اطلاعات خود را ویرایش کنید. برای حذف کامل حساب، با پشتیبانی تماس بگیرید.",
+          },
+          {
+            heading: "تغییرات در سیاست حریم خصوصی",
+            body: "ما ممکن است این سیاست را به‌طور دوره‌ای به‌روزرسانی کنیم. تغییرات مهم از طریق ایمیل یا اطلاعیه در سایت به شما اطلاع داده می‌شود. استفاده مداوم از پلتفرم پس از اعمال تغییرات به‌منزله پذیرش سیاست جدید است.",
           },
           {
             heading: "تماس با ما",
-            body: "برای هر سوالی درباره‌ی این سیاست حریم خصوصی، از طریق seone@gmail.com یا صفحه‌ی تماس با ما در ارتباط باشید.",
+            body: "برای هر سوال یا نگرانی درباره سیاست حریم خصوصی، می‌توانید از طریق فرم تماس با ما، ایمیل seone@gmail.com یا شماره تلفن ۰۰۹۸۹۹۶۷۷۲۱۲۱۸ با ما در ارتباط باشید.",
           },
         ],
       },
@@ -806,21 +945,93 @@ export const dictionary = {
     nav: {
       home: "Home",
       courses: "Courses",
-      teacher: "Teacher",
+      teacher: "Teachers",
       contact: "Contact",
       about: "About Us",
+      blog: "Blog",
       logIn: "Log In",
+    },
+    blog: {
+      hero: {
+        title1: "Latest Articles and",
+        title2: "Learning Tips",
+        lead: "Improve your English journey with practical articles, language tips, and learning guides.",
+      },
+      readMore: "Read More",
+      newsletter: {
+        title: "Stay Updated with Latest Articles",
+        lead: "Subscribe to our newsletter to receive the latest articles, learning tips, and educational resources directly in your inbox.",
+        placeholder: "Enter your email",
+        send: "Subscribe",
+        sent: "Subscribed!",
+      },
+      posts: {
+        1: {
+          title: "How to Learn English Faster?",
+          excerpt: "In this article, we explore 5 effective methods to accelerate English learning and provide practical techniques for enhancing language skills.",
+          author: "Sara Mohammadi",
+          date: "May 5, 2024",
+          readTime: "5 min",
+          category: "Learning Tips"
+        },
+        2: {
+          title: "Common Mistakes in Learning English",
+          excerpt: "Learn about common mistakes language learners make and simple strategies to avoid them. This article helps you follow a more correct learning path.",
+          author: "Ali Rezaei",
+          date: "April 30, 2024",
+          readTime: "7 min",
+          category: "Learning Guide"
+        },
+        3: {
+          title: "Techniques to Improve English Speaking",
+          excerpt: "Practical methods for improving speaking skills, from self-practice to finding study partners. Useful tips for more fluent communication.",
+          author: "Maryam Karimi",
+          date: "April 25, 2024",
+          readTime: "6 min",
+          category: "Speaking"
+        },
+        4: {
+          title: "Free Resources for Learning English",
+          excerpt: "Introduction to the best apps, websites, and YouTube channels for free English learning. Complete list of valuable resources.",
+          author: "Sara Mohammadi",
+          date: "April 20, 2024",
+          readTime: "8 min",
+          category: "Resources"
+        },
+        5: {
+          title: "IELTS Exam Preparation Guide",
+          excerpt: "Complete guide for IELTS preparation, from four main skills to important exam day tips. Success strategies for IELTS.",
+          author: "Ali Rezaei",
+          date: "April 15, 2024",
+          readTime: "10 min",
+          category: "Exams"
+        },
+        6: {
+          title: "Building Daily English Study Habits",
+          excerpt: "How to create and maintain daily English study habits. Simple but effective techniques for continuous progress.",
+          author: "Maryam Karimi",
+          date: "April 10, 2024",
+          readTime: "5 min",
+          category: "Habits"
+        }
+      }
     },
     footer: {
       desc: "Helping students build confidence in English through modern teaching methods and practical learning experiences.",
-      courses: "Courses",
+      courses: "English Courses",
+      germanCourses: "German Courses",
       about: "About",
       resources: "Resources",
       courseLinks: [
         "IELTS Preparation",
         "TOEFL Preparation",
         "Kids English",
-        "Business English",
+      ],
+      germanLinks: [
+        "German A1",
+        "German A2",
+        "German B1",
+        "Free Discussion",
       ],
       aboutLinks: ["Our Story", "Instructors", "Careers", "Contact"],
       resourceLinks: [
@@ -841,6 +1052,19 @@ export const dictionary = {
       loading: "Sending...",
       noCoursesFound: "No courses match your search.",
     },
+    pwa: {
+      installTitle: "Install SE ONE App",
+      installMessage: "Install the app for faster access and a better experience.",
+      install: "Install",
+      later: "Later",
+      understood: "Got it",
+      android: "Android:",
+      androidInstructions: "Tap the browser menu (three dots) and select Add to Home Screen.",
+      ios: "iOS (iPhone/iPad):",
+      iosInstructions: "Tap the Share button (square with arrow up) and select Add to Home Screen.",
+      desktop: "Desktop:",
+      desktopInstructions: "Click the install icon in the browser address bar and follow the instructions.",
+    },
     home: {
       hero: {
         title1: "A Smarter Way to",
@@ -857,7 +1081,7 @@ export const dictionary = {
           satisfied: "Satisfied",
         },
       },
-      levels: ["Beginner", "Intermediate", "Advanced", "IELTS Ready"],
+      levels: ["Beginner", "Intermediate", "Advanced", "IELTS Ready", "German A1", "German A2", "German B1", "Free Discussion"],
       levelDescriptions: [
         "Start from zero with basic concepts",
         "Strengthen everyday skills",
@@ -996,6 +1220,42 @@ export const dictionary = {
         students: 230,
         price: "6,000,000 Toman",
       },
+      {
+        id: "german-a1",
+        title: "German Level A1",
+        level: "German A1",
+        desc: "Start learning German from scratch with basic concepts and simple conversations.",
+        lessons: 25,
+        students: 80,
+        price: "1,400,000 Toman",
+      },
+      {
+        id: "german-a2",
+        title: "German Level A2",
+        level: "German A2",
+        desc: "Strengthen your German skills for everyday conversations and simple situations.",
+        lessons: 30,
+        students: 65,
+        price: "1,600,000 Toman",
+      },
+      {
+        id: "german-b1",
+        title: "German Level B1",
+        level: "German B1",
+        desc: "Advanced German conversation for professional and everyday situations.",
+        lessons: 35,
+        students: 50,
+        price: "2,000,000 Toman",
+      },
+      {
+        id: "free-discussion",
+        title: "Free Discussion Class",
+        level: "Free Discussion",
+        desc: "Improve your English speaking skills through free discussion and exchange with other learners.",
+        lessons: 12,
+        students: 90,
+        price: "800,000 Toman",
+      },
     ],
     coursesPage: {
       hero: {
@@ -1005,7 +1265,7 @@ export const dictionary = {
         searchPlaceholder: "Search Courses...",
         find: "Find Courses",
       },
-      popular: { heading: "Popular Courses", signUp: "Sign Up Now" },
+      popular: { heading: "All Courses", signUp: "Sign Up Now" },
       level: {
         heading: "English Level",
         eyebrow: "Not sure where to start?",
@@ -1015,6 +1275,16 @@ export const dictionary = {
         beginner: "Beginner",
         intermediate: "Intermediate",
         advanced: "Advanced",
+      },
+      germanLevel: {
+        heading: "German Level",
+        eyebrow: "Learn German",
+        title: "Choose your German Level",
+        lead: "Explore our German courses for all levels. Learn from A1 to B1 with expert teachers.",
+        cta: "Sign Up for German Course",
+        a1: "Beginner",
+        a2: "Intermediate",
+        b1: "Advanced",
       },
       why: {
         heading: "Why Learn With SE ONE?",
@@ -1429,35 +1699,43 @@ export const dictionary = {
         "This is a standard template and should be reviewed and localized by legal counsel before an official launch.",
       privacy: {
         title: "Privacy Policy",
-        lastUpdated: "Last updated: August 2026",
+        lastUpdated: "Last updated: September 2024",
         sections: [
           {
-            heading: "What We Collect",
-            body: "When you sign up, we collect your name, email, phone number, and payment details. We also log how you use courses and classes to improve our service.",
+            heading: "Introduction",
+            body: "At SE ONE Academy, protecting the privacy and security of our students and instructors is our top priority. This privacy policy explains what information we collect, how we use it, and what options you have to control your information.",
           },
           {
-            heading: "How We Use Your Information",
-            body: "We use your information to provide educational services, communicate with you about classes and bookings, process payments, and improve the platform. We never sell your data to third parties.",
+            heading: "Information we collect",
+            body: "We collect information such as your name, email, phone number, date of birth, and profile photo when you sign up. We also collect payment information, academic progress, class participation, and platform interactions.",
           },
           {
-            heading: "Cookies",
-            body: "We use cookies to improve your experience, remember your language preference, and analyze site traffic. You can manage cookies through your browser settings.",
+            heading: "How we use your information",
+            body: "Your information is used to provide educational services, manage classes, process payments, send important notifications, improve educational quality, and enhance user experience. We never sell or rent your information to third parties without your explicit consent.",
           },
           {
-            heading: "Third-Party Sharing",
-            body: "To process payments and send emails, limited data may be shared with trusted service providers (such as our payment gateway), only to the extent necessary to deliver the service.",
+            heading: "Cookies and similar technologies",
+            body: "We use cookies to improve user experience, save language preferences, maintain login status, and analyze site traffic. You can disable cookies through your browser settings, though this may limit some site functionality.",
           },
           {
-            heading: "Data Security",
-            body: "We use encryption and standard security practices to protect your data, though no method of transmission over the internet is ever 100% secure.",
+            heading: "Information sharing",
+            body: "Your information is only shared in the following cases: for payment processing with trusted payment gateways, for email and notifications with email services, and when legally required with authorities. We do not share your sensitive information with third parties without your permission.",
           },
           {
-            heading: "Your Rights",
-            body: "You can request to view, edit, or delete your personal information at any time by reaching out through our Contact page.",
+            heading: "Information security",
+            body: "We use advanced security standards, SSL encryption, firewalls, and other protective measures to safeguard your information. However, no method of internet transmission or storage is 100% secure, and we cannot guarantee absolute security.",
           },
           {
-            heading: "Contact Us",
-            body: "For any questions about this privacy policy, reach us at seone@gmail.com or through our Contact page.",
+            heading: "Student rights",
+            body: "You have the right to access, correct, or request deletion of your personal information at any time. You can edit your information through the profile settings section. For complete account deletion, please contact our support team.",
+          },
+          {
+            heading: "Changes to privacy policy",
+            body: "We may update this policy periodically. Significant changes will be communicated to you via email or site notification. Continued use of the platform after changes constitutes acceptance of the new policy.",
+          },
+          {
+            heading: "Contact us",
+            body: "For any questions or concerns about our privacy policy, you can contact us through the contact form, email at seone@gmail.com, or phone at +98 996 772 1218.",
           },
         ],
       },

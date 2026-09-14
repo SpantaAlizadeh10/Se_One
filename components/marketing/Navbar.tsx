@@ -17,6 +17,7 @@ export default function Navbar() {
     { label: t("nav.home"), path: "/" },
     { label: t("nav.courses"), path: "/courses", hasChevron: true },
     { label: t("nav.teacher"), path: "/become-teacher" },
+    { label: t("nav.blog"), path: "/blog" },
     { label: t("nav.contact"), path: "/contact" },
     { label: t("nav.about"), path: "/about" },
   ];

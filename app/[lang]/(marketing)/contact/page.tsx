@@ -4,7 +4,6 @@ import ContactForm from "@/components/marketing/contact/ContactForm";
 import FAQSection from "@/components/marketing/contact/FAQSection";
 import ResponseProcess from "@/components/marketing/contact/ResponseProcess";
 import SubscribeBanner from "@/components/marketing/contact/SubscribeBanner";
-import LatestCourses from "@/components/marketing/LatestCourses";
 
 export const metadata: Metadata = {
   title: "Contact Us",
@@ -19,7 +18,6 @@ export default function ContactPage() {
       <FAQSection />
       <ResponseProcess />
       <SubscribeBanner />
-      <LatestCourses variant="popular" />
     </main>
   );
 }

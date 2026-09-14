@@ -13,7 +13,7 @@ export default function SpeakToEveryone() {
         <div className="relative h-[260px] sm:h-[320px] rounded-[40px] overflow-hidden order-2 lg:order-1">
           <div
             className="absolute inset-0 bg-cover bg-center"
-            style={{ backgroundImage: "url('/images/kids.jpeg')" }}
+            style={{ backgroundImage: "url('/images/Seone.png')" }}
           />
           <div className="absolute inset-0 bg-gradient-to-r from-white/10 via-transparent to-white/5" />
         </div>

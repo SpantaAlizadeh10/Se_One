@@ -21,7 +21,11 @@ export const coursesPricingSeed: CoursePricing[] = [
   { id: "beginners", basePrice: 1200000, discountPercent: 0 },
   { id: "everyday", basePrice: 1500000, discountPercent: 0 },
   { id: "advanced", basePrice: 1800000, discountPercent: 0 },
-  { id: "ielts", basePrice: 6000000, discountPercent: 0 }
+  { id: "ielts", basePrice: 6000000, discountPercent: 0 },
+  { id: "german-a1", basePrice: 1400000, discountPercent: 0 },
+  { id: "german-a2", basePrice: 1600000, discountPercent: 0 },
+  { id: "german-b1", basePrice: 2000000, discountPercent: 0 },
+  { id: "free-discussion", basePrice: 800000, discountPercent: 0 }
 ];
 
 export const PRICING_STORAGE_KEY = "se-one-course-pricing";

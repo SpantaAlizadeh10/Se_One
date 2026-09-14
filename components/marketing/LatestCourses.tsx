@@ -20,6 +20,10 @@ const courseCovers: Record<string, string> = {
   everyday: "/images/clas.jpeg",
   advanced: "/images/c1.jpeg",
   ielts: "/images/ielts.jpeg",
+  "german-a1": "/images/A1.jpeg",
+  "german-a2": "/images/A2.jpeg",
+  "german-b1": "/images/B1.jpeg",
+  "free-discussion": "/images/free-discussion.jpeg",
 };
 
 type Variant = "latest" | "popular" | "popular-cta";
@@ -58,11 +62,11 @@ export default function LatestCourses({
   const q = filterQuery?.trim().toLowerCase() ?? "";
   const courses = q
     ? allCourses.filter(
-        (c) =>
-          c.title.toLowerCase().includes(q) ||
-          c.level.toLowerCase().includes(q) ||
-          c.desc.toLowerCase().includes(q),
-      )
+      (c) =>
+        c.title.toLowerCase().includes(q) ||
+        c.level.toLowerCase().includes(q) ||
+        c.desc.toLowerCase().includes(q),
+    )
     : allCourses;
 
   const heading =

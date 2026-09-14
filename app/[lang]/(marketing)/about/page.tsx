@@ -3,7 +3,6 @@ import AboutHero from "@/components/marketing/about/AboutHero";
 import MissionVision from "@/components/marketing/about/MissionVision";
 import OurStory from "@/components/marketing/about/OurStory";
 import TeachingPhilosophy from "@/components/marketing/TeachingPhilosophy";
-import LatestCourses from "@/components/marketing/LatestCourses";
 
 export const metadata: Metadata = {
   title: "About Us",
@@ -17,7 +16,6 @@ export default function AboutPage() {
       <MissionVision />
       <OurStory />
       <TeachingPhilosophy />
-      <LatestCourses variant="popular" />
     </main>
   );
 }

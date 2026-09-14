@@ -1,9 +1,15 @@
 "use client";
 
-import { Search, BookOpen } from "lucide-react";
+import { Search } from "lucide-react";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 
-export default function CoursesHero({ query, onQueryChange }: { query: string; onQueryChange: (v: string) => void }) {
+export default function CoursesHero({
+  query,
+  onQueryChange,
+}: {
+  query: string;
+  onQueryChange: (v: string) => void;
+}) {
   const { t } = useLanguage();
   const c = t("coursesPage.hero");
   const levels: string[] = t("home.levels");
@@ -18,12 +24,16 @@ export default function CoursesHero({ query, onQueryChange }: { query: string; o
             <span className="text-blue">{c.title2}</span>
           </h1>
           <div className="w-[74px] h-[3px] bg-gold rounded my-5" />
-          <p className="text-ink70 text-[15px] sm:text-[16px] leading-relaxed max-w-[460px] mb-7">{c.lead}</p>
+          <p className="text-ink70 text-[15px] sm:text-[16px] leading-relaxed max-w-[460px] mb-7">
+            {c.lead}
+          </p>
 
           <form
             onSubmit={(e) => {
               e.preventDefault();
-              document.getElementById("courses")?.scrollIntoView({ behavior: "smooth" });
+              document
+                .getElementById("courses")
+                ?.scrollIntoView({ behavior: "smooth" });
             }}
             className="flex flex-col sm:flex-row gap-3 max-w-[520px]"
           >
@@ -37,7 +47,10 @@ export default function CoursesHero({ query, onQueryChange }: { query: string; o
                 className="flex-1 min-w-0 outline-none text-[14px] placeholder:text-muted"
               />
             </div>
-            <button type="submit" className="bg-blue text-white rounded-full px-6 py-3.5 text-[14px] font-bold hover:bg-blueDeep transition-colors whitespace-nowrap">
+            <button
+              type="submit"
+              className="bg-blue text-white rounded-full px-6 py-3.5 text-[14px] font-bold hover:bg-blueDeep transition-colors whitespace-nowrap"
+            >
               {c.find}
             </button>
           </form>
@@ -46,14 +59,21 @@ export default function CoursesHero({ query, onQueryChange }: { query: string; o
         <div className="relative h-[280px] sm:h-[320px] flex items-center justify-center">
           <div className="absolute w-[260px] h-[260px] sm:w-[300px] sm:h-[300px] rounded-full bg-gradient-to-br from-goldSoft to-peach" />
           <div className="relative w-[170px] h-[170px] sm:w-[190px] sm:h-[190px] rounded-full bg-white shadow-card flex items-center justify-center">
-            <BookOpen size={64} className="text-blue" strokeWidth={1.4} />
+            <img
+              src="/images/Hat.png"
+              alt=""
+              className="w-full h-full object-contain"
+            />
           </div>
         </div>
       </div>
 
       <div className="mt-10 bg-white border border-line rounded-full shadow-card flex flex-wrap justify-center sm:justify-between px-3 py-2 gap-1">
         {levels.map((level) => (
-          <div key={level} className="px-5 sm:px-7 py-2.5 text-[13.5px] font-semibold rounded-full text-center flex-1 text-ink70">
+          <div
+            key={level}
+            className="px-5 sm:px-7 py-2.5 text-[13.5px] font-semibold rounded-full text-center flex-1 text-ink70"
+          >
             {level}
           </div>
         ))}
