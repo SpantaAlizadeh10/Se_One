@@ -7,6 +7,8 @@ import { useLanguage } from "@/lib/i18n/LanguageProvider";
 import { useCoursesPricing } from "@/lib/use-courses-pricing";
 import { getDiscountedPrice, formatPrice } from "@/lib/courses-pricing";
 import { getWishlist, toggleWishlist } from "@/lib/wishlist-store";
+import { useCourses } from "@/lib/use-courses";
+import type { Course } from "@/lib/api/courses";
 
 const gradients = [
   "from-[#CFE7E4] to-[#9FCFC9]",
@@ -49,24 +51,17 @@ export default function LatestCourses({
     setWishlist(toggleWishlist(courseId));
   };
 
-  const allCourses: {
-    id: string;
-    title: string;
-    level: string;
-    desc: string;
-    lessons: number;
-    students: number;
-    price: string;
-  }[] = t("coursesData");
+  const fallbackCourses: Course[] = t("coursesData");
+  const { courses: allCourses } = useCourses(lang, fallbackCourses);
 
   const q = filterQuery?.trim().toLowerCase() ?? "";
   const courses = q
     ? allCourses.filter(
-      (c) =>
-        c.title.toLowerCase().includes(q) ||
-        c.level.toLowerCase().includes(q) ||
-        c.desc.toLowerCase().includes(q),
-    )
+        (c) =>
+          c.title.toLowerCase().includes(q) ||
+          c.level.toLowerCase().includes(q) ||
+          c.desc.toLowerCase().includes(q),
+      )
     : allCourses;
 
   const heading =
@@ -118,7 +113,7 @@ export default function LatestCourses({
                 <div
                   className="absolute inset-0 bg-cover bg-center"
                   style={{
-                    backgroundImage: `linear-gradient(135deg, rgba(12,18,28,0.14), rgba(12,18,28,0.1)), url(${courseCovers[course.id] ?? courseCovers.beginners})`,
+                    backgroundImage: `linear-gradient(135deg, rgba(12,18,28,0.14), rgba(12,18,28,0.1)), url(${course.image ?? courseCovers[course.id] ?? courseCovers.beginners})`,
                   }}
                 />
                 <div className="absolute inset-0 bg-gradient-to-br from-black/10 via-transparent to-black/15" />

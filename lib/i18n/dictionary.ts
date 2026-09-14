@@ -17,17 +17,8 @@ export const dictionary = {
       germanCourses: "دوره‌های آلمانی",
       about: "درباره ما",
       resources: "منابع",
-      courseLinks: [
-        "آمادگی آیلتس",
-        "آمادگی تافل",
-        "انگلیسی کودکان",
-      ],
-      germanLinks: [
-        "آلمانی A1",
-        "آلمانی A2",
-        "آلمانی B1",
-        "فری دیسکاشن",
-      ],
+      courseLinks: ["آمادگی آیلتس", "آمادگی تافل", "انگلیسی کودکان"],
+      germanLinks: ["آلمانی A1", "آلمانی A2", "آلمانی B1", "فری دیسکاشن"],
       aboutLinks: ["داستان ما", "مدرسان", "فرصت‌های شغلی", "تماس با ما"],
       resourceLinks: [
         "وبلاگ آموزشی",
@@ -49,16 +40,20 @@ export const dictionary = {
     },
     pwa: {
       installTitle: "نصب اپلیکیشن SE ONE",
-      installMessage: "اپلیکیشن را نصب کنید تا دسترسی سریع‌تر و تجربه بهتری داشته باشید.",
+      installMessage:
+        "اپلیکیشن را نصب کنید تا دسترسی سریع‌تر و تجربه بهتری داشته باشید.",
       install: "نصب",
       later: "بعداً",
       understood: "متوجه شدم",
       android: "Android:",
-      androidInstructions: "روی منوی مرورگر (سه نقطه) ضربه بزنید و گزینه Add to Home Screen را انتخاب کنید.",
+      androidInstructions:
+        "روی منوی مرورگر (سه نقطه) ضربه بزنید و گزینه Add to Home Screen را انتخاب کنید.",
       ios: "iOS (iPhone/iPad):",
-      iosInstructions: "روی دکمه Share (یک مربع با فلش به بالا) ضربه بزنید و گزینه Add to Home Screen را انتخاب کنید.",
+      iosInstructions:
+        "روی دکمه Share (یک مربع با فلش به بالا) ضربه بزنید و گزینه Add to Home Screen را انتخاب کنید.",
       desktop: "Desktop:",
-      desktopInstructions: "روی آیکون نصب در نوار آدرس مرورگر کلیک کنید و دستورالعمل‌ها را دنبال کنید.",
+      desktopInstructions:
+        "روی آیکون نصب در نوار آدرس مرورگر کلیک کنید و دستورالعمل‌ها را دنبال کنید.",
     },
     blog: {
       hero: {
@@ -77,53 +72,59 @@ export const dictionary = {
       posts: {
         1: {
           title: "چگونه انگلیسی را سریع‌تر یاد بگیریم؟",
-          excerpt: "در این مقاله ۵ روش موثر برای تسریع یادگیری انگلیسی را بررسی می‌کنیم و تکنیک‌های عملی برای تقویت مهارت‌های زبانی ارائه می‌دهیم.",
+          excerpt:
+            "در این مقاله ۵ روش موثر برای تسریع یادگیری انگلیسی را بررسی می‌کنیم و تکنیک‌های عملی برای تقویت مهارت‌های زبانی ارائه می‌دهیم.",
           author: "سارا محمدی",
           date: "۱۵ اردیبهشت ۱۴۰۳",
           readTime: "۵ دقیقه",
-          category: "نکات آموزشی"
+          category: "نکات آموزشی",
         },
         2: {
           title: "مهم‌ترین اشتباهات در یادگیری انگلیسی",
-          excerpt: "آشنایی با اشتباهات رایج زبان‌آموزان و راهکارهای ساده برای جلوگیری از آنها. این مقاله به شما کمک می‌کند مسیر یادگیری صحیح‌تری را طی کنید.",
+          excerpt:
+            "آشنایی با اشتباهات رایج زبان‌آموزان و راهکارهای ساده برای جلوگیری از آنها. این مقاله به شما کمک می‌کند مسیر یادگیری صحیح‌تری را طی کنید.",
           author: "علی رضایی",
           date: "۱۰ اردیبهشت ۱۴۰۳",
           readTime: "۷ دقیقه",
-          category: "راهنمای یادگیری"
+          category: "راهنمای یادگیری",
         },
         3: {
           title: "تکنیک‌های تقویت مکالمه انگلیسی",
-          excerpt: "روش‌های عملی برای بهبود مهارت مکالمه، از تمرین با خود تا پیدا کردن شریک مطالعه. نکات کاربردی برای صحبت روان‌تر.",
+          excerpt:
+            "روش‌های عملی برای بهبود مهارت مکالمه، از تمرین با خود تا پیدا کردن شریک مطالعه. نکات کاربردی برای صحبت روان‌تر.",
           author: "مریم کریمی",
           date: "۵ اردیبهشت ۱۴۰۳",
           readTime: "۶ دقیقه",
-          category: "مکالمه"
+          category: "مکالمه",
         },
         4: {
           title: "منابع رایگان برای یادگیری انگلیسی",
-          excerpt: "معرفی بهترین اپلیکیشن‌ها، وب‌سایت‌ها و کانال‌های یوتیوب برای یادگیری رایگان انگلیسی. لیست کامل منابع با ارزش.",
+          excerpt:
+            "معرفی بهترین اپلیکیشن‌ها، وب‌سایت‌ها و کانال‌های یوتیوب برای یادگیری رایگان انگلیسی. لیست کامل منابع با ارزش.",
           author: "سارا محمدی",
           date: "۳۰ فروردین ۱۴۰۳",
           readTime: "۸ دقیقه",
-          category: "منابع"
+          category: "منابع",
         },
         5: {
           title: "آمادگی برای آزمون آیلتس",
-          excerpt: "راهنمای کامل برای آمادگی آزمون آیلتس، از چهار مهارت اصلی تا نکات مهم روز آزمون. استراتژی‌های موفقیت در آیلتس.",
+          excerpt:
+            "راهنمای کامل برای آمادگی آزمون آیلتس، از چهار مهارت اصلی تا نکات مهم روز آزمون. استراتژی‌های موفقیت در آیلتس.",
           author: "علی رضایی",
           date: "۲۵ فروردین ۱۴۰۳",
           readTime: "۱۰ دقیقه",
-          category: "آزمون‌ها"
+          category: "آزمون‌ها",
         },
         6: {
           title: "ایجاد عادت مطالعه روزانه انگلیسی",
-          excerpt: "چگونه عادت مطالعه روزانه انگلیسی را ایجاد کنیم و حفظ کنیم. تکنیک‌های ساده اما موثر برای پیشرفت مداوم.",
+          excerpt:
+            "چگونه عادت مطالعه روزانه انگلیسی را ایجاد کنیم و حفظ کنیم. تکنیک‌های ساده اما موثر برای پیشرفت مداوم.",
           author: "مریم کریمی",
           date: "۲۰ فروردین ۱۴۰۳",
           readTime: "۵ دقیقه",
-          category: "عادت‌ها"
-        }
-      }
+          category: "عادت‌ها",
+        },
+      },
     },
     home: {
       hero: {
@@ -137,12 +138,21 @@ export const dictionary = {
           satisfied: "رضایت",
         },
       },
-      levels: ["مبتدی", "متوسط", "پیشرفته", "آماده آیلتس", "آلمانی A1", "آلمانی A2", "آلمانی B1", "فری دیسکاشن"],
+      levels: [
+        "مبتدی",
+        "متوسط",
+        "پیشرفته",
+        "آماده آیلتس",
+        "آلمانی A1",
+        "آلمانی A2",
+        "آلمانی B1",
+        "فری دیسکاشن",
+      ],
       levelDescriptions: [
         "شروع از صفر با مفاهیم پایه",
         "تقویت مهارت‌های روزمره",
         "تسلط بر زبان پیشرفته",
-        "آمادگی کامل برای آزمون"
+        "آمادگی کامل برای آزمون",
       ],
       levelsTitle: "سطوح یادگیری ما",
       features: [
@@ -177,6 +187,12 @@ export const dictionary = {
       courses: {
         heading: "جدیدترین دوره‌ها",
         sub: "از محبوب‌ترین دوره‌های انگلیسی ما، متناسب با هر سن و هدف یادگیری انتخاب کنید.",
+      },
+      instructors: {
+        eyebrow: "مدرسان منتخب",
+        heading: "با مدرس مناسب خود یاد بگیرید",
+        sub: "مدرسان باتجربه‌ای را پیدا کنید که با هدف و سبک یادگیری شما هماهنگ هستند.",
+        viewAll: "مشاهده همه مدرسان",
       },
       philosophy: {
         heading: "فلسفه آموزشی ما",
@@ -732,6 +748,54 @@ export const dictionary = {
       lead: "مدرسان متخصص و باتجربه‌ای که یادگیری انگلیسی را برای هزاران دانشجو ممکن کرده‌اند.",
       ctaTitle: "می‌خواهید یکی از مدرسان ما باشید؟",
       ctaButton: "درخواست تدریس",
+      verified: "تأییدشده",
+      slotsAvailable: "زمان آزاد",
+      viewProfile: "مشاهده پروفایل",
+      directoryCount: "مدرس متخصص",
+      directoryHint: "سبک تدریس مناسب هدف خود را پیدا کنید.",
+      languages: { english: "انگلیسی", german: "آلمانی" },
+      teacherCopy: {
+        tp1: {
+          name: "آناهیتا امینی",
+          subject: "مکالمه و گفت‌وگو",
+          bio: "مربی مکالمه با تمرکز بر گفت‌وگوهای واقعی و تقویت تلفظ.",
+        },
+        tp2: {
+          name: "نیما شعبانی",
+          subject: "گرامر و نگارش",
+          bio: "متخصص گرامر که ساختارهای دشوار را به قوانین ساده تبدیل می‌کند.",
+        },
+        tp3: {
+          name: "رضا مرادی",
+          subject: "آمادگی آیلتس",
+          bio: "ممتحن سابق آیلتس که به شما کمک می‌کند به نمره هدف خود برسید.",
+        },
+        tp4: {
+          name: "سارا نادری",
+          subject: "انگلیسی مقدماتی",
+          bio: "صبور و همراه؛ انتخابی مناسب برای زبان‌آموزانی که از صفر شروع می‌کنند.",
+        },
+        tp5: {
+          name: "نازنین کرمی",
+          subject: "آلمانی A1 تا B2",
+          bio: "مدرس آلمانی با تمرکز بر مکالمه کاربردی، تلفظ و ارتباط با اعتمادبه‌نفس در موقعیت‌های روزمره.",
+        },
+        tp6: {
+          name: "مریم احمدی",
+          subject: "مکالمه آلمانی",
+          bio: "مدرس مکالمه برای صحبت‌کردن طبیعی در سفر، محیط کار و زندگی روزمره.",
+        },
+        tp7: {
+          name: "امیرحسین رضایی",
+          subject: "گرامر آلمانی",
+          bio: "مدرس صبور گرامر که ساختار جمله در زبان آلمانی را ساده و کاربردی توضیح می‌دهد.",
+        },
+        tp8: {
+          name: "نیلوفر کاظمی",
+          subject: "آمادگی آزمون آلمانی",
+          bio: "متخصص آمادگی آزمون با تمرکز بر راهکارهای آزمون گوته و تلک.",
+        },
+      },
     },
     cookieConsent: {
       message:
@@ -968,53 +1032,59 @@ export const dictionary = {
       posts: {
         1: {
           title: "How to Learn English Faster?",
-          excerpt: "In this article, we explore 5 effective methods to accelerate English learning and provide practical techniques for enhancing language skills.",
+          excerpt:
+            "In this article, we explore 5 effective methods to accelerate English learning and provide practical techniques for enhancing language skills.",
           author: "Sara Mohammadi",
           date: "May 5, 2024",
           readTime: "5 min",
-          category: "Learning Tips"
+          category: "Learning Tips",
         },
         2: {
           title: "Common Mistakes in Learning English",
-          excerpt: "Learn about common mistakes language learners make and simple strategies to avoid them. This article helps you follow a more correct learning path.",
+          excerpt:
+            "Learn about common mistakes language learners make and simple strategies to avoid them. This article helps you follow a more correct learning path.",
           author: "Ali Rezaei",
           date: "April 30, 2024",
           readTime: "7 min",
-          category: "Learning Guide"
+          category: "Learning Guide",
         },
         3: {
           title: "Techniques to Improve English Speaking",
-          excerpt: "Practical methods for improving speaking skills, from self-practice to finding study partners. Useful tips for more fluent communication.",
+          excerpt:
+            "Practical methods for improving speaking skills, from self-practice to finding study partners. Useful tips for more fluent communication.",
           author: "Maryam Karimi",
           date: "April 25, 2024",
           readTime: "6 min",
-          category: "Speaking"
+          category: "Speaking",
         },
         4: {
           title: "Free Resources for Learning English",
-          excerpt: "Introduction to the best apps, websites, and YouTube channels for free English learning. Complete list of valuable resources.",
+          excerpt:
+            "Introduction to the best apps, websites, and YouTube channels for free English learning. Complete list of valuable resources.",
           author: "Sara Mohammadi",
           date: "April 20, 2024",
           readTime: "8 min",
-          category: "Resources"
+          category: "Resources",
         },
         5: {
           title: "IELTS Exam Preparation Guide",
-          excerpt: "Complete guide for IELTS preparation, from four main skills to important exam day tips. Success strategies for IELTS.",
+          excerpt:
+            "Complete guide for IELTS preparation, from four main skills to important exam day tips. Success strategies for IELTS.",
           author: "Ali Rezaei",
           date: "April 15, 2024",
           readTime: "10 min",
-          category: "Exams"
+          category: "Exams",
         },
         6: {
           title: "Building Daily English Study Habits",
-          excerpt: "How to create and maintain daily English study habits. Simple but effective techniques for continuous progress.",
+          excerpt:
+            "How to create and maintain daily English study habits. Simple but effective techniques for continuous progress.",
           author: "Maryam Karimi",
           date: "April 10, 2024",
           readTime: "5 min",
-          category: "Habits"
-        }
-      }
+          category: "Habits",
+        },
+      },
     },
     footer: {
       desc: "Helping students build confidence in English through modern teaching methods and practical learning experiences.",
@@ -1022,17 +1092,8 @@ export const dictionary = {
       germanCourses: "German Courses",
       about: "About",
       resources: "Resources",
-      courseLinks: [
-        "IELTS Preparation",
-        "TOEFL Preparation",
-        "Kids English",
-      ],
-      germanLinks: [
-        "German A1",
-        "German A2",
-        "German B1",
-        "Free Discussion",
-      ],
+      courseLinks: ["IELTS Preparation", "TOEFL Preparation", "Kids English"],
+      germanLinks: ["German A1", "German A2", "German B1", "Free Discussion"],
       aboutLinks: ["Our Story", "Instructors", "Careers", "Contact"],
       resourceLinks: [
         "Learning Blog",
@@ -1054,16 +1115,20 @@ export const dictionary = {
     },
     pwa: {
       installTitle: "Install SE ONE App",
-      installMessage: "Install the app for faster access and a better experience.",
+      installMessage:
+        "Install the app for faster access and a better experience.",
       install: "Install",
       later: "Later",
       understood: "Got it",
       android: "Android:",
-      androidInstructions: "Tap the browser menu (three dots) and select Add to Home Screen.",
+      androidInstructions:
+        "Tap the browser menu (three dots) and select Add to Home Screen.",
       ios: "iOS (iPhone/iPad):",
-      iosInstructions: "Tap the Share button (square with arrow up) and select Add to Home Screen.",
+      iosInstructions:
+        "Tap the Share button (square with arrow up) and select Add to Home Screen.",
       desktop: "Desktop:",
-      desktopInstructions: "Click the install icon in the browser address bar and follow the instructions.",
+      desktopInstructions:
+        "Click the install icon in the browser address bar and follow the instructions.",
     },
     home: {
       hero: {
@@ -1081,12 +1146,21 @@ export const dictionary = {
           satisfied: "Satisfied",
         },
       },
-      levels: ["Beginner", "Intermediate", "Advanced", "IELTS Ready", "German A1", "German A2", "German B1", "Free Discussion"],
+      levels: [
+        "Beginner",
+        "Intermediate",
+        "Advanced",
+        "IELTS Ready",
+        "German A1",
+        "German A2",
+        "German B1",
+        "Free Discussion",
+      ],
       levelDescriptions: [
         "Start from zero with basic concepts",
         "Strengthen everyday skills",
         "Master advanced language",
-        "Complete exam preparation"
+        "Complete exam preparation",
       ],
       levelsTitle: "Our Learning Levels",
       features: [
@@ -1121,6 +1195,12 @@ export const dictionary = {
       courses: {
         heading: "Our Latest Courses",
         sub: "Choose from our most popular English programs designed for every age and learning goal.",
+      },
+      instructors: {
+        eyebrow: "Featured instructors",
+        heading: "Learn with the right teacher",
+        sub: "Meet experienced instructors whose teaching style matches your goals and learning pace.",
+        viewAll: "Meet all instructors",
       },
       philosophy: {
         heading: "Our Teaching Philosophy",
@@ -1676,6 +1756,54 @@ export const dictionary = {
       lead: "Expert, experienced teachers who've helped thousands of students learn English.",
       ctaTitle: "Want to be one of our instructors?",
       ctaButton: "Apply to Teach",
+      verified: "Verified",
+      slotsAvailable: "slots available",
+      viewProfile: "View profile",
+      directoryCount: "expert instructors",
+      directoryHint: "Find the right teaching style for your goals.",
+      languages: { english: "English", german: "German" },
+      teacherCopy: {
+        tp1: {
+          name: "Anahita Amini",
+          subject: "Speaking & Conversation",
+          bio: "Speaking coach focused on real-world conversation practice and pronunciation.",
+        },
+        tp2: {
+          name: "Nima Shabani",
+          subject: "Grammar & Writing",
+          bio: "Grammar specialist who breaks down tricky structures into simple rules.",
+        },
+        tp3: {
+          name: "Reza Moradi",
+          subject: "IELTS Preparation",
+          bio: "Former IELTS examiner who helps students target their band score efficiently.",
+        },
+        tp4: {
+          name: "Sara Naderi",
+          subject: "Beginner English",
+          bio: "Patient and encouraging, with a great approach for absolute beginners.",
+        },
+        tp5: {
+          name: "Nazanin Karimi",
+          subject: "German A1 - B2",
+          bio: "German teacher focused on practical conversation, pronunciation, and confident everyday communication.",
+        },
+        tp6: {
+          name: "Maryam Ahmadi",
+          subject: "German Conversation",
+          bio: "Conversation teacher helping learners speak naturally in travel, work, and daily life.",
+        },
+        tp7: {
+          name: "Amirhossein Rezaei",
+          subject: "German Grammar",
+          bio: "Patient grammar coach who makes German sentence structure clear and practical.",
+        },
+        tp8: {
+          name: "Niloufar Kazemi",
+          subject: "German Exam Preparation",
+          bio: "Exam preparation specialist focused on Goethe and TELC test strategies.",
+        },
+      },
     },
     cookieConsent: {
       message:

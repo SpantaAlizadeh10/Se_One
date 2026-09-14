@@ -14,6 +14,8 @@ import {
 } from "lucide-react";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 import { useCoursesPricing } from "@/lib/use-courses-pricing";
+import { useCourses } from "@/lib/use-courses";
+import type { Course } from "@/lib/api/courses";
 import { getDiscountedPrice, formatPrice } from "@/lib/courses-pricing";
 import { isWishlisted, toggleWishlist } from "@/lib/wishlist-store";
 import CourseReviews from "@/components/marketing/course-detail/CourseReviews";
@@ -40,18 +42,18 @@ export default function CourseDetailPage({
 }) {
   const { t, href, lang } = useLanguage();
   const c = t("courseDetail");
-  const courses: {
-    id: string;
-    title: string;
-    level: string;
-    desc: string;
-    lessons: number;
-    students: number;
-    price: string;
-  }[] = t("coursesData");
+  const fallbackCourses: Course[] = t("coursesData");
+  const { courses, loading } = useCourses(lang, fallbackCourses);
   const [pricing] = useCoursesPricing();
 
   const course = courses.find((cc) => cc.id === params.courseId);
+  if (!course && loading) {
+    return (
+      <main className="max-w-5xl mx-auto px-5 sm:px-8 py-20 text-center text-ink70">
+        Loading course...
+      </main>
+    );
+  }
   if (!course) notFound();
 
   const p = pricing.find((cp) => cp.id === course.id);
@@ -84,7 +86,7 @@ export default function CourseDetailPage({
             <div
               className="absolute inset-0 bg-cover bg-center"
               style={{
-                backgroundImage: `linear-gradient(135deg, rgba(12,18,28,0.18), rgba(12,18,28,0.14)), url(${courseCoverImages[course.id] ?? courseCoverImages.beginners})`,
+                backgroundImage: `linear-gradient(135deg, rgba(12,18,28,0.18), rgba(12,18,28,0.14)), url(${course.image ?? courseCoverImages[course.id] ?? courseCoverImages.beginners})`,
               }}
             />
             <div className="absolute inset-0 bg-gradient-to-br from-black/10 via-transparent to-black/20" />
