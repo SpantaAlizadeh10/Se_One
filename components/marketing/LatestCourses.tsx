@@ -22,6 +22,7 @@ const courseCovers: Record<string, string> = {
   everyday: "/images/clas.jpeg",
   advanced: "/images/c1.jpeg",
   ielts: "/images/ielts.jpeg",
+  "english-a1-c1": "/images/c1.jpeg",
   "german-a1": "/images/A1.jpeg",
   "german-a2": "/images/A2.jpeg",
   "german-b1": "/images/B1.jpeg",
@@ -154,8 +155,9 @@ export default function LatestCourses({
                 </p>
                 <div className="flex flex-wrap items-center gap-x-3.5 gap-y-1 text-[10px] sm:text-[11px] text-muted mb-3">
                   <span className="flex items-center gap-1">
-                    <BookOpen size={11} /> {course.lessons}{" "}
-                    {t("common.lessons")}
+                    <BookOpen size={11} />{" "}
+                    {course.duration ??
+                      `${course.lessons} ${t("common.lessons")}`}
                   </span>
                   <span className="flex items-center gap-1">
                     <Users size={11} /> {course.students} {t("common.students")}

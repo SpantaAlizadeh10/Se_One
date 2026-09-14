@@ -33,6 +33,7 @@ const courseCoverImages: Record<string, string> = {
   everyday: "/images/clas.jpeg",
   advanced: "/images/c1.jpeg",
   ielts: "/images/ielts.jpeg",
+  "english-a1-c1": "/images/c1.jpeg",
 };
 
 export default function CourseDetailPage({
@@ -107,7 +108,8 @@ export default function CourseDetailPage({
 
           <div className="flex items-center gap-4 text-[13px] text-ink70 mb-8">
             <span className="flex items-center gap-1.5">
-              <BookOpen size={15} /> {course.lessons} {t("common.lessons")}
+              <BookOpen size={15} />{" "}
+              {course.duration ?? `${course.lessons} ${t("common.lessons")}`}
             </span>
             <span className="flex items-center gap-1.5">
               <Users size={15} /> {course.students} {t("common.students")}

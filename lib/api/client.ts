@@ -34,7 +34,17 @@ export function setToken(token: string | null) {
 
 type ApiFetchOptions = Omit<RequestInit, "body"> & { body?: unknown };
 
-export async function apiFetch<T>(path: string, options: ApiFetchOptions = {}): Promise<T> {
+export async function apiFetch<T>(
+  path: string,
+  options: ApiFetchOptions = {},
+): Promise<T> {
+  if (!BASE_URL) {
+    throw new ApiError(
+      "Backend API URL is not configured. Set NEXT_PUBLIC_API_BASE_URL in .env.local.",
+      0,
+    );
+  }
+
   const { body, headers, ...rest } = options;
   const token = getToken();
 
@@ -44,20 +54,26 @@ export async function apiFetch<T>(path: string, options: ApiFetchOptions = {}): 
     headers: {
       "Content-Type": "application/json",
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...headers
+      ...headers,
     },
-    body: body !== undefined ? JSON.stringify(body) : undefined
+    body: body !== undefined ? JSON.stringify(body) : undefined,
   });
 
   const contentType = res.headers.get("content-type") || "";
   const isJson = contentType.includes("application/json");
-  const data = isJson ? await res.json().catch(() => null) : await res.text().catch(() => null);
+  const data = isJson
+    ? await res.json().catch(() => null)
+    : await res.text().catch(() => null);
 
   if (!res.ok) {
     // ASP.NET's default ProblemDetails error shape uses "title"/"detail";
     // adjust this line if your API returns errors differently.
     const message =
-      (isJson && data && ((data as any).message || (data as any).title || (data as any).detail)) ||
+      (isJson &&
+        data &&
+        ((data as any).message ||
+          (data as any).title ||
+          (data as any).detail)) ||
       res.statusText ||
       "Request failed";
     throw new ApiError(message, res.status, data);

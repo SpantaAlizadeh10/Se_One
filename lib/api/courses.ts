@@ -8,6 +8,7 @@ export type Course = {
   lessons: number;
   students: number;
   price: string;
+  duration?: string;
   image?: string;
 };
 
@@ -86,6 +87,8 @@ function normalizeCourse(raw: unknown, index: number): Course | null {
       "EnrollmentCount",
     ),
     price: text(record, "price", "Price", "formattedPrice", "FormattedPrice"),
+    duration:
+      text(record, "duration", "Duration", "months", "Months") || undefined,
     image:
       text(
         record,

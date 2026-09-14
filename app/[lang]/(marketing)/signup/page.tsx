@@ -12,7 +12,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
-import { type Role } from "@/lib/auth-client";
+import { storeAuth, type Role } from "@/lib/auth-client";
 import { register } from "@/lib/api/auth";
 import { ApiError } from "@/lib/api/client";
 import FormField from "@/components/marketing/auth/FormField";
@@ -25,7 +25,8 @@ export default function SignupPage() {
   const router = useRouter();
   const [role, setRole] = useState<Role>("student");
   const [agreed, setAgreed] = useState(false);
-  const [fullName, setFullName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -42,7 +43,13 @@ export default function SignupPage() {
     setError(null);
     setLoading(true);
     try {
-      await register({ fullName, email, password, role });
+      const auth = await register({
+        fullName: `${firstName.trim()} ${lastName.trim()}`.trim(),
+        email,
+        password,
+        role,
+      });
+      storeAuth(auth);
       router.push(href("/login"));
     } catch (err) {
       setError(err instanceof ApiError ? err.message : String(err));
@@ -53,7 +60,7 @@ export default function SignupPage() {
   return (
     <main className="max-w-7xl mx-auto px-5 sm:px-8">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-start py-8">
-        <div className="max-w-[520px]">
+        <div className="order-last max-w-[520px] lg:order-first">
           <h1 className="font-serif text-[36px] sm:text-[44px] font-bold leading-[1.1] mb-4">
             {s.title1}
             <br />
@@ -75,13 +82,23 @@ export default function SignupPage() {
           <form onSubmit={submit}>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-5">
               <FormField
-                label={s.fullName}
+                label={s.firstName}
                 icon={<User size={18} />}
-                placeholder={s.fullNamePh}
+                placeholder={s.firstNamePh}
                 required
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
               />
+              <FormField
+                label={s.lastName}
+                icon={<User size={18} />}
+                placeholder={s.lastNamePh}
+                required
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+              />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-5">
               <FormField
                 label={s.email}
                 icon={<Mail size={18} />}
@@ -237,19 +254,21 @@ export default function SignupPage() {
           </p>
         </div>
 
-        <ArchFigure tone="warm">
-          <div className="w-[180px] h-[180px] sm:w-[220px] sm:h-[220px] rounded-full overflow-hidden mt-6">
-            <Image
-              src="/images/ssss.png"
-              alt="Signup overlay"
-              width={480}
-              height={480}
-              className="w-full h-full object-contain"
-              sizes="(max-width: 640px) 180px, 220px"
-              priority
-            />
-          </div>
-        </ArchFigure>
+        <div className="order-first lg:order-last">
+          <ArchFigure tone="warm">
+            <div className="w-[180px] h-[180px] sm:w-[220px] sm:h-[220px] rounded-full overflow-hidden mt-6">
+              <Image
+                src="/images/ssss.png"
+                alt="Signup overlay"
+                width={480}
+                height={480}
+                className="w-full h-full object-contain"
+                sizes="(max-width: 640px) 180px, 220px"
+                priority
+              />
+            </div>
+          </ArchFigure>
+        </div>
       </div>
     </main>
   );

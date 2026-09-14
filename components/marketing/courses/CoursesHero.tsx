@@ -68,15 +68,17 @@ export default function CoursesHero({
         </div>
       </div>
 
-      <div className="mt-10 bg-white border border-line rounded-full shadow-card flex flex-wrap justify-center sm:justify-between px-3 py-2 gap-1">
-        {levels.map((level) => (
-          <div
-            key={level}
-            className="px-5 sm:px-7 py-2.5 text-[13.5px] font-semibold rounded-full text-center flex-1 text-ink70"
-          >
-            {level}
-          </div>
-        ))}
+      <div className="mt-10 overflow-x-auto rounded-lg border border-line bg-white shadow-card thin-scroll sm:overflow-visible">
+        <div className="flex w-max min-w-full snap-x snap-mandatory gap-1 px-3 py-2 sm:w-full sm:justify-between">
+          {levels.map((level) => (
+            <div
+              key={level}
+              className="shrink-0 snap-start whitespace-nowrap rounded-md px-5 py-2.5 text-center text-[13.5px] font-semibold text-ink70 sm:flex-1 sm:px-7"
+            >
+              {level}
+            </div>
+          ))}
+        </div>
       </div>
     </section>
   );
