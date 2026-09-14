@@ -23,7 +23,8 @@ export default function PWAInstallPrompt() {
     const isIosStandalone =
       (navigator as Navigator & { standalone?: boolean }).standalone === true;
     const isStandalone =
-      window.matchMedia("(display-mode: standalone)").matches || isIosStandalone;
+      window.matchMedia("(display-mode: standalone)").matches ||
+      isIosStandalone;
 
     if (isStandalone) {
       setDismissed(true);
@@ -43,10 +44,10 @@ export default function PWAInstallPrompt() {
       }
     };
 
-    window.addEventListener('beforeinstallprompt', handler);
+    window.addEventListener("beforeinstallprompt", handler);
 
     return () => {
-      window.removeEventListener('beforeinstallprompt', handler);
+      window.removeEventListener("beforeinstallprompt", handler);
     };
   }, []);
 
@@ -59,7 +60,7 @@ export default function PWAInstallPrompt() {
 
     deferredPrompt.prompt();
     const { outcome } = await deferredPrompt.userChoice;
-    if (outcome === 'accepted') {
+    if (outcome === "accepted") {
       setDeferredPrompt(null);
       setShowPrompt(false);
     }
@@ -68,7 +69,7 @@ export default function PWAInstallPrompt() {
   const handleDismiss = () => {
     setShowPrompt(false);
     setDismissed(true);
-    localStorage.setItem('pwa-install-dismissed', 'true');
+    localStorage.setItem("pwa-install-dismissed", "true");
   };
 
   const [showInstructions, setShowInstructions] = useState(false);

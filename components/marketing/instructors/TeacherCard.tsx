@@ -28,10 +28,10 @@ export default function TeacherCard({
   const availableSlots = teacher.slots.filter((slot) => !slot.booked).length;
 
   return (
-    <article
-      className={`group overflow-hidden rounded-2xl border border-line bg-white shadow-card transition-all duration-300 hover:-translate-y-1 hover:shadow-cardHover ${compact ? "" : "h-full"}`}
-    >
-      <div className="relative h-[208px] overflow-hidden bg-gradient-to-br from-[#DCEFED] via-[#C7E1DE] to-[#A9CFC9]">
+    <article className="group h-full overflow-hidden rounded-2xl border border-line bg-white shadow-card transition-all duration-300 hover:-translate-y-1 hover:shadow-cardHover">
+      <div
+        className={`relative overflow-hidden bg-gradient-to-br from-[#DCEFED] via-[#C7E1DE] to-[#A9CFC9] ${compact ? "h-[172px] sm:h-[208px]" : "h-[208px]"}`}
+      >
         <div className="absolute -end-10 -top-14 h-44 w-44 rounded-full border-[18px] border-white/25" />
         <div className="absolute -bottom-16 -start-8 h-36 w-36 rounded-full bg-gold/20" />
         <img
@@ -39,7 +39,7 @@ export default function TeacherCard({
           alt={copy.name}
           width={196}
           height={196}
-          className="absolute bottom-[-8px] left-1/2 h-[196px] w-[196px] -translate-x-1/2 rounded-full border-4 border-white object-cover object-center shadow-lg transition-transform duration-300 group-hover:scale-105"
+          className={`absolute bottom-[-8px] left-1/2 -translate-x-1/2 rounded-full border-4 border-white object-cover object-center shadow-lg transition-transform duration-300 group-hover:scale-105 ${compact ? "h-[160px] w-[160px] sm:h-[196px] sm:w-[196px]" : "h-[196px] w-[196px]"}`}
         />
         <span className="absolute start-4 top-4 inline-flex items-center gap-1 rounded-full bg-white/90 px-2.5 py-1 text-[10px] font-bold text-sageDeep shadow-sm">
           <CheckCircle2 size={12} /> {labels.verified}
@@ -50,7 +50,7 @@ export default function TeacherCard({
         </span>
       </div>
 
-      <div className="p-5">
+      <div className={compact ? "p-4 sm:p-5" : "p-5"}>
         <div className="mb-3 flex items-start justify-between gap-3">
           <div>
             <h3 className="text-[16px] font-bold text-ink">{copy.name}</h3>

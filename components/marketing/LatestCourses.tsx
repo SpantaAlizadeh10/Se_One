@@ -107,7 +107,7 @@ export default function LatestCourses({
             <Link
               key={course.id}
               href={href(`/courses/${course.id}`)}
-              className="bg-white border border-line rounded-lg overflow-hidden shadow-card hover:-translate-y-1 hover:shadow-cardHover transition-all block"
+              className="min-w-0 bg-white border border-line rounded-lg overflow-hidden shadow-card hover:-translate-y-1 hover:shadow-cardHover transition-all block"
             >
               <div className="relative h-[130px] overflow-hidden">
                 <div
@@ -145,14 +145,14 @@ export default function LatestCourses({
                   />
                 </div>
               </div>
-              <div className="p-4">
-                <h3 className="text-[14.5px] font-semibold mb-1.5">
+              <div className="p-3 sm:p-4">
+                <h3 className="min-h-[2.75rem] text-[13px] sm:text-[14.5px] leading-[1.45] font-semibold mb-1.5 line-clamp-2">
                   {course.title}
                 </h3>
-                <p className="text-[12px] text-muted leading-relaxed mb-3 line-clamp-2">
+                <p className="min-h-[3.5rem] text-[11px] sm:text-[12px] text-muted leading-relaxed mb-3 line-clamp-2">
                   {course.desc}
                 </p>
-                <div className="flex items-center gap-3.5 text-[11px] text-muted mb-3">
+                <div className="flex flex-wrap items-center gap-x-3.5 gap-y-1 text-[10px] sm:text-[11px] text-muted mb-3">
                   <span className="flex items-center gap-1">
                     <BookOpen size={11} /> {course.lessons}{" "}
                     {t("common.lessons")}

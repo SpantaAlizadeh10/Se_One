@@ -33,9 +33,14 @@ export default function TeacherShowcase() {
         </Link>
       </div>
 
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="flex gap-5 overflow-x-auto snap-x snap-mandatory -mx-5 px-5 thin-scroll sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 xl:grid-cols-4">
         {teachers.map((teacher) => (
-          <TeacherCard key={teacher.id} teacher={teacher} compact />
+          <div
+            key={teacher.id}
+            className="w-[250px] min-w-[250px] shrink-0 snap-start sm:w-auto sm:min-w-0 sm:shrink"
+          >
+            <TeacherCard teacher={teacher} compact />
+          </div>
         ))}
       </div>
     </section>
