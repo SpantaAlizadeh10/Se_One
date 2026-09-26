@@ -13,11 +13,8 @@ import {
   Heart,
 } from "lucide-react";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
-import { useCoursesPricing } from "@/lib/use-courses-pricing";
 import { useCourses } from "@/lib/use-courses";
-import type { Course } from "@/lib/api/courses";
-import { getDiscountedPrice, formatPrice } from "@/lib/courses-pricing";
-import { isWishlisted, toggleWishlist } from "@/lib/wishlist-store";
+import { isInWishlist, addToWishlist, removeFromWishlist } from "@/lib/api/wishlist";
 import CourseReviews from "@/components/marketing/course-detail/CourseReviews";
 import RelatedCourses from "@/components/marketing/course-detail/RelatedCourses";
 
@@ -43,9 +40,7 @@ export default function CourseDetailPage({
 }) {
   const { t, href, lang } = useLanguage();
   const c = t("courseDetail");
-  const fallbackCourses: Course[] = t("coursesData");
-  const { courses, loading } = useCourses(lang, fallbackCourses);
-  const [pricing] = useCoursesPricing();
+  const { courses, loading } = useCourses(lang);
 
   const course = courses.find((cc) => cc.id === params.courseId);
   if (!course && loading) {
@@ -57,19 +52,26 @@ export default function CourseDetailPage({
   }
   if (!course) notFound();
 
-  const p = pricing.find((cp) => cp.id === course.id);
-  const hasDiscount = !!p && p.discountPercent > 0;
-  const discountedPrice = p
-    ? getDiscountedPrice(p.basePrice, p.discountPercent)
-    : null;
+  const discountPercent = course.discountPercent ?? 0;
+  const hasDiscount = discountPercent > 0 && Boolean(course.basePrice);
 
   const learnItems: string[] = c.whatYouLearnItems;
   const includesItems: string[] = c.includesItems;
 
   const [saved, setSaved] = useState(false);
   useEffect(() => {
-    setSaved(isWishlisted(course.id));
+    isInWishlist(course.id).then(setSaved).catch(() => setSaved(false));
   }, [course.id]);
+
+  const toggleSaved = async () => {
+    try {
+      if (saved) await removeFromWishlist(course.id);
+      else await addToWishlist(course.id);
+      setSaved(!saved);
+    } catch {
+      // Keep the saved state unchanged if the API request fails.
+    }
+  };
 
   return (
     <main className="max-w-5xl mx-auto px-5 sm:px-8 py-10 sm:py-14">
@@ -135,10 +137,10 @@ export default function CourseDetailPage({
           {hasDiscount ? (
             <div className="flex items-center gap-2.5 mb-1">
               <span className="text-[26px] font-serif font-semibold text-goldDeep">
-                {formatPrice(discountedPrice!, lang)}
+                {new Intl.NumberFormat(lang === "fa" ? "fa-IR" : "en-US", { style: "currency", currency: course.currency || (lang === "fa" ? "IRR" : "USD"), maximumFractionDigits: 0 }).format(Math.round((course.basePrice ?? 0) * (1 - discountPercent / 100)))}
               </span>
               <span className="text-[15px] text-muted line-through">
-                {formatPrice(p!.basePrice, lang)}
+                {course.price}
               </span>
             </div>
           ) : (
@@ -148,7 +150,7 @@ export default function CourseDetailPage({
           )}
           {hasDiscount && (
             <span className="inline-flex items-center gap-1 bg-danger/10 text-danger text-[11px] font-bold px-2.5 py-1 rounded-full mb-4">
-              <Tag size={11} /> -{p!.discountPercent}%
+              <Tag size={11} /> -{discountPercent}%
             </span>
           )}
 
@@ -160,9 +162,7 @@ export default function CourseDetailPage({
           </Link>
 
           <button
-            onClick={() =>
-              setSaved(toggleWishlist(course.id).includes(course.id))
-            }
+            onClick={toggleSaved}
             className={`w-full inline-flex items-center justify-center gap-2 rounded-full py-3 text-[13.5px] font-semibold mt-2.5 border transition-colors ${
               saved
                 ? "border-danger/30 text-danger bg-danger/5"

@@ -1,14 +1,21 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Clock } from "lucide-react";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
-import { weeklySchedule } from "@/lib/teacher-data";
+import { getTeacherSchedule, type TeacherClass } from "@/lib/api/teacher-dashboard";
 
 export default function TeacherSchedulePage() {
   const { t } = useLanguage();
   const d = t("teacherDashboard");
+  const [weeklySchedule, setWeeklySchedule] = useState<TeacherClass[]>([]);
+  useEffect(() => {
+    let active = true;
+    getTeacherSchedule().then((items) => { if (active) setWeeklySchedule(items); }).catch(() => { if (active) setWeeklySchedule([]); });
+    return () => { active = false; };
+  }, []);
 
-  const days = Array.from(new Set(weeklySchedule.map((s) => s.day)));
+  const days = Array.from(new Set(weeklySchedule.map((item) => item.scheduledDate ? new Date(item.scheduledDate).toLocaleDateString(undefined, { weekday: "long" }) : ""))).filter(Boolean);
 
   return (
     <div>
@@ -20,15 +27,15 @@ export default function TeacherSchedulePage() {
             <h3 className="text-[14.5px] font-bold mb-3">{day}</h3>
             <div className="flex flex-col gap-3">
               {weeklySchedule
-                .filter((s) => s.day === day)
+                .filter((s) => (s.scheduledDate ? new Date(s.scheduledDate).toLocaleDateString(undefined, { weekday: "long" }) : "") === day)
                 .map((s) => (
                   <div key={s.id} className="flex items-center gap-3 bg-cream rounded-xl p-3">
                     <div className="w-9 h-9 rounded-full bg-blue text-white flex items-center justify-center shrink-0">
                       <Clock size={16} />
                     </div>
                     <div className="min-w-0">
-                      <div className="text-[13px] font-semibold truncate">{s.title}</div>
-                      <div className="text-[11.5px] text-muted">{s.time} · {s.level}</div>
+                      <div className="text-[13px] font-semibold truncate">{s.courseTitle}</div>
+                      <div className="text-[11.5px] text-muted">{s.startTime}{s.endTime ? ` – ${s.endTime}` : ""} · {s.subject}</div>
                     </div>
                   </div>
                 ))}

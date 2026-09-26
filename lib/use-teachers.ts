@@ -1,12 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { getTeachers } from "./api/teachers";
-import { teacherDirectory, type TeacherProfile } from "./teachers-directory";
+import type { TeacherProfile } from "./teachers-directory";
 
 export function useTeachers() {
-  const [teachers, setTeachers] = useState<TeacherProfile[]>(teacherDirectory);
+  const [teachers, setTeachers] = useState<TeacherProfile[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const refresh = useCallback(() => setRefreshKey((key) => key + 1), []);
 
   useEffect(() => {
     let active = true;
@@ -16,7 +19,7 @@ export function useTeachers() {
         if (active) setTeachers(remoteTeachers);
       })
       .catch(() => {
-        // Keep the sample directory when the .NET API is not configured or unavailable.
+        if (active) setTeachers([]);
       })
       .finally(() => {
         if (active) setLoading(false);
@@ -25,7 +28,7 @@ export function useTeachers() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [refreshKey]);
 
-  return { teachers, loading };
+  return { teachers, loading, refresh };
 }

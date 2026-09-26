@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { Check, Eye, EyeOff } from "lucide-react";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
-import { useCoursesPricing } from "@/lib/use-courses-pricing";
 import { getDiscountedPrice, formatPrice } from "@/lib/courses-pricing";
 import { isApiConfigured } from "@/lib/is-api-configured";
 import {
@@ -18,14 +17,16 @@ export default function AdminCoursesPage() {
   const s = t("adminCoursesPage");
   const coursesData: { id: string; title: string }[] = t("coursesData");
 
-  const [pricing, updatePricing] = useCoursesPricing();
-  const [apiCourses, setApiCourses] = useState<AdminCourse[] | null>(null);
+  const [apiCourses, setApiCourses] = useState<AdminCourse[]>([]);
   const [apiError, setApiError] = useState<string | null>(null);
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [savedId, setSavedId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!isApiConfigured()) return;
+    if (!isApiConfigured()) {
+      setApiError("Backend API URL is not configured. Course pricing is unavailable.");
+      return;
+    }
     listAdminCourses()
       .then(setApiCourses)
       .catch((error) =>
@@ -48,9 +49,7 @@ export default function AdminCoursesPage() {
           discountPercent: clamped,
         });
         setApiCourses(
-          (prev) =>
-            prev?.map((course) => (course.id === id ? updated : course)) ??
-            null,
+          (prev) => prev.map((course) => (course.id === id ? updated : course)),
         );
       } catch (error) {
         setApiError(
@@ -59,9 +58,6 @@ export default function AdminCoursesPage() {
         return;
       }
     }
-    updatePricing((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, discountPercent: clamped } : p)),
-    );
     setSavedId(id);
     setTimeout(() => setSavedId((cur) => (cur === id ? null : cur)), 1800);
   };
@@ -72,8 +68,7 @@ export default function AdminCoursesPage() {
         isPublished: !course.isPublished,
       });
       setApiCourses(
-        (prev) =>
-          prev?.map((item) => (item.id === course.id ? updated : item)) ?? null,
+          (prev) => prev.map((item) => (item.id === course.id ? updated : item)),
       );
     } catch (error) {
       setApiError(
@@ -110,16 +105,13 @@ export default function AdminCoursesPage() {
             </tr>
           </thead>
           <tbody>
-            {(apiCourses
-              ? apiCourses.map((course) => ({
+            {apiCourses.map((course) => ({
                   id: course.id,
                   basePrice: course.basePrice,
                   discountPercent: course.discountPercent,
                   title: course.title,
                   isPublished: course.isPublished,
-                }))
-              : pricing
-            ).map((p) => {
+                })).map((p) => {
               const course = coursesData.find((c) => c.id === p.id);
               const courseTitle =
                 "title" in p && typeof p.title === "string"
@@ -183,7 +175,7 @@ export default function AdminCoursesPage() {
                         {savedId === p.id ? <Check size={13} /> : null}
                         {savedId === p.id ? s.savedMsg : s.saveBtn}
                       </button>
-                      {apiCourses && "isPublished" in p && (
+                          {"isPublished" in p && (
                         <button
                           onClick={() =>
                             togglePublished(

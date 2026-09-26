@@ -3,40 +3,45 @@
 import { useState } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { CreditCard, Lock, ArrowLeft, CheckCircle2, ShieldAlert } from "lucide-react";
+import { Lock, ArrowLeft, CheckCircle2 } from "lucide-react";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
-import { useCoursesPricing } from "@/lib/use-courses-pricing";
-import { getDiscountedPrice, formatPrice } from "@/lib/courses-pricing";
-import { mockCharge } from "@/lib/api/payments";
+import { useCourses } from "@/lib/use-courses";
+import { enrollInCourse } from "@/lib/api/enrollment";
 
 export default function CheckoutPage({ params }: { params: { courseId: string } }) {
   const { t, href, lang } = useLanguage();
   const c = t("checkout");
-  const courses: { id: string; title: string; price: string }[] = t("coursesData");
-  const [pricing] = useCoursesPricing();
+  const { courses, loading: coursesLoading } = useCourses(lang);
 
   const course = courses.find((cc) => cc.id === params.courseId);
+  if (!course && coursesLoading) return <main className="max-w-4xl mx-auto px-5 py-16 text-center">Loading course...</main>;
   if (!course) notFound();
 
-  const p = pricing.find((cp) => cp.id === course.id);
-  const basePrice = p?.basePrice ?? 0;
-  const discountPercent = p?.discountPercent ?? 0;
-  const total = p ? getDiscountedPrice(basePrice, discountPercent) : 0;
+  const basePrice = course.basePrice ?? 0;
+  const discountPercent = course.discountPercent ?? 0;
+  const total = Math.round(basePrice * (1 - discountPercent / 100));
   const discountAmount = basePrice - total;
 
-  const [cardholderName, setCardholderName] = useState("");
-  const [cardNumber, setCardNumber] = useState("");
-  const [expiry, setExpiry] = useState("");
-  const [cvv, setCvv] = useState("");
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const result = await mockCharge({ courseId: course.id, amount: total, cardholderName });
-    setLoading(false);
-    if (result.success) setSuccess(true);
+    setError(null);
+    try {
+      const result = await enrollInCourse(course.id);
+      if (result.paymentUrl) {
+        window.location.assign(result.paymentUrl);
+        return;
+      }
+      setSuccess(true);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Could not start enrollment.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (success) {
@@ -73,97 +78,34 @@ export default function CheckoutPage({ params }: { params: { courseId: string } 
 
           <div className="flex items-center justify-between text-[13px] text-ink70 py-2 border-t border-line">
             <span>{c.subtotal}</span>
-            <span>{formatPrice(basePrice, lang)}</span>
+            <span>{course.price}</span>
           </div>
           {discountPercent > 0 && (
             <div className="flex items-center justify-between text-[13px] text-danger py-2 border-t border-line">
               <span>
                 {c.discount} (-{discountPercent}%)
               </span>
-              <span>-{formatPrice(discountAmount, lang)}</span>
+              <span>-{new Intl.NumberFormat(lang === "fa" ? "fa-IR" : "en-US", { style: "currency", currency: course.currency || (lang === "fa" ? "IRR" : "USD"), maximumFractionDigits: 0 }).format(discountAmount)}</span>
             </div>
           )}
           <div className="flex items-center justify-between text-[15px] font-bold py-3 border-t border-line mt-1">
             <span>{c.total}</span>
-            <span className="text-goldDeep">{formatPrice(total, lang)}</span>
+            <span className="text-goldDeep">{new Intl.NumberFormat(lang === "fa" ? "fa-IR" : "en-US", { style: "currency", currency: course.currency || (lang === "fa" ? "IRR" : "USD"), maximumFractionDigits: 0 }).format(total)}</span>
           </div>
         </div>
 
         <form onSubmit={submit} className="bg-white border border-line rounded-lg shadow-card p-6 order-1 lg:order-2">
-          <div className="flex items-center gap-2 mb-5">
-            <CreditCard size={17} className="text-blue" />
-            <h2 className="text-[15px] font-semibold m-0">{c.paymentDetails}</h2>
-          </div>
-
-          <div className="flex flex-col gap-4">
-            <div>
-              <label className="block text-[12px] font-semibold text-ink70 mb-1.5">{c.cardholderName}</label>
-              <input
-                type="text"
-                required
-                value={cardholderName}
-                onChange={(e) => setCardholderName(e.target.value)}
-                placeholder={c.cardholderPh}
-                className="w-full border border-line rounded-xl px-4 py-3 text-[14px] outline-none focus:border-blue transition-colors"
-              />
-            </div>
-            <div>
-              <label className="block text-[12px] font-semibold text-ink70 mb-1.5">{c.cardNumber}</label>
-              <input
-                type="text"
-                required
-                dir="ltr"
-                inputMode="numeric"
-                maxLength={19}
-                value={cardNumber}
-                onChange={(e) => setCardNumber(e.target.value)}
-                placeholder="4242 4242 4242 4242"
-                className="w-full border border-line rounded-xl px-4 py-3 text-[14px] outline-none focus:border-blue transition-colors"
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-[12px] font-semibold text-ink70 mb-1.5">{c.expiry}</label>
-                <input
-                  type="text"
-                  required
-                  dir="ltr"
-                  maxLength={5}
-                  value={expiry}
-                  onChange={(e) => setExpiry(e.target.value)}
-                  placeholder="MM/YY"
-                  className="w-full border border-line rounded-xl px-4 py-3 text-[14px] outline-none focus:border-blue transition-colors"
-                />
-              </div>
-              <div>
-                <label className="block text-[12px] font-semibold text-ink70 mb-1.5">{c.cvv}</label>
-                <input
-                  type="text"
-                  required
-                  dir="ltr"
-                  maxLength={4}
-                  value={cvv}
-                  onChange={(e) => setCvv(e.target.value)}
-                  placeholder="123"
-                  className="w-full border border-line rounded-xl px-4 py-3 text-[14px] outline-none focus:border-blue transition-colors"
-                />
-              </div>
-            </div>
-          </div>
-
+          <h2 className="text-[15px] font-semibold mb-3">{c.paymentDetails}</h2>
+          <p className="text-[13px] text-ink70 leading-relaxed mb-5">Your enrollment and payment session will be securely created by the backend.</p>
+          {error && <p role="alert" className="text-danger text-[13px] mb-4">{error}</p>}
           <button
             type="submit"
             disabled={loading}
             className="w-full mt-6 inline-flex items-center justify-center gap-2 bg-blue text-white rounded-full py-4 text-[14.5px] font-bold hover:bg-blueDeep transition-colors disabled:opacity-70"
           >
             <Lock size={14} />
-            {loading ? c.processing : `${c.payButton} — ${formatPrice(total, lang)}`}
+            {loading ? c.processing : `${c.payButton} — ${course.price}`}
           </button>
-
-          <div className="flex items-start gap-2 mt-4 text-[11.5px] text-muted">
-            <ShieldAlert size={14} className="shrink-0 mt-0.5" />
-            {c.securityNote}
-          </div>
         </form>
       </div>
     </main>

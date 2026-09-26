@@ -1,5 +1,8 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import { Mic, BookOpen, PenLine, Clock } from "lucide-react";
-import { practiceItems } from "@/lib/data";
+import { getPracticeContent, type PracticeContent } from "@/lib/api/practice";
 
 const kindStyles = {
   speak: { bg: "bg-[#E4ECFF]", text: "text-blue", Icon: Mic },
@@ -8,10 +11,22 @@ const kindStyles = {
 } as const;
 
 export default function PracticeList() {
+  const [practiceItems, setPracticeItems] = useState<PracticeContent[]>([]);
+
+  useEffect(() => {
+    let active = true;
+    getPracticeContent()
+      .then((items) => { if (active) setPracticeItems(items); })
+      .catch(() => { if (active) setPracticeItems([]); });
+    return () => { active = false; };
+  }, []);
+
   return (
     <div className="bg-white border border-line rounded-lg shadow-card px-4">
       {practiceItems.map((item, i) => {
-        const { bg, text, Icon } = kindStyles[item.kind];
+        const category = `${item.category} ${item.title}`.toLowerCase();
+        const kind = category.includes("speak") || category.includes("listen") ? "speak" : category.includes("grammar") ? "grammar" : "write";
+        const { bg, text, Icon } = kindStyles[kind];
         return (
           <div
             key={item.id}
@@ -24,10 +39,10 @@ export default function PracticeList() {
               <div className="text-[13.5px] font-semibold">{item.title}</div>
               <div className="flex gap-2.5 mt-0.5">
                 <span className="text-[11px] text-muted flex items-center gap-1">
-                  <Clock size={11} /> {item.minutes} min
+                  <Clock size={11} /> {item.timeLimit ? Math.ceil(item.timeLimit / 60) : "—"} min
                 </span>
                 <span className="text-[11px] text-muted">
-                  {item.skill} · {item.level}
+                  {item.category} · {item.level}
                 </span>
               </div>
             </div>

@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { Mic, BookOpen, PenLine, ChevronRight } from "lucide-react";
-import type { ClassItem } from "@/lib/data";
+
+type ClassItem = { id: string; title: string; level: string; day: string; time: string; kind: "speak" | "grammar" | "write" };
 
 const kindStyles: Record<ClassItem["kind"], { bg: string; text: string; Icon: React.ElementType }> = {
   speak: { bg: "bg-[#E4ECFF]", text: "text-blue", Icon: Mic },

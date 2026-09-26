@@ -1,19 +1,85 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { CalendarClock, History } from "lucide-react";
+import { useLanguage } from "@/lib/i18n/LanguageProvider";
+import { getName } from "@/lib/auth-client";
+import { getCourses } from "@/lib/api/courses";
+import { getUserEnrollments } from "@/lib/api/enrollment";
+import { getDashboardOverview, type UpcomingClass, type RecentActivity } from "@/lib/api/student-dashboard";
 import MilestoneBanner from "@/components/dashboard/MilestoneBanner";
 import CourseCard from "@/components/dashboard/CourseCard";
 import StudyChart from "@/components/dashboard/StudyChart";
 import Calendar from "@/components/dashboard/Calendar";
 import ClassPanel from "@/components/dashboard/ClassPanel";
-import { courses, upcomingClasses, recentActivity } from "@/lib/data";
+
+const gradients = ["from-[#CFE7E4] to-[#9FCFC9]", "from-[#D9D2F0] to-[#B7A8E6]", "from-[#CDE0D6] to-[#9CC4AC]"];
+
+type DashboardCourse = { id: string; title: string; level: string; progress: number; gradient: string; price?: string };
+type PanelItem = { id: string; title: string; level: string; day: string; time: string; kind: "speak" | "grammar" | "write" };
+
+function classToPanelItem(item: UpcomingClass): PanelItem {
+  const start = item.scheduledDate ? new Date(item.scheduledDate) : null;
+  return {
+    id: item.id,
+    title: item.subject || item.courseTitle,
+    level: item.courseTitle,
+    day: start && !Number.isNaN(start.getTime()) ? start.toLocaleDateString() : "",
+    time: item.startTime,
+    kind: /grammar/i.test(item.subject) ? "grammar" : /writ/i.test(item.subject) ? "write" : "speak",
+  };
+}
+
+function activityToPanelItem(item: RecentActivity): PanelItem {
+  const date = item.timestamp ? new Date(item.timestamp) : null;
+  return {
+    id: item.id,
+    title: item.title,
+    level: item.description,
+    day: date && !Number.isNaN(date.getTime()) ? date.toLocaleDateString() : "",
+    time: "",
+    kind: /assignment/i.test(item.type) ? "write" : "grammar",
+  };
+}
 
 export default function DashboardPage() {
+  const { lang } = useLanguage();
+  const [name, setName] = useState("");
+  const [courses, setCourses] = useState<DashboardCourse[]>([]);
+  const [upcomingClasses, setUpcomingClasses] = useState<PanelItem[]>([]);
+  const [recentActivity, setRecentActivity] = useState<PanelItem[]>([]);
+
+  useEffect(() => {
+    setName(getName() || "");
+    let active = true;
+    Promise.all([getCourses(lang), getUserEnrollments(), getDashboardOverview()])
+      .then(([catalog, enrollments, overview]) => {
+        if (!active) return;
+        setCourses(enrollments
+          .filter((enrollment) => enrollment.status === "active")
+          .map((enrollment, index) => {
+            const course = catalog.find((item) => item.id === enrollment.courseId);
+            return course ? { id: course.id, title: course.title, level: course.level, progress: enrollment.progress ?? 0, gradient: gradients[index % gradients.length], price: course.price } : null;
+          })
+          .filter((course): course is DashboardCourse => course !== null));
+        setUpcomingClasses(overview.upcomingClasses.map(classToPanelItem));
+        setRecentActivity(overview.recentActivity.map(activityToPanelItem));
+      })
+      .catch(() => {
+        if (active) {
+          setCourses([]);
+          setUpcomingClasses([]);
+          setRecentActivity([]);
+        }
+      });
+    return () => { active = false; };
+  }, [lang]);
+
   return (
     <div>
       <div className="mb-6">
         <h2 className="font-serif text-[27px] font-semibold mb-1">
-          Welcome back, Sepanta 👋
+          Welcome back{name ? `, ${name}` : ""} 👋
         </h2>
         <p className="text-muted text-[14px] m-0">
           Your academic work is now a digital asset.

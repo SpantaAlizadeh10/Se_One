@@ -1,17 +1,24 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import { Search } from "lucide-react";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
-import { teacherStudents } from "@/lib/teacher-data";
+import { getTeacherStudents, type TeacherStudent } from "@/lib/api/teacher-dashboard";
 
 export default function TeacherStudentsPage() {
   const { t } = useLanguage();
   const d = t("teacherDashboard");
   const [query, setQuery] = useState("");
+  const [teacherStudents, setTeacherStudents] = useState<TeacherStudent[]>([]);
 
-  const filtered = teacherStudents.filter((s) => s.name.toLowerCase().includes(query.toLowerCase()));
+  useEffect(() => {
+    let active = true;
+    getTeacherStudents().then((items) => { if (active) setTeacherStudents(items); }).catch(() => { if (active) setTeacherStudents([]); });
+    return () => { active = false; };
+  }, []);
+
+  const filtered = teacherStudents.filter((s) => s.studentName.toLowerCase().includes(query.toLowerCase()));
 
   return (
     <div>
@@ -28,11 +35,11 @@ export default function TeacherStudentsPage() {
 
       <div className="bg-white border border-line rounded-lg shadow-card divide-y divide-line">
         {filtered.map((s) => (
-          <div key={s.id} className="flex items-center gap-4 p-4">
-            <Image src={s.avatar} alt={s.name} width={44} height={44} className="rounded-full object-cover shrink-0" />
+          <div key={`${s.studentId}-${s.courseId}`} className="flex items-center gap-4 p-4">
+            {s.studentAvatar ? <Image src={s.studentAvatar} alt={s.studentName} width={44} height={44} className="rounded-full object-cover shrink-0" /> : <div className="w-11 h-11 rounded-full bg-cream shrink-0" />}
             <div className="flex-1 min-w-0">
-              <div className="text-[14px] font-semibold truncate">{s.name}</div>
-              <div className="text-[12px] text-muted">{s.className} · {s.level}</div>
+              <div className="text-[14px] font-semibold truncate">{s.studentName}</div>
+              <div className="text-[12px] text-muted">{s.courseTitle}</div>
             </div>
             <div className="w-[110px] shrink-0 hidden sm:block">
               <div className="h-[7px] bg-line rounded-full overflow-hidden">

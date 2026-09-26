@@ -12,7 +12,6 @@ import {
   FileText,
 } from "lucide-react";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
-import { courseReviews } from "@/lib/course-reviews";
 import { isApiConfigured } from "@/lib/is-api-configured";
 import {
   createAdminBlogPost,
@@ -39,54 +38,7 @@ type BlogPost = {
 export default function AdminBlogPage() {
   const { t, lang } = useLanguage();
 
-  // Mock blog data
-  const [posts, setPosts] = useState<BlogPost[]>([
-    {
-      id: "1",
-      title: "How to Master English Speaking in 30 Days",
-      excerpt:
-        "A comprehensive guide to improving your English speaking skills through daily practice and proven techniques.",
-      content:
-        "Start with a daily speaking routine. Record yourself, review your mistakes, and repeat useful phrases in real conversations.",
-      author: "Sarah Johnson",
-      category: "Learning Tips",
-      status: "published",
-      publishedAt: "2026-09-01",
-      readTime: "8 min",
-      image: "/images/Study4.jpeg",
-      views: 1245,
-    },
-    {
-      id: "2",
-      title: "German Grammar Made Simple",
-      excerpt:
-        "Understanding German grammar doesn't have to be difficult. Learn the basics with our simplified approach.",
-      content:
-        "German grammar becomes easier when you learn sentence patterns before memorizing individual rules.",
-      author: "Hans Mueller",
-      category: "Grammar",
-      status: "published",
-      publishedAt: "2026-08-28",
-      readTime: "12 min",
-      image: "/images/Study4.jpeg",
-      views: 892,
-    },
-    {
-      id: "3",
-      title: "IELTS Preparation Guide",
-      excerpt:
-        "Everything you need to know to prepare for your IELTS exam and achieve your target band score.",
-      content:
-        "Build a weekly study plan around the four IELTS skills and measure your progress with timed practice tests.",
-      author: "Maria Garcia",
-      category: "Exam Prep",
-      status: "draft",
-      publishedAt: "2026-09-15",
-      readTime: "15 min",
-      image: "/images/Study4.jpeg",
-      views: 0,
-    },
-  ]);
+  const [posts, setPosts] = useState<BlogPost[]>([]);
 
   const [query, setQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState<
@@ -94,11 +46,13 @@ export default function AdminBlogPage() {
   >("all");
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingPost, setEditingPost] = useState<BlogPost | null>(null);
-  const [apiMode, setApiMode] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!isApiConfigured()) return;
+    if (!isApiConfigured()) {
+      setApiError("Backend API URL is not configured. Blog data is unavailable.");
+      return;
+    }
     listAdminBlogPosts({ pageSize: 100 })
       .then((result) => {
         setPosts(
@@ -116,7 +70,6 @@ export default function AdminBlogPage() {
             views: post.views,
           })),
         );
-        setApiMode(true);
       })
       .catch((error) =>
         setApiError(
@@ -138,15 +91,13 @@ export default function AdminBlogPage() {
   const remove = async (id: string) => {
     if (!window.confirm("Are you sure you want to delete this blog post?"))
       return;
-    if (apiMode) {
-      try {
-        await deleteAdminBlogPost(id);
-      } catch (error) {
-        setApiError(
-          error instanceof Error ? error.message : "Could not delete blog post",
-        );
-        return;
-      }
+    try {
+      await deleteAdminBlogPost(id);
+    } catch (error) {
+      setApiError(
+        error instanceof Error ? error.message : "Could not delete blog post",
+      );
+      return;
     }
     setPosts((prev) => prev.filter((post) => post.id !== id));
   };
@@ -155,17 +106,15 @@ export default function AdminBlogPage() {
     const post = posts.find((item) => item.id === id);
     if (!post) return;
     const nextStatus = post.status === "published" ? "draft" : "published";
-    if (apiMode) {
-      try {
-        await setAdminBlogPostStatus(id, nextStatus);
-      } catch (error) {
-        setApiError(
-          error instanceof Error
-            ? error.message
-            : "Could not update publication status",
-        );
-        return;
-      }
+    try {
+      await setAdminBlogPostStatus(id, nextStatus);
+    } catch (error) {
+      setApiError(
+        error instanceof Error
+          ? error.message
+          : "Could not update publication status",
+      );
+      return;
     }
     setPosts((prev) =>
       prev.map((post) =>
@@ -175,59 +124,41 @@ export default function AdminBlogPage() {
   };
 
   const addPost = async (post: Omit<BlogPost, "id" | "views">) => {
-    if (apiMode) {
-      try {
-        const created = await createAdminBlogPost({
-          title: post.title,
-          excerpt: post.excerpt,
-          content: post.content,
-          author: post.author,
-          category: post.category,
-          status: post.status,
-          publishedAt: post.publishedAt,
-          readTimeMinutes: Number.parseInt(post.readTime, 10) || 5,
-          imageUrl: post.image,
-          lang,
-        });
-        setPosts((prev) => [
-          { ...post, id: created.id, views: created.views },
-          ...prev,
-        ]);
-        setShowAddModal(false);
-        return;
-      } catch (error) {
-        setApiError(
-          error instanceof Error ? error.message : "Could not create blog post",
-        );
-        return;
-      }
+    try {
+      const created = await createAdminBlogPost({
+        title: post.title,
+        excerpt: post.excerpt,
+        content: post.content,
+        author: post.author,
+        category: post.category,
+        status: post.status,
+        publishedAt: post.publishedAt,
+        readTimeMinutes: Number.parseInt(post.readTime, 10) || 5,
+        imageUrl: post.image,
+        lang,
+      });
+      setPosts((prev) => [{ ...post, id: created.id, views: created.views }, ...prev]);
+      setShowAddModal(false);
+    } catch (error) {
+      setApiError(error instanceof Error ? error.message : "Could not create blog post");
     }
-    const newPost: BlogPost = {
-      ...post,
-      id: `post${Date.now()}`,
-      views: 0,
-    };
-    setPosts((prev) => [...prev, newPost]);
-    setShowAddModal(false);
   };
 
   const updatePost = async (id: string, updates: Partial<BlogPost>) => {
-    if (apiMode) {
-      try {
-        await updateAdminBlogPost(id, {
-          ...updates,
-          readTimeMinutes: updates.readTime
-            ? Number.parseInt(updates.readTime, 10) || 5
-            : undefined,
-          imageUrl: updates.image,
-          content: updates.content,
-        });
-      } catch (error) {
-        setApiError(
-          error instanceof Error ? error.message : "Could not update blog post",
-        );
-        return;
-      }
+    try {
+      await updateAdminBlogPost(id, {
+        ...updates,
+        readTimeMinutes: updates.readTime
+          ? Number.parseInt(updates.readTime, 10) || 5
+          : undefined,
+        imageUrl: updates.image,
+        content: updates.content,
+      });
+    } catch (error) {
+      setApiError(
+        error instanceof Error ? error.message : "Could not update blog post",
+      );
+      return;
     }
     setPosts((prev) =>
       prev.map((post) => (post.id === id ? { ...post, ...updates } : post)),

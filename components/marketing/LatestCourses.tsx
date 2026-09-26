@@ -4,11 +4,8 @@ import { useEffect, useState } from "react";
 import { ArrowRight, BookOpen, Users, Tag, Heart } from "lucide-react";
 import Link from "next/link";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
-import { useCoursesPricing } from "@/lib/use-courses-pricing";
-import { getDiscountedPrice, formatPrice } from "@/lib/courses-pricing";
-import { getWishlist, toggleWishlist } from "@/lib/wishlist-store";
+import { getWishlist, addToWishlist, removeFromWishlist } from "@/lib/api/wishlist";
 import { useCourses } from "@/lib/use-courses";
-import type { Course } from "@/lib/api/courses";
 
 const gradients = [
   "from-[#CFE7E4] to-[#9FCFC9]",
@@ -39,21 +36,29 @@ export default function LatestCourses({
   filterQuery?: string;
 }) {
   const { t, href, lang } = useLanguage();
-  const [pricing] = useCoursesPricing();
   const [wishlist, setWishlist] = useState<string[]>([]);
 
   useEffect(() => {
-    setWishlist(getWishlist());
+    getWishlist().then((items) => setWishlist(items.map((item) => item.courseId))).catch(() => setWishlist([]));
   }, []);
 
-  const handleWishlistClick = (e: React.MouseEvent, courseId: string) => {
+  const handleWishlistClick = async (e: React.MouseEvent, courseId: string) => {
     e.preventDefault();
     e.stopPropagation();
-    setWishlist(toggleWishlist(courseId));
+    try {
+      if (wishlist.includes(courseId)) {
+        await removeFromWishlist(courseId);
+        setWishlist((current) => current.filter((id) => id !== courseId));
+      } else {
+        await addToWishlist(courseId);
+        setWishlist((current) => [...current, courseId]);
+      }
+    } catch {
+      // Keep the UI unchanged when the API request fails.
+    }
   };
 
-  const fallbackCourses: Course[] = t("coursesData");
-  const { courses: allCourses } = useCourses(lang, fallbackCourses);
+  const { courses: allCourses } = useCourses(lang);
 
   const q = filterQuery?.trim().toLowerCase() ?? "";
   const courses = q
@@ -168,22 +173,19 @@ export default function LatestCourses({
                   </span>
                 </div>
                 {(() => {
-                  const p = pricing.find((cp) => cp.id === course.id);
-                  if (p && p.discountPercent > 0) {
-                    const discounted = getDiscountedPrice(
-                      p.basePrice,
-                      p.discountPercent,
-                    );
+                  const discountPercent = course.discountPercent ?? 0;
+                  if (discountPercent > 0 && course.basePrice) {
+                    const discounted = Math.round(course.basePrice * (1 - discountPercent / 100));
                     return (
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="inline-flex items-center gap-1 bg-danger/10 text-danger text-[11px] font-bold px-2.5 py-1 rounded-full">
-                          <Tag size={11} /> -{p.discountPercent}%
+                          <Tag size={11} /> -{discountPercent}%
                         </span>
                         <span className="text-[11px] text-muted line-through">
-                          {formatPrice(p.basePrice, lang)}
+                          {course.price}
                         </span>
                         <span className="inline-block bg-goldSoft text-goldDeep text-[12px] font-bold px-3 py-1 rounded-full">
-                          {formatPrice(discounted, lang)}
+                          {new Intl.NumberFormat(lang === "fa" ? "fa-IR" : "en-US", { style: "currency", currency: course.currency || (lang === "fa" ? "IRR" : "USD"), maximumFractionDigits: 0 }).format(discounted)}
                         </span>
                       </div>
                     );

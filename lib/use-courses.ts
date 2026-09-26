@@ -4,21 +4,21 @@ import { useEffect, useState } from "react";
 import { getCourses } from "./api/courses";
 import type { Course } from "./api/courses";
 
-export function useCourses(lang: string, fallback: Course[]) {
-  const [courses, setCourses] = useState<Course[]>(fallback);
+export function useCourses(lang: string) {
+  const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let active = true;
-    setCourses(fallback);
+    setCourses([]);
     setLoading(true);
 
     getCourses(lang)
       .then((remoteCourses) => {
-        if (active && remoteCourses.length > 0) setCourses(remoteCourses);
+        if (active) setCourses(remoteCourses);
       })
       .catch(() => {
-        // Keep the sample catalog when the .NET API is unavailable.
+        if (active) setCourses([]);
       })
       .finally(() => {
         if (active) setLoading(false);

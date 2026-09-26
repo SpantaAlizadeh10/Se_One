@@ -1,12 +1,21 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Clock, CheckCircle2, Award } from "lucide-react";
-import { assignments, type Assignment } from "@/lib/data";
+import { getStudentAssignments, getStudentSubmissions } from "@/lib/api/assignments";
+
+type AssignmentRow = {
+  id: string;
+  title: string;
+  course: string;
+  due: string;
+  status: "pending" | "submitted" | "graded";
+  grade?: string;
+};
 
 const filters = ["All", "Pending", "Submitted", "Graded"] as const;
 
-const statusStyles: Record<Assignment["status"], { bg: string; text: string; label: string }> = {
+const statusStyles: Record<AssignmentRow["status"], { bg: string; text: string; label: string }> = {
   pending: { bg: "bg-[#FDEFE0]", text: "text-[#B8792E]", label: "Pending" },
   submitted: { bg: "bg-[#E4ECFF]", text: "text-blue", label: "Submitted" },
   graded: { bg: "bg-sage", text: "text-sageDeep", label: "Graded" }
@@ -14,6 +23,29 @@ const statusStyles: Record<Assignment["status"], { bg: string; text: string; lab
 
 export default function AssignmentsTable() {
   const [filter, setFilter] = useState<(typeof filters)[number]>("All");
+  const [assignments, setAssignments] = useState<AssignmentRow[]>([]);
+
+  useEffect(() => {
+    let active = true;
+    Promise.all([getStudentAssignments(), getStudentSubmissions()])
+      .then(([items, submissions]) => {
+        const rows = items.map((assignment) => {
+          const submission = submissions.find((item) => item.assignmentId === assignment.id);
+          const status: AssignmentRow["status"] = submission?.status === "graded" ? "graded" : submission ? "submitted" : "pending";
+          return {
+            id: assignment.id,
+            title: assignment.title,
+            course: assignment.courseTitle,
+            due: assignment.dueDate ? new Date(assignment.dueDate).toLocaleDateString() : "—",
+            status,
+            grade: submission?.grade != null ? `${submission.grade}/${assignment.maxPoints}` : undefined,
+          };
+        });
+        if (active) setAssignments(rows);
+      })
+      .catch(() => { if (active) setAssignments([]); });
+    return () => { active = false; };
+  }, []);
 
   const visible =
     filter === "All"
@@ -25,7 +57,7 @@ export default function AssignmentsTable() {
   const gradedScores = assignments
     .filter((a) => a.grade)
     .map((a) => Number(a.grade!.split("/")[0]));
-  const avg = Math.round(gradedScores.reduce((a, b) => a + b, 0) / gradedScores.length);
+  const avg = gradedScores.length ? Math.round(gradedScores.reduce((a, b) => a + b, 0) / gradedScores.length) : 0;
 
   return (
     <div>

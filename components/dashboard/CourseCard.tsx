@@ -1,5 +1,6 @@
 import { BookOpen } from "lucide-react";
-import type { Course } from "@/lib/data";
+
+type Course = { id: string; title: string; level: string; progress: number; gradient: string; price?: string };
 
 export default function CourseCard({ course }: { course: Course }) {
   return (

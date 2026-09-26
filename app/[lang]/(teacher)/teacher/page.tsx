@@ -5,23 +5,35 @@ import Link from "next/link";
 import { Users, CalendarDays, Clock, Star, ArrowRight } from "lucide-react";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 import { getName } from "@/lib/auth-client";
-import { teacherClasses } from "@/lib/teacher-data";
+import { getTeacherDashboardOverview, type TeacherClass, type TeacherAnalytics } from "@/lib/api/teacher-dashboard";
 
 export default function TeacherOverviewPage() {
   const { t, href } = useLanguage();
   const d = t("teacherDashboard");
   const [name, setName] = useState("Teacher");
+  const [classes, setClasses] = useState<TeacherClass[]>([]);
+  const [analytics, setAnalytics] = useState<TeacherAnalytics | null>(null);
 
   useEffect(() => {
     const n = getName();
     if (n) setName(n);
+    let active = true;
+    getTeacherDashboardOverview().then((overview) => {
+      if (active) {
+        setClasses(overview.classes);
+        setAnalytics(overview.analytics);
+      }
+    }).catch(() => {
+      if (active) { setClasses([]); setAnalytics(null); }
+    });
+    return () => { active = false; };
   }, []);
 
   const stats = [
-    { label: d.stats.students, value: "63", icon: Users, bg: "bg-[#E4ECFF]", text: "text-blue" },
-    { label: d.stats.classesToday, value: "3", icon: CalendarDays, bg: "bg-sage", text: "text-sageDeep" },
-    { label: d.stats.hoursWeek, value: "12", icon: Clock, bg: "bg-goldSoft", text: "text-goldDeep" },
-    { label: d.stats.rating, value: "4.9", icon: Star, bg: "bg-peach", text: "text-peachDeep" }
+    { label: d.stats.students, value: analytics?.totalStudents ?? "—", icon: Users, bg: "bg-[#E4ECFF]", text: "text-blue" },
+    { label: d.stats.classesToday, value: analytics?.upcomingClasses ?? "—", icon: CalendarDays, bg: "bg-sage", text: "text-sageDeep" },
+    { label: d.stats.hoursWeek, value: analytics?.totalHoursTaught ?? "—", icon: Clock, bg: "bg-goldSoft", text: "text-goldDeep" },
+    { label: d.stats.rating, value: analytics?.averageRating ?? "—", icon: Star, bg: "bg-peach", text: "text-peachDeep" }
   ];
 
   return (
@@ -55,18 +67,18 @@ export default function TeacherOverviewPage() {
       </div>
 
       <div className="bg-white border border-line rounded-lg shadow-card divide-y divide-line">
-        {teacherClasses.slice(0, 3).map((c) => (
+        {classes.slice(0, 3).map((c) => (
           <div key={c.id} className="flex items-center gap-4 p-4">
-            <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${c.gradient} flex items-center justify-center shrink-0 text-white`}>
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#CFE7E4] to-[#9FCFC9] flex items-center justify-center shrink-0 text-white">
               <CalendarDays size={18} />
             </div>
             <div className="flex-1 min-w-0">
-              <div className="text-[14px] font-semibold truncate">{c.title}</div>
-              <div className="text-[12px] text-muted">{c.level} · {c.students} {t("common.students")}</div>
+              <div className="text-[14px] font-semibold truncate">{c.courseTitle}</div>
+              <div className="text-[12px] text-muted">{c.subject} · {c.studentName}</div>
             </div>
             <div className="text-end shrink-0">
-              <div className="text-[13px] font-bold">{c.time}</div>
-              <div className="text-[11px] text-muted">{c.day}</div>
+              <div className="text-[13px] font-bold">{c.startTime}</div>
+              <div className="text-[11px] text-muted">{c.scheduledDate ? new Date(c.scheduledDate).toLocaleDateString() : ""}</div>
             </div>
           </div>
         ))}

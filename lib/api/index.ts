@@ -97,13 +97,6 @@ export {
   type BlogPost,
 } from "./blog";
 
-// Payments
-export {
-  mockCharge,
-  type ChargeInput,
-  type ChargeResult,
-} from "./payments";
-
 // Admin
 export {
   getAdminDashboardStats,

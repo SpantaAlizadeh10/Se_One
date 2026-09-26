@@ -3,60 +3,97 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import { Search, Send, ArrowLeft } from "lucide-react";
-import { loadMessages, addMessage, markAsRead } from "@/lib/messages-store";
-import type { Conversation } from "@/lib/data";
+import { getConversation, getConversations, getMessages, markConversationAsRead, sendMessage as sendMessageApi, type Conversation as ApiConversation, type Message as ApiMessage } from "@/lib/api/messaging";
+import { getRole } from "@/lib/auth-client";
+
+type ConversationView = {
+  id: string;
+  name: string;
+  role: string;
+  avatar: string;
+  preview: string;
+  time: string;
+  unread: boolean;
+  online: boolean;
+  messages: { id: string; fromMe: boolean; text: string; time: string }[];
+};
+
+function toView(conversation: ApiConversation, messages: ApiMessage[] = []): ConversationView {
+  const myRole = getRole();
+  const other = conversation.participants.find((participant) => participant.role !== myRole) ?? conversation.participants[0];
+  const lastMessage = conversation.lastMessage;
+  return {
+    id: conversation.id,
+    name: other?.name || conversation.subject || "Conversation",
+    role: other?.role || "",
+    avatar: other?.avatar || "/images/Teacher.jpeg",
+    preview: lastMessage?.content || "",
+    time: lastMessage?.createdAt ? new Date(lastMessage.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "",
+    unread: conversation.unreadCount > 0,
+    online: false,
+    messages: messages.map((message) => ({
+      id: message.id,
+      fromMe: message.senderRole === myRole,
+      text: message.content,
+      time: message.createdAt ? new Date(message.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "",
+    })),
+  };
+}
 
 export default function MessagesView() {
-  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [conversations, setConversations] = useState<ConversationView[]>([]);
   const [activeId, setActiveId] = useState("");
   const [draft, setDraft] = useState("");
   // on mobile we only ever show one pane at a time
   const [mobilePane, setMobilePane] = useState<"list" | "thread">("list");
 
-  // Load messages from localStorage on mount
   useEffect(() => {
-    const loaded = loadMessages();
-    setConversations(loaded);
-    if (loaded.length > 0 && !activeId) {
-      setActiveId(loaded[0].id);
-    }
+    let active = true;
+    getConversations()
+      .then((loaded) => {
+        if (!active) return;
+        setConversations(loaded.map((conversation) => toView(conversation)));
+        if (loaded.length > 0) setActiveId((current) => current || loaded[0].id);
+      })
+      .catch(() => { if (active) setConversations([]); });
+    return () => { active = false; };
   }, []);
 
-  // Listen for storage events to sync across tabs
   useEffect(() => {
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === "se-one-messages" && e.newValue) {
-        const updated = JSON.parse(e.newValue) as Conversation[];
-        setConversations(updated);
-      }
-    };
-
-    window.addEventListener("storage", handleStorageChange);
-    return () => window.removeEventListener("storage", handleStorageChange);
-  }, []);
+    if (!activeId) return;
+    let active = true;
+    Promise.all([getConversation(activeId), getMessages(activeId)])
+      .then(([conversation, messages]) => {
+        if (active) setConversations((items) => items.map((item) => item.id === activeId ? toView(conversation, messages) : item));
+      })
+      .catch(() => undefined);
+    return () => { active = false; };
+  }, [activeId]);
 
   const active = conversations.find((c) => c.id === activeId);
 
-  const selectConversation = (id: string) => {
+  const selectConversation = async (id: string) => {
     setActiveId(id);
     setMobilePane("thread");
-    const updated = markAsRead(id);
-    setConversations(updated);
+    try {
+      await markConversationAsRead(id);
+      const [conversation, messages] = await Promise.all([getConversation(id), getMessages(id)]);
+      setConversations((items) => items.map((item) => item.id === id ? toView(conversation, messages) : item));
+    } catch {
+      // Conversation remains visible; API errors do not fabricate local messages.
+    }
   };
 
-  const sendMessage = () => {
+  const sendMessage = async () => {
     if (!draft.trim() || !activeId) return;
-
-    const newMessage = {
-      id: `m${Date.now()}`,
-      fromMe: true,
-      text: draft.trim(),
-      time: "Now"
-    };
-
-    const updated = addMessage(activeId, newMessage);
-    setConversations(updated);
-    setDraft("");
+    try {
+      await sendMessageApi(activeId, { content: draft.trim() });
+      const [conversation, messages] = await Promise.all([getConversation(activeId), getMessages(activeId)]);
+      setConversations((items) => items.map((item) => item.id === activeId ? toView(conversation, messages) : item));
+      setDraft("");
+    } catch {
+      // Do not show a message unless the API accepted it.
+    }
   };
 
   // Don't render thread if no active conversation

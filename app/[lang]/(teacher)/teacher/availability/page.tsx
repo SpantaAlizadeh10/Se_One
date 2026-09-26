@@ -1,11 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Clock, Plus, Trash2, User, Video } from "lucide-react";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
-import { teacherDirectory, CURRENT_TEACHER_ID } from "@/lib/teachers-directory";
-import { useTeacherSlots } from "@/lib/use-teacher-slots";
+import type { AvailabilitySlot } from "@/lib/teachers-directory";
+import { getTeachers } from "@/lib/api/teachers";
+import { createAvailabilitySlot, deleteAvailabilitySlot, getMyAvailability } from "@/lib/api/availability";
+import { getName } from "@/lib/auth-client";
 import { getRoomId } from "@/lib/video-call";
 
 const dayOptions = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
@@ -14,20 +16,37 @@ export default function TeacherAvailabilityPage() {
   const { t, href } = useLanguage();
   const a = t("teacherAvailabilityPage");
 
-  const me = teacherDirectory.find((tp) => tp.id === CURRENT_TEACHER_ID) ?? teacherDirectory[0];
-  const [slots, updateSlots] = useTeacherSlots(me.id, me.slots);
+  const [teacherId, setTeacherId] = useState("");
+  const [slots, setSlots] = useState<AvailabilitySlot[]>([]);
   const [day, setDay] = useState(dayOptions[0]);
   const [time, setTime] = useState("");
 
-  const addSlot = (e: React.FormEvent) => {
+  useEffect(() => {
+    let active = true;
+    Promise.all([getTeachers(), getMyAvailability()]).then(([teachers, availability]) => {
+      if (!active) return;
+      const currentTeacher = teachers.find((teacher) => teacher.name === getName());
+      setTeacherId(currentTeacher?.id ?? "");
+      setSlots(availability);
+    }).catch(() => { if (active) setSlots([]); });
+    return () => { active = false; };
+  }, []);
+
+  const addSlot = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!time.trim()) return;
-    updateSlots((prev) => [...prev, { id: `slot-${Date.now()}`, day, time: time.trim(), booked: false }]);
-    setTime("");
+    try {
+      const slot = await createAvailabilitySlot({ day, time: time.trim() });
+      setSlots((previous) => [...previous, slot]);
+      setTime("");
+    } catch { /* Keep existing API data visible on failure. */ }
   };
 
-  const removeSlot = (id: string) => {
-    updateSlots((prev) => prev.filter((s) => s.id !== id));
+  const removeSlot = async (id: string) => {
+    try {
+      await deleteAvailabilitySlot(id);
+      setSlots((previous) => previous.filter((slot) => slot.id !== id));
+    } catch { /* Keep the slot visible if the API request fails. */ }
   };
 
   return (
@@ -84,7 +103,7 @@ export default function TeacherAvailabilityPage() {
                   <User size={11} /> {a.bookedByStudent}
                 </span>
                 <Link
-                  href={href(`/teacher/call/${getRoomId(me.id, slot.id)}`)}
+                  href={href(`/teacher/call/${getRoomId(teacherId, slot.id)}`)}
                   className="inline-flex items-center gap-1.5 text-[11px] font-bold text-white bg-blue hover:bg-blueDeep px-3 py-1.5 rounded-full transition-colors"
                 >
                   <Video size={12} />

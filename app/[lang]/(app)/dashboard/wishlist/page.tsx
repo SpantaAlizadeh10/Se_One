@@ -4,9 +4,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Heart, BookOpen, X } from "lucide-react";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
-import { getWishlist, toggleWishlist } from "@/lib/wishlist-store";
-import { useCoursesPricing } from "@/lib/use-courses-pricing";
-import { getDiscountedPrice, formatPrice } from "@/lib/courses-pricing";
+import { getWishlist, removeFromWishlist, type WishlistItem } from "@/lib/api/wishlist";
+import { useCourses } from "@/lib/use-courses";
 
 const gradients: Record<string, string> = {
   beginners: "from-[#CFE7E4] to-[#9FCFC9]",
@@ -18,19 +17,28 @@ const gradients: Record<string, string> = {
 export default function WishlistPage() {
   const { t, href, lang } = useLanguage();
   const w = t("wishlist");
-  const courses: { id: string; title: string; level: string; price: string }[] = t("coursesData");
-  const [pricing] = useCoursesPricing();
-  const [savedIds, setSavedIds] = useState<string[]>([]);
+  const { courses } = useCourses(lang);
+  const [savedItems, setSavedItems] = useState<WishlistItem[]>([]);
 
   useEffect(() => {
-    setSavedIds(getWishlist());
+    getWishlist().then(setSavedItems).catch(() => setSavedItems([]));
   }, []);
 
-  const remove = (id: string) => {
-    setSavedIds(toggleWishlist(id));
+  const remove = async (id: string) => {
+    try {
+      await removeFromWishlist(id);
+      setSavedItems((items) => items.filter((item) => item.courseId !== id));
+    } catch {
+      // Keep the item visible if the API request fails.
+    }
   };
 
-  const savedCourses = courses.filter((c) => savedIds.includes(c.id));
+  const savedCourses = savedItems.map((item) => ({
+    id: item.courseId,
+    title: courses.find((course) => course.id === item.courseId)?.title || item.courseTitle,
+    level: courses.find((course) => course.id === item.courseId)?.level || "",
+    price: item.coursePrice,
+  }));
 
   return (
     <div>
@@ -54,8 +62,6 @@ export default function WishlistPage() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
           {savedCourses.map((course) => {
-            const p = pricing.find((cp) => cp.id === course.id);
-            const hasDiscount = !!p && p.discountPercent > 0;
             return (
               <div key={course.id} className="bg-white border border-line rounded-lg overflow-hidden shadow-card">
                 <div className={`h-[110px] relative bg-gradient-to-br ${gradients[course.id] ?? gradients.beginners} flex items-center justify-center`}>
@@ -72,13 +78,7 @@ export default function WishlistPage() {
                   <h3 className="text-[14.5px] font-semibold mb-1">{course.title}</h3>
                   <div className="text-[12px] text-muted mb-3">{course.level}</div>
                   <div className="flex items-center justify-between gap-2">
-                    {hasDiscount ? (
-                      <span className="text-[13px] font-bold text-goldDeep">
-                        {formatPrice(getDiscountedPrice(p!.basePrice, p!.discountPercent), lang)}
-                      </span>
-                    ) : (
-                      <span className="text-[13px] font-bold text-ink">{course.price}</span>
-                    )}
+                    <span className="text-[13px] font-bold text-ink">{course.price}</span>
                     <Link href={href(`/courses/${course.id}`)} className="text-[12px] font-semibold text-blue">
                       {w.viewCourse}
                     </Link>

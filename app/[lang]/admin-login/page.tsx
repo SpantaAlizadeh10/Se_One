@@ -4,9 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ShieldCheck, Lock, User, AlertCircle } from "lucide-react";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
-import { validateAdminCredentials, setAdminSession } from "@/lib/admin-auth";
+import { setAdminSession } from "@/lib/admin-auth";
 import { login } from "@/lib/api/auth";
-import { setToken } from "@/lib/api/client";
 import { ApiError } from "@/lib/api/client";
 import { storeAuth } from "@/lib/auth-client";
 
@@ -24,44 +23,20 @@ export default function AdminLoginPage() {
     setError(null);
     setLoading(true);
 
-    const apiConfigured = Boolean(process.env.NEXT_PUBLIC_API_BASE_URL);
-
     try {
-      if (validateAdminCredentials(username, password)) {
-        setAdminSession();
-        router.push(href("/admin"));
+      if (!username.includes("@")) {
+        setError("Use your admin email address to sign in.");
         return;
       }
-
-      if (apiConfigured) {
-        if (!username.includes("@")) {
-          setError("Use your admin email address to sign in.");
-          return;
-        }
-        const auth = await login(username, password);
-        if (auth.user.role !== "admin") {
-          setError("This account does not have admin access.");
-          return;
-        }
-        setToken(auth.token);
-        storeAuth(auth);
-        setAdminSession();
-        router.push(href("/admin"));
+      const auth = await login(username, password);
+      if (auth.user.role !== "admin") {
+        setError("This account does not have admin access.");
         return;
       }
-
-      setError("Invalid username or password");
+      storeAuth(auth);
+      setAdminSession();
+      router.push(href("/admin"));
     } catch (err) {
-      // Keep the local demo usable when the configured backend is offline.
-      // Authentication errors from a reachable backend must still be shown.
-      if (
-        !(err instanceof ApiError) &&
-        validateAdminCredentials(username, password)
-      ) {
-        setAdminSession();
-        router.push(href("/admin"));
-        return;
-      }
       const message =
         err instanceof ApiError
           ? err.message
@@ -145,13 +120,6 @@ export default function AdminLoginPage() {
             </button>
           </form>
 
-          <div className="mt-6 pt-6 border-t border-line text-center">
-            <p className="text-[12px] text-muted">
-              For demo purposes: username:{" "}
-              <span className="font-mono font-bold">admin</span>, password:{" "}
-              <span className="font-mono font-bold">seone2024</span>
-            </p>
-          </div>
         </div>
 
         <div className="text-center mt-6">

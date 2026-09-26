@@ -1,8 +1,15 @@
 import type { AdminBlogPost, AdminStudent, AdminTeacher } from "@/lib/api/admin";
-import type { AdminStudent as MockStudent } from "@/lib/admin-data";
 import type { TeacherProfile } from "@/lib/teachers-directory";
 
-export type StudentRow = MockStudent & { status: "active" | "suspended" | "banned" };
+export type StudentRow = {
+  id: string;
+  name: string;
+  email: string;
+  avatar: string;
+  joinedDate: string;
+  coursesEnrolled: number;
+  status: "active" | "suspended" | "banned";
+};
 
 export function adminStudentToRow(s: AdminStudent): StudentRow {
   const joined = s.joinedAt?.includes("T") ? s.joinedAt.split("T")[0] : s.joinedAt;

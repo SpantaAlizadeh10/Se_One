@@ -5,51 +5,35 @@ import Image from "next/image";
 import Link from "next/link";
 import { Star, Clock, Check, ChevronDown, ChevronUp, Video } from "lucide-react";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
-import { teacherDirectory, type TeacherProfile } from "@/lib/teachers-directory";
-import { loadSlots, saveSlots, slotsStorageKey } from "@/lib/slots-store";
+import { useTeachers } from "@/lib/use-teachers";
+import { bookTeacherSlot } from "@/lib/api/availability";
 import { getRoomId } from "@/lib/video-call";
 
 export default function FindTeacherPage() {
   const { t, href } = useLanguage();
   const p = t("findTeacherPage");
-
-  // Starts from the static seed (matches server-rendered HTML), then
-  // swaps in the real cross-tab slot data right after mount — see
-  // lib/use-teacher-slots.ts for why, same pattern applied per-teacher
-  // here since this page needs every teacher's slots at once.
-  const [teachers, setTeachers] = useState<TeacherProfile[]>(teacherDirectory);
-  const [expandedId, setExpandedId] = useState<string | null>(teacherDirectory[0]?.id ?? null);
+  const { teachers, refresh } = useTeachers();
+  const [expandedId, setExpandedId] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
 
   useEffect(() => {
-    setTeachers(teacherDirectory.map((tp) => ({ ...tp, slots: loadSlots(tp.id, tp.slots) })));
-
-    const onStorage = (e: StorageEvent) => {
-      if (e.key && teacherDirectory.some((tp) => slotsStorageKey(tp.id) === e.key)) {
-        setTeachers(teacherDirectory.map((tp) => ({ ...tp, slots: loadSlots(tp.id, tp.slots) })));
-      }
-    };
-    window.addEventListener("storage", onStorage);
-    return () => window.removeEventListener("storage", onStorage);
-  }, []);
+    if (teachers.length > 0) setExpandedId((current) => current ?? teachers[0].id);
+  }, [teachers]);
 
   const bookedSlots = teachers.flatMap((teacher) =>
     teacher.slots.filter((s) => s.booked).map((s) => ({ teacher, slot: s }))
   );
 
-  const bookSlot = (teacherId: string, slotId: string) => {
-    setTeachers((prev) => {
-      const next = prev.map((teacher) =>
-        teacher.id === teacherId
-          ? { ...teacher, slots: teacher.slots.map((s) => (s.id === slotId ? { ...s, booked: true } : s)) }
-          : teacher
-      );
-      const updated = next.find((teacher) => teacher.id === teacherId);
-      if (updated) saveSlots(teacherId, updated.slots);
-      return next;
-    });
-    setToast(p.bookedSuccess);
-    setTimeout(() => setToast(null), 2500);
+  const bookSlot = async (teacherId: string, slotId: string) => {
+    try {
+      await bookTeacherSlot(teacherId, slotId);
+      refresh();
+      setToast(p.bookedSuccess);
+      setTimeout(() => setToast(null), 2500);
+    } catch {
+      setToast("Could not book this slot. Please try again.");
+      setTimeout(() => setToast(null), 2500);
+    }
   };
 
   return (

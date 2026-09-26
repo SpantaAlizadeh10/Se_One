@@ -14,7 +14,6 @@ import {
   Check,
 } from "lucide-react";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
-import type { AdminStudent } from "@/lib/admin-data";
 import { isApiConfigured } from "@/lib/is-api-configured";
 import {
   createAdminStudent,
@@ -25,7 +24,13 @@ import {
 } from "@/lib/api/admin";
 import AdminDataSourceBanner from "@/components/admin/AdminDataSourceBanner";
 
-type StudentWithStatus = AdminStudent & {
+type StudentWithStatus = {
+  id: string;
+  name: string;
+  email: string;
+  avatar: string;
+  joinedDate: string;
+  coursesEnrolled: number;
   status: "active" | "suspended" | "banned";
 };
 
