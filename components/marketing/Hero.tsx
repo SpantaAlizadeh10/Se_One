@@ -1,17 +1,37 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, Play, Check, GraduationCap, Users, Smile, Sparkle, BookOpen, TrendingUp, Award, Target, Globe, MessageCircle } from "lucide-react";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import {
+  ArrowRight,
+  Play,
+  Check,
+  GraduationCap,
+  Users,
+  Smile,
+  Sparkle,
+  Award,
+  MessageCircle,
+  Search,
+  Monitor,
+  MapPin,
+  WifiOff,
+  UserRound,
+  Baby,
+  Target,
+} from "lucide-react";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 
 export default function Hero() {
   const { t, href } = useLanguage();
+  const router = useRouter();
+  const [classQuery, setClassQuery] = useState("");
   const checklist: string[] = t("home.hero.checklist");
-  const levels: string[] = t("home.levels");
-  const levelDescriptions: string[] = t("home.levelDescriptions");
-
-  const levelIcons = [BookOpen, TrendingUp, Award, Target, Globe, MessageCircle, Sparkle, Users];
-  const levelColors = ["bg-green-100 text-green-700", "bg-blue-100 text-blue-700", "bg-purple-100 text-purple-700", "bg-orange-100 text-orange-700", "bg-pink-100 text-pink-700", "bg-cyan-100 text-cyan-700", "bg-yellow-100 text-yellow-700", "bg-red-100 text-red-700"];
+  const classFinder = t("home.classFinder");
+  const levelTest = t("home.levelTest");
+  const classTypes: { label: string; query: string; contact?: boolean }[] =
+    classFinder.categories;
 
   return (
     <section className="max-w-7xl mx-auto px-5 sm:px-8 pt-12 sm:pt-16 pb-10">
@@ -20,15 +40,19 @@ export default function Hero() {
           <h1 className="font-serif text-[36px] sm:text-[48px] leading-[1.15] font-semibold mb-5">
             {t("home.hero.title1")}
             <br />
-            {t("home.hero.title2").split(" ").map((word: string, i: number, arr: string[]) =>
-              i === arr.length - 1 ? (
-                <span key={i} className="text-blue">
-                  {word}
-                </span>
-              ) : (
-                <span key={i}>{word} </span>
-              )
-            )}
+            {t("home.hero.title2")
+              .split(" ")
+              .map((word: string, i: number, arr: string[]) =>
+                i === arr.length - 1 ? (
+                  <span key={i} className="text-blue">
+                    {word}
+                  </span>
+                ) : (
+                  <span key={i}>{word} </span>
+                ),
+              )}{" "}
+            <span className="text-ink">/</span>{" "}
+            <span className="text-gold">{t("home.hero.german")}</span>
           </h1>
           <p className="text-ink70 text-[15px] sm:text-[16px] leading-relaxed max-w-[440px] mb-7">
             {t("home.hero.lead")}
@@ -39,7 +63,8 @@ export default function Hero() {
               href={href("/signup")}
               className="inline-flex items-center gap-2 bg-blue text-white px-6 py-3.5 rounded-full text-[14px] font-semibold hover:bg-blueDeep transition-colors"
             >
-              {t("common.startLearning")} <ArrowRight size={15} className="rtl:rotate-180" />
+              {t("common.startLearning")}{" "}
+              <ArrowRight size={15} className="rtl:rotate-180" />
             </Link>
             <a
               href="#courses"
@@ -54,7 +79,10 @@ export default function Hero() {
 
           <div className="flex flex-wrap gap-x-7 gap-y-3">
             {checklist.map((item) => (
-              <div key={item} className="flex items-center gap-2 text-[13.5px] font-medium text-ink70">
+              <div
+                key={item}
+                className="flex items-center gap-2 text-[13.5px] font-medium text-ink70"
+              >
                 <span className="w-5 h-5 rounded-full bg-blue text-white flex items-center justify-center shrink-0">
                   <Check size={12} />
                 </span>
@@ -79,7 +107,9 @@ export default function Hero() {
             <Users size={16} className="text-blue" />
             <div>
               <div className="text-[13px] font-bold leading-none">36k+</div>
-              <div className="text-[10px] text-muted mt-1">{t("home.hero.stats.students")}</div>
+              <div className="text-[10px] text-muted mt-1">
+                {t("home.hero.stats.students")}
+              </div>
             </div>
           </div>
 
@@ -87,7 +117,9 @@ export default function Hero() {
             <Sparkle size={16} className="text-gold" />
             <div>
               <div className="text-[13px] font-bold leading-none">100%</div>
-              <div className="text-[10px] text-muted mt-1">{t("home.hero.stats.ages")}</div>
+              <div className="text-[10px] text-muted mt-1">
+                {t("home.hero.stats.ages")}
+              </div>
             </div>
           </div>
 
@@ -95,32 +127,102 @@ export default function Hero() {
             <Smile size={16} className="text-sageDeep" />
             <div>
               <div className="text-[13px] font-bold leading-none">89%</div>
-              <div className="text-[10px] text-muted mt-1">{t("home.hero.stats.satisfied")}</div>
+              <div className="text-[10px] text-muted mt-1">
+                {t("home.hero.stats.satisfied")}
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="mt-8 sm:mt-12">
-        <h3 className="text-center font-serif text-[18px] sm:text-[20px] font-semibold mb-4 text-ink">
-          {t("home.levelsTitle")}
-        </h3>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-          {levels.map((level, i) => {
-            const Icon = levelIcons[i];
+      <div className="mt-8 sm:mt-12 rounded-2xl border border-line bg-white p-5 sm:p-8 shadow-card">
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+          <h3 className="font-serif text-[20px] sm:text-[24px] font-semibold text-ink">
+            {classFinder.title}
+          </h3>
+          <form
+            onSubmit={(event) => {
+              event.preventDefault();
+              const query = classQuery.trim();
+              if (query) {
+                router.push(
+                  href(`/courses?search=${encodeURIComponent(query)}`),
+                );
+              }
+            }}
+            className="flex w-full gap-2 sm:max-w-[500px]"
+          >
+            <label className="flex min-w-0 flex-1 items-center gap-2.5 rounded-full border border-line bg-[#FAFAF8] px-4 py-3">
+              <Search size={17} className="shrink-0 text-blue" />
+              <input
+                type="search"
+                value={classQuery}
+                onChange={(event) => setClassQuery(event.target.value)}
+                placeholder={classFinder.placeholder}
+                className="min-w-0 flex-1 bg-transparent text-[13px] outline-none placeholder:text-muted"
+              />
+            </label>
+            <button
+              type="submit"
+              className="shrink-0 rounded-full bg-blue px-5 py-3 text-[13px] font-semibold text-white transition-colors hover:bg-blueDeep"
+            >
+              {classFinder.search}
+            </button>
+          </form>
+        </div>
+
+        <div className="mt-5 flex flex-col gap-4 rounded-xl bg-[#F3F6FF] p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
+          <div className="flex items-center gap-3">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white text-blue shadow-sm">
+              <Target size={22} />
+            </div>
+            <div>
+              <h4 className="text-[14px] font-bold text-ink">
+                {levelTest.title}
+              </h4>
+              <p className="mt-1 text-[12px] leading-relaxed text-ink70">
+                {levelTest.description}
+              </p>
+            </div>
+          </div>
+          <Link
+            href={href("/contact")}
+            className="inline-flex shrink-0 items-center justify-center gap-2 rounded-full bg-white px-5 py-3 text-[12px] font-semibold text-blue shadow-sm transition-colors hover:bg-blue hover:text-white"
+          >
+            {levelTest.cta}
+            <ArrowRight size={14} className="rtl:rotate-180" />
+          </Link>
+        </div>
+
+        <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
+          {classTypes.map((category, index) => {
+            const Icon = [
+              Monitor,
+              MapPin,
+              WifiOff,
+              Award,
+              UserRound,
+              Baby,
+              MessageCircle,
+            ][index];
+            const destination = category.contact
+              ? href("/contact")
+              : href(`/courses?search=${encodeURIComponent(category.query)}`);
+
             return (
-              <div
-                key={level}
-                className="group bg-white border border-line rounded-xl p-4 sm:p-5 hover:shadow-md hover:border-blue/20 transition-all duration-300 cursor-pointer"
+              <Link
+                key={category.label}
+                href={destination}
+                className="group flex min-h-24 flex-col items-center justify-center gap-2 rounded-xl border border-line bg-[#FAFAF8] px-3 py-4 text-center transition-all hover:border-blue/30 hover:bg-blue/5 hover:shadow-sm"
               >
-                <div className={`w-10 h-10 sm:w-11 sm:h-11 rounded-lg ${levelColors[i]} flex items-center justify-center mb-3 group-hover:scale-105 transition-transform duration-300`}>
-                  <Icon size={20} />
-                </div>
-                <h4 className="font-serif text-[14px] sm:text-[15px] font-semibold text-ink mb-1.5">{level}</h4>
-                <p className="text-[11px] sm:text-[12px] text-ink70 leading-relaxed">
-                  {levelDescriptions[i]}
-                </p>
-              </div>
+                <Icon
+                  size={21}
+                  className="text-blue transition-transform group-hover:-translate-y-0.5"
+                />
+                <span className="text-[12px] font-semibold text-ink">
+                  {category.label}
+                </span>
+              </Link>
             );
           })}
         </div>

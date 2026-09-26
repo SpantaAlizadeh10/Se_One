@@ -1,6 +1,13 @@
 "use client";
 
-import { Lightbulb, Calendar, Grid2x2, User, MessageCircle, Target, ChevronRight } from "lucide-react";
+import {
+  Lightbulb,
+  Calendar,
+  Grid2x2,
+  User,
+  MessageCircle,
+  Target,
+} from "lucide-react";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 
 const icons = [Lightbulb, Calendar, Grid2x2, User, MessageCircle, Target];
@@ -10,22 +17,28 @@ export default function TeachingPhilosophy() {
   const items: { title: string; desc: string }[] = t("home.philosophy.items");
 
   return (
-    <section className="max-w-7xl mx-auto px-5 sm:px-8 py-14 sm:py-16">
-      <h2 className="font-serif text-[28px] sm:text-[32px] font-semibold mb-8">{t("home.philosophy.heading")}</h2>
+    <section className="max-w-7xl mx-auto px-5 sm:px-8 py-8 sm:py-10">
+      <h2 className="font-serif text-[24px] sm:text-[28px] font-semibold mb-5 sm:mb-6">
+        {t("home.philosophy.heading")}
+      </h2>
 
-      <div className="grid grid-cols-2 xl:grid-cols-3 gap-3.5 sm:gap-5">
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-4">
         {items.map((item, i) => {
           const Icon = icons[i];
           return (
-            <div key={item.title} className="bg-white border border-line rounded-lg p-6 shadow-card">
-              <div className="w-11 h-11 rounded-xl bg-[#E4ECFF] text-blue flex items-center justify-center mb-4">
-                <Icon size={20} />
+            <div
+              key={item.title}
+              className="h-full bg-white border border-line rounded-lg p-3.5 sm:p-5 shadow-card"
+            >
+              <div className="w-9 h-9 rounded-lg bg-[#E4ECFF] text-blue flex items-center justify-center mb-3">
+                <Icon size={18} />
               </div>
-              <h3 className="text-[16px] font-semibold mb-2">{item.title}</h3>
-              <p className="text-[13px] text-ink70 leading-relaxed mb-5">{item.desc}</p>
-              <button className="w-9 h-9 rounded-full border border-line flex items-center justify-center text-ink70 hover:bg-cream transition-colors">
-                <ChevronRight size={16} className="rtl:rotate-180" />
-              </button>
+              <h3 className="text-[13px] sm:text-[15px] font-semibold mb-1.5">
+                {item.title}
+              </h3>
+              <p className="text-[11px] sm:text-[12px] text-ink70 leading-relaxed line-clamp-3">
+                {item.desc}
+              </p>
             </div>
           );
         })}

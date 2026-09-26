@@ -64,13 +64,14 @@ export default function LatestCourses({
           c.desc.toLowerCase().includes(q),
       )
     : allCourses;
+  const displayedCourses = variant === "latest" ? courses.slice(0, 4) : courses;
 
   const heading =
     variant === "latest"
       ? t("home.courses.heading")
       : t("coursesPage.popular.heading");
   const subtitle = variant === "latest" ? t("home.courses.sub") : null;
-  const topButtonLabel = variant === "latest" ? t("common.getStarted") : null;
+  const topButtonLabel = variant === "latest" ? t("common.seeAll") : null;
   const bottomButtonLabel =
     variant === "popular-cta" ? t("coursesPage.popular.signUp") : null;
   const sectionId = variant === "popular" ? undefined : "courses";
@@ -92,9 +93,12 @@ export default function LatestCourses({
           )}
         </div>
         {topButtonLabel && (
-          <button className="inline-flex items-center gap-2 bg-blue text-white px-5 py-3 rounded-full text-[13.5px] font-semibold hover:bg-blueDeep transition-colors shrink-0">
+          <Link
+            href={href("/courses")}
+            className="inline-flex items-center gap-2 bg-blue text-white px-5 py-3 rounded-full text-[13.5px] font-semibold hover:bg-blueDeep transition-colors shrink-0"
+          >
             {topButtonLabel} <ArrowRight size={14} className="rtl:rotate-180" />
-          </button>
+          </Link>
         )}
       </div>
 
@@ -104,7 +108,7 @@ export default function LatestCourses({
         </p>
       ) : (
         <div className="grid grid-cols-2 xl:grid-cols-4 gap-3.5 sm:gap-5">
-          {courses.map((course, i) => (
+          {displayedCourses.map((course) => (
             <Link
               key={course.id}
               href={href(`/courses/${course.id}`)}

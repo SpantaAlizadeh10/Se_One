@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import CoursesHero from "@/components/marketing/courses/CoursesHero";
 import LatestCourses from "@/components/marketing/LatestCourses";
 import EnglishLevel from "@/components/marketing/courses/EnglishLevel";
@@ -10,6 +10,13 @@ import JourneyBanner from "@/components/marketing/courses/JourneyBanner";
 
 export default function CoursesPage() {
   const [query, setQuery] = useState("");
+
+  useEffect(() => {
+    const initialSearch = new URLSearchParams(window.location.search).get(
+      "search",
+    );
+    if (initialSearch) setQuery(initialSearch);
+  }, []);
 
   return (
     <main>

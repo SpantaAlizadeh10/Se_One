@@ -55,11 +55,7 @@ export default function Footer() {
     {
       heading: t("footer.courses"),
       links: courseLinks,
-      hrefs: [
-        href("/courses/ielts"),
-        null,
-        href("/courses/beginners"),
-      ],
+      hrefs: [href("/courses/ielts"), null, href("/courses/beginners")],
     },
     {
       heading: t("footer.germanCourses"),
@@ -90,10 +86,11 @@ export default function Footer() {
                 <Link
                   key={label}
                   href={itemHref}
-                  className={`group flex flex-col items-center justify-center gap-1 rounded-[18px] px-1.5 py-2.5 text-[9px] font-semibold transition-all duration-200 ${isActive
-                    ? "bg-white text-[#182163] shadow-sm"
-                    : "text-white hover:bg-white/20"
-                    }`}
+                  className={`group flex flex-col items-center justify-center gap-1 rounded-[18px] px-1.5 py-2.5 text-[9px] font-semibold transition-all duration-200 ${
+                    isActive
+                      ? "bg-white text-[#182163] shadow-sm"
+                      : "text-white hover:bg-white/20"
+                  }`}
                 >
                   <span
                     className={`flex h-7 w-7 items-center justify-center rounded-full ${isActive ? "bg-[#182163] text-white" : "bg-white/20 text-white group-hover:bg-white/30"}`}
@@ -110,7 +107,7 @@ export default function Footer() {
 
       <footer className="border-t border-line mt-6 pb-[84px] lg:pb-0 bg-gradient-to-br from-[#182163] via-[#1a2e5a] to-[#182163]">
         <div className="max-w-7xl mx-auto px-5 sm:px-8 py-12 sm:py-14">
-          {/* mobile / tablet: brand full-width, then Courses/About/Resources stay side-by-side */}
+          {/* mobile / tablet: brand first, then all four link sections in one row */}
           <div className="lg:hidden">
             <div>
               <Link
@@ -130,19 +127,19 @@ export default function Footer() {
                 {t("footer.desc")}
               </p>
             </div>
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-8 mt-8">
+            <div className="mt-8 grid grid-cols-4 gap-2 sm:gap-8">
               {columns.map((col) => (
                 <div key={col.heading} className="min-w-0">
-                  <h4 className="font-serif text-[13.5px] sm:text-[15px] font-semibold mb-4 text-white relative inline-block">
+                  <h4 className="font-serif text-[10px] sm:text-[15px] font-semibold mb-3 sm:mb-4 text-white relative inline-block leading-snug">
                     {col.heading}
                     <span className="absolute bottom-0 left-0 w-8 h-0.5 bg-gold rounded-full"></span>
                   </h4>
-                  <ul className="flex flex-col gap-2.5">
+                  <ul className="flex flex-col gap-2 sm:gap-2.5">
                     {col.links.map((link, i) => (
                       <li key={link}>
                         <a
                           href={col.hrefs[i] ?? "#"}
-                          className="text-[11.5px] sm:text-[13px] text-white/70 hover:text-gold hover:translate-x-1 transition-all duration-300 leading-snug"
+                          className="text-[9px] sm:text-[13px] text-white/70 hover:text-gold hover:translate-x-1 transition-all duration-300 leading-snug break-words"
                         >
                           {link}
                         </a>
@@ -204,14 +201,20 @@ export default function Footer() {
               {[Facebook, Twitter, Instagram, Youtube].map((Icon, i) => (
                 <a
                   key={i}
-                  href="#"
+                  href={i === 3 ? "https://www.youtube.com/@Se1_Academy" : "#"}
+                  target={i === 3 ? "_blank" : undefined}
+                  rel={i === 3 ? "noopener noreferrer" : undefined}
+                  aria-label={i === 3 ? "SE ONE YouTube channel" : undefined}
                   className="w-10 h-10 rounded-full bg-white/10 text-white flex items-center justify-center hover:bg-gold hover:text-white transition-all duration-300 transform hover:scale-110"
                 >
                   <Icon size={16} />
                 </a>
               ))}
             </div>
-            <p className="text-[12.5px] text-white/60">{t("footer.credit")}</p>
+            <div className="text-center text-[12px] leading-relaxed text-white/60 sm:text-end">
+              <p>{t("footer.credit")}</p>
+              <p>{t("footer.designer")}</p>
+            </div>
           </div>
         </div>
       </footer>

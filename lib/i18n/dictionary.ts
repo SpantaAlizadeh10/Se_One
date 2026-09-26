@@ -26,7 +26,8 @@ export const dictionary = {
         "سوالات متداول",
         "حریم خصوصی",
       ],
-      credit: "طراح: سپنتا علی‌زاده",
+      credit: "بنیان‌گذاران: امیر حسین مسلمی و علی علیزاده",
+      designer: "طراح: سپنتا علیزاده",
     },
     common: {
       startLearning: "شروع یادگیری",
@@ -130,7 +131,8 @@ export const dictionary = {
       hero: {
         title1: "روشی هوشمندتر برای",
         title2: "یادگیری انگلیسی",
-        lead: "با درس‌های تعاملی، مدرسان باتجربه و مسیرهای یادگیری شخصی‌سازی‌شده، انگلیسی را با اعتمادبه‌نفس یاد بگیرید.",
+        german: "آلمانی",
+        lead: "با درس‌های تعاملی، مدرسان باتجربه و مسیرهای یادگیری شخصی‌سازی‌شده، زبان‌های انگلیسی و آلمانی را با اعتمادبه‌نفس یاد بگیرید.",
         checklist: ["مدرسان متخصص", "زمان‌بندی منعطف", "درس‌های تعاملی"],
         stats: {
           students: "دانشجوی فعال",
@@ -155,6 +157,25 @@ export const dictionary = {
         "آمادگی کامل برای آزمون",
       ],
       levelsTitle: "سطوح یادگیری ما",
+      classFinder: {
+        title: "کلاس موردنظرت را پیدا کن",
+        placeholder: "جستجوی آیلتس، کودکان، فری دیسکاشن...",
+        search: "جستجوی کلاس",
+        categories: [
+          { label: "کلاس آنلاین", query: "online", contact: true },
+          { label: "کلاس حضوری", query: "in-person", contact: true },
+          { label: "کلاس آفلاین", query: "offline", contact: true },
+          { label: "آیلتس", query: "آیلتس" },
+          { label: "خصوصی", query: "private", contact: true },
+          { label: "کودکان", query: "کودک" },
+          { label: "فری دیسکاشن", query: "فری دیسکاشن" },
+        ],
+      },
+      levelTest: {
+        title: "برای انتخاب سطح مناسب مطمئن نیستی؟",
+        description: "برای تعیین سطح انگلیسی یا آلمانی از ما راهنمایی بگیر.",
+        cta: "درخواست تعیین سطح رایگان",
+      },
       features: [
         {
           title: "برنامه یادگیری شخصی",
@@ -185,8 +206,16 @@ export const dictionary = {
         ],
       },
       courses: {
-        heading: "جدیدترین دوره‌ها",
-        sub: "از محبوب‌ترین دوره‌های انگلیسی ما، متناسب با هر سن و هدف یادگیری انتخاب کنید.",
+        heading: "دوره‌های آموزشی ما",
+        sub: "از دوره‌های انگلیسی و آلمانی، متناسب با سن و هدف یادگیری‌ات انتخاب کن.",
+      },
+      youtube: {
+        eyebrow: "ویدیوهای یوتیوب",
+        heading: "از کانال ما یاد بگیر",
+        sub: "ویدیوهای آموزشی و نکات زبان انگلیسی را در کانال SE ONE ببین.",
+        viewChannel: "مشاهده کانال",
+        unavailable:
+          "فعلاً ویدیویی برای نمایش در دسترس نیست. کانال ما را در یوتیوب ببین.",
       },
       instructors: {
         eyebrow: "مدرسان منتخب",
@@ -249,10 +278,8 @@ export const dictionary = {
       },
       newsletter: {
         title: "به جامعه یادگیری ما بپیوندید",
-        lead: "نکات مطالعه، به‌روزرسانی دوره‌ها و منابع آموزشی اختصاصی را مستقیم در ایمیل خود دریافت کنید.",
-        placeholder: "ایمیل خود را وارد کنید",
-        send: "ارسال ایمیل",
-        sent: "ارسال شد!",
+        lead: "با ثبت‌نام، کلاس مناسب هدفت را پیدا کن و یادگیری انگلیسی یا آلمانی را شروع کن.",
+        cta: "ثبت‌نام در کلاس",
       },
     },
     coursesData: [
@@ -1109,7 +1136,8 @@ export const dictionary = {
         "FAQ",
         "Privacy Policy",
       ],
-      credit: "Designer Sepanta Ali Alizadeh",
+      credit: "Founders: Amir Hossein Moslemi and Ali Alizadeh",
+      designer: "Designer: Sepanta Alizadeh",
     },
     common: {
       startLearning: "Start Learning",
@@ -1142,7 +1170,8 @@ export const dictionary = {
       hero: {
         title1: "A Smarter Way to",
         title2: "Learn English",
-        lead: "Master English through interactive lessons, experienced teachers, and personalized learning paths designed to help you speak with confidence.",
+        german: "German",
+        lead: "Learn English and German with confidence through interactive lessons, experienced teachers, and personalized learning paths.",
         checklist: [
           "Expert Teachers",
           "Flexible Schedule",
@@ -1171,6 +1200,25 @@ export const dictionary = {
         "Complete exam preparation",
       ],
       levelsTitle: "Our Learning Levels",
+      classFinder: {
+        title: "Find the class you want",
+        placeholder: "Search IELTS, kids, free discussion...",
+        search: "Search classes",
+        categories: [
+          { label: "Online", query: "online", contact: true },
+          { label: "In-person", query: "in-person", contact: true },
+          { label: "Offline", query: "offline", contact: true },
+          { label: "IELTS", query: "IELTS" },
+          { label: "Private", query: "private", contact: true },
+          { label: "Kids", query: "children" },
+          { label: "Free discussion", query: "Free Discussion" },
+        ],
+      },
+      levelTest: {
+        title: "Not sure which level is right for you?",
+        description: "Ask us for help assessing your English or German level.",
+        cta: "Request a free level assessment",
+      },
       features: [
         {
           title: "Personal Learning Plan",
@@ -1201,8 +1249,16 @@ export const dictionary = {
         ],
       },
       courses: {
-        heading: "Our Latest Courses",
-        sub: "Choose from our most popular English programs designed for every age and learning goal.",
+        heading: "Explore Our Courses",
+        sub: "Choose an English or German course designed for your age and learning goals.",
+      },
+      youtube: {
+        eyebrow: "YouTube videos",
+        heading: "Learn with our channel",
+        sub: "Watch English-learning videos and practical language tips from SE ONE.",
+        viewChannel: "Visit channel",
+        unavailable:
+          "Videos are temporarily unavailable. Visit our YouTube channel instead.",
       },
       instructors: {
         eyebrow: "Featured instructors",
@@ -1265,10 +1321,8 @@ export const dictionary = {
       },
       newsletter: {
         title: "Join Our Learning Community",
-        lead: "Receive study tips, course updates, and exclusive learning resources directly in your inbox.",
-        placeholder: "Enter your email",
-        send: "Send Email",
-        sent: "Sent!",
+        lead: "Find a class that fits your goals and start learning English or German today.",
+        cta: "Sign up for a class",
       },
     },
     coursesData: [
