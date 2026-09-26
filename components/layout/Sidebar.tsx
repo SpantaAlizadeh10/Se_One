@@ -62,9 +62,8 @@ export default function Sidebar({
         key={item.href}
         href={href(item.href)}
         onClick={onClose}
-        className={`flex items-center gap-3 rounded-[11px] px-3 py-2.5 mb-0.5 text-[14.5px] font-medium transition-colors ${
-          active ? "bg-ink text-white font-semibold" : "text-ink70 hover:bg-cream hover:text-ink"
-        }`}
+        className={`flex items-center gap-3 rounded-[11px] px-3 py-2.5 mb-0.5 text-[14.5px] font-medium transition-colors ${active ? "bg-ink text-white font-semibold" : "text-ink70 hover:bg-cream hover:text-ink"
+          }`}
       >
         <Icon size={17} className={active ? "text-gold flex-shrink-0" : "flex-shrink-0"} />
         <span className="truncate">{t(item.labelKey)}</span>
@@ -83,7 +82,7 @@ export default function Sidebar({
   return (
     <aside
       className={`bg-white border-e border-line px-5 py-6 lg:py-7 flex flex-col
-        fixed inset-y-0 start-0 z-50 w-[248px] overflow-y-auto thin-scroll
+        fixed inset-y-0 start-0 rtl:end-0 rtl:start-auto z-50 w-[248px] overflow-y-auto thin-scroll
         transform transition-transform duration-300 ease-in-out
         lg:static lg:z-auto lg:translate-x-0 lg:sticky lg:top-0 lg:h-screen lg:shrink-0
         ${isOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full rtl:translate-x-full"}`}

@@ -1,9 +1,7 @@
-import SettingsView from "@/components/settings/SettingsView";
+"use client";
+
+import AdminSiteSettingsPanel from "@/components/admin/AdminSiteSettings";
 
 export default function AdminSettingsPage() {
-  return (
-    <div>
-      <SettingsView />
-    </div>
-  );
+  return <AdminSiteSettingsPanel />;
 }

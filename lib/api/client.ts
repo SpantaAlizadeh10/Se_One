@@ -9,6 +9,7 @@
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "";
 const TOKEN_KEY = "se-one-token";
+const API_REQUEST_TIMEOUT_MS = 15_000;
 
 export class ApiError extends Error {
   status: number;
@@ -45,39 +46,65 @@ export async function apiFetch<T>(
     );
   }
 
-  const { body, headers, ...rest } = options;
+  const { body, headers, signal, ...rest } = options;
   const token = getToken();
+  const controller = new AbortController();
+  const forwardAbort = () => controller.abort(signal?.reason);
 
-  const res = await fetch(`${BASE_URL}${path}`, {
-    ...rest,
-    credentials: "include",
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...headers,
-    },
-    body: body !== undefined ? JSON.stringify(body) : undefined,
-  });
-
-  const contentType = res.headers.get("content-type") || "";
-  const isJson = contentType.includes("application/json");
-  const data = isJson
-    ? await res.json().catch(() => null)
-    : await res.text().catch(() => null);
-
-  if (!res.ok) {
-    // ASP.NET's default ProblemDetails error shape uses "title"/"detail";
-    // adjust this line if your API returns errors differently.
-    const message =
-      (isJson &&
-        data &&
-        ((data as any).message ||
-          (data as any).title ||
-          (data as any).detail)) ||
-      res.statusText ||
-      "Request failed";
-    throw new ApiError(message, res.status, data);
+  if (signal?.aborted) {
+    forwardAbort();
+  } else {
+    signal?.addEventListener("abort", forwardAbort, { once: true });
   }
 
-  return data as T;
+  const timeoutId = setTimeout(
+    () => controller.abort(),
+    API_REQUEST_TIMEOUT_MS,
+  );
+
+  try {
+    const res = await fetch(`${BASE_URL}${path}`, {
+      ...rest,
+      signal: controller.signal,
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...headers,
+      },
+      body: body !== undefined ? JSON.stringify(body) : undefined,
+    });
+
+    const contentType = res.headers.get("content-type") || "";
+    const isJson = contentType.includes("application/json");
+    const responseBody = isJson ? res.json() : res.text();
+    const data = await responseBody.catch((error) => {
+      if (controller.signal.aborted) throw error;
+      return null;
+    });
+
+    if (!res.ok) {
+      // ASP.NET's default ProblemDetails error shape uses "title"/"detail";
+      // adjust this line if your API returns errors differently.
+      const message =
+        (isJson &&
+          data &&
+          ((data as any).message ||
+            (data as any).title ||
+            (data as any).detail)) ||
+        res.statusText ||
+        "Request failed";
+      throw new ApiError(message, res.status, data);
+    }
+
+    return data as T;
+  } catch (error) {
+    if (controller.signal.aborted && !signal?.aborted) {
+      throw new ApiError("The API request timed out. Please try again.", 408);
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeoutId);
+    signal?.removeEventListener("abort", forwardAbort);
+  }
 }

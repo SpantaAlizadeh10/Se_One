@@ -73,7 +73,7 @@ export default function TeacherSidebar({ isOpen, onClose }: { isOpen: boolean; o
   return (
     <aside
       className={`bg-white border-e border-line px-5 py-6 lg:py-7 flex flex-col
-        fixed inset-y-0 start-0 z-50 w-[248px] overflow-y-auto thin-scroll
+        fixed inset-y-0 start-0 rtl:end-0 rtl:start-auto z-50 w-[248px] overflow-y-auto thin-scroll
         transform transition-transform duration-300 ease-in-out
         lg:static lg:z-auto lg:translate-x-0 lg:sticky lg:top-0 lg:h-screen lg:shrink-0
         ${isOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full rtl:translate-x-full"}`}

@@ -1,50 +1,79 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import { Search, Send, ArrowLeft } from "lucide-react";
-import { conversations as initialConversations } from "@/lib/data";
+import { loadMessages, addMessage, markAsRead } from "@/lib/messages-store";
+import type { Conversation } from "@/lib/data";
 
 export default function MessagesView() {
-  const [conversations, setConversations] = useState(initialConversations);
-  const [activeId, setActiveId] = useState(initialConversations[0].id);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [activeId, setActiveId] = useState("");
   const [draft, setDraft] = useState("");
   // on mobile we only ever show one pane at a time
   const [mobilePane, setMobilePane] = useState<"list" | "thread">("list");
 
-  const active = conversations.find((c) => c.id === activeId)!;
+  // Load messages from localStorage on mount
+  useEffect(() => {
+    const loaded = loadMessages();
+    setConversations(loaded);
+    if (loaded.length > 0 && !activeId) {
+      setActiveId(loaded[0].id);
+    }
+  }, []);
+
+  // Listen for storage events to sync across tabs
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === "se-one-messages" && e.newValue) {
+        const updated = JSON.parse(e.newValue) as Conversation[];
+        setConversations(updated);
+      }
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
+  }, []);
+
+  const active = conversations.find((c) => c.id === activeId);
 
   const selectConversation = (id: string) => {
     setActiveId(id);
     setMobilePane("thread");
-    setConversations((prev) => prev.map((c) => (c.id === id ? { ...c, unread: false } : c)));
+    const updated = markAsRead(id);
+    setConversations(updated);
   };
 
   const sendMessage = () => {
-    if (!draft.trim()) return;
-    setConversations((prev) =>
-      prev.map((c) =>
-        c.id === activeId
-          ? {
-              ...c,
-              messages: [
-                ...c.messages,
-                { id: `m${c.messages.length + 1}`, fromMe: true, text: draft.trim(), time: "Now" }
-              ]
-            }
-          : c
-      )
-    );
+    if (!draft.trim() || !activeId) return;
+
+    const newMessage = {
+      id: `m${Date.now()}`,
+      fromMe: true,
+      text: draft.trim(),
+      time: "Now"
+    };
+
+    const updated = addMessage(activeId, newMessage);
+    setConversations(updated);
     setDraft("");
   };
+
+  // Don't render thread if no active conversation
+  if (!active) {
+    return (
+      <div className="bg-white border border-line rounded-lg shadow-card overflow-hidden h-[75vh] md:h-[640px] flex items-center justify-center">
+        <p className="text-muted">No conversation selected</p>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white border border-line rounded-lg shadow-card overflow-hidden grid grid-cols-1 md:grid-cols-[300px_1fr] h-[75vh] md:h-[640px]">
       {/* conversation list — full width on mobile until a thread is opened */}
       <div
-        className={`border-r border-line overflow-y-auto thin-scroll ${
-          mobilePane === "thread" ? "hidden md:block" : "block"
-        }`}
+        className={`border-r border-line overflow-y-auto thin-scroll ${mobilePane === "thread" ? "hidden md:block" : "block"
+          }`}
       >
         <div className="p-4 border-b border-line">
           <div className="flex items-center gap-2.5 bg-cream border border-line rounded-xl px-3 py-2.5">
@@ -60,9 +89,8 @@ export default function MessagesView() {
           <button
             key={c.id}
             onClick={() => selectConversation(c.id)}
-            className={`w-full flex gap-2.5 px-4 py-3.5 border-b border-line text-start transition-colors ${
-              c.id === activeId ? "bg-cream border-s-[3px] border-s-gold ps-[13px]" : "hover:bg-cream"
-            }`}
+            className={`w-full flex gap-2.5 px-4 py-3.5 border-b border-line text-start transition-colors ${c.id === activeId ? "bg-cream border-s-[3px] border-s-gold ps-[13px]" : "hover:bg-cream"
+              }`}
           >
             <Image src={c.avatar} alt={c.name} width={42} height={42} className="rounded-full object-cover shrink-0" />
             <div className="flex-1 min-w-0">
@@ -103,11 +131,10 @@ export default function MessagesView() {
             <div key={m.id} className={`flex ${m.fromMe ? "justify-end" : "justify-start"}`}>
               <div className="max-w-[80%] sm:max-w-[62%]">
                 <div
-                  className={`px-4 py-2.5 text-[13.5px] leading-relaxed rounded-2xl ${
-                    m.fromMe
-                      ? "bg-blue text-white rounded-br-[4px]"
-                      : "bg-cream border border-line rounded-bl-[4px]"
-                  }`}
+                  className={`px-4 py-2.5 text-[13.5px] leading-relaxed rounded-2xl ${m.fromMe
+                    ? "bg-blue text-white rounded-br-[4px]"
+                    : "bg-cream border border-line rounded-bl-[4px]"
+                    }`}
                 >
                   {m.text}
                 </div>

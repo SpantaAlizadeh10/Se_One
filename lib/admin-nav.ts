@@ -10,5 +10,6 @@ export const adminNavItems: AdminNavItem[] = [
   { href: "/admin/students", labelKey: "adminNav.students", titleKey: "adminNav.titles.students", group: "dashboard" },
   { href: "/admin/teachers", labelKey: "adminNav.teachers", titleKey: "adminNav.titles.teachers", group: "dashboard" },
   { href: "/admin/courses", labelKey: "adminNav.courses", titleKey: "adminNav.titles.courses", group: "dashboard" },
+  { href: "/admin/blog", labelKey: "adminNav.blog", titleKey: "adminNav.titles.blog", group: "dashboard" },
   { href: "/admin/settings", labelKey: "adminNav.settings", titleKey: "adminNav.titles.settings", group: "profile" }
 ];

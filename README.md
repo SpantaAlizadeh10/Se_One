@@ -13,6 +13,35 @@ cp .env.local.example .env.local   # point NEXT_PUBLIC_API_BASE_URL at your .NET
 npm run dev
 ```
 
+## Backend Integration
+
+The project now includes a complete set of API clients for backend integration:
+
+### API Clients (lib/api/)
+- **`client.ts`** - Base API client with auth handling
+- **`auth.ts`** - Authentication endpoints
+- **`courses.ts`** - Course listing and details
+- **`enrollment.ts`** - Course enrollment management
+- **`modules.ts`** - Course modules
+- **`lessons.ts`** - Lesson content and progress
+- **`progress.ts`** - User progress tracking
+- **`learning.ts`** - Learning sessions and recommendations
+- **`teachers.ts`** - Teacher directory
+- **`blog.ts`** - Blog posts
+- **`payments.ts`** - Payment processing (mock)
+
+### Documentation for Backend Developers
+- **`API_SPECIFICATION.md`** - Complete API reference with all endpoints
+- **`BACKEND_DEVELOPER_GUIDE.md`** - Step-by-step development guide
+- **`API_TESTING_EXAMPLES.md`** - Curl commands and testing examples
+- **`BACKEND_INTEGRATION_PLAN.md`** - Integration strategy and priorities
+- **`README_BACKEND.md`** - Quick start guide for backend developers
+
+### Testing
+- **`lib/api/__tests__/api-test.ts`** - Automated API tests
+
+**For backend developers:** Start with `README_BACKEND.md` for a quick overview, then read `API_SPECIFICATION.md` for detailed endpoint information.
+
 Visiting `/` redirects to `/fa` (or `/en` if your browser/cookie prefers
 it). Every route lives under a locale prefix:
 
