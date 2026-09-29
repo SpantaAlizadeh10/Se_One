@@ -129,6 +129,7 @@ function normalizeTeacher(raw: unknown, index: number): TeacherProfile | null {
       "about",
       "About",
     ),
+    videoUrl: text(record, "videoUrl", "VideoUrl") || undefined,
     slots: normalizeSlots(slots),
   };
 }

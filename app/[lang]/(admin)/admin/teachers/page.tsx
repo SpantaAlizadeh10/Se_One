@@ -27,6 +27,7 @@ import AdminDataSourceBanner from "@/components/admin/AdminDataSourceBanner";
 
 type TeacherWithStatus = TeacherProfile & {
   status: "active" | "pending" | "suspended";
+  videoUrl?: string;
 };
 
 export default function AdminTeachersPage() {
@@ -128,6 +129,7 @@ export default function AdminTeachersPage() {
         teachingLanguage: teacher.teachingLanguage,
         bio: teacher.bio,
         avatarUrl: teacher.avatar,
+        videoUrl: (teacher as any).videoUrl,
       });
       setTeachers((prev) => [
         ...prev,
@@ -165,6 +167,7 @@ export default function AdminTeachersPage() {
         subject: updates.subject,
         level: updates.level,
         bio: updates.bio,
+        videoUrl: (updates as any).videoUrl,
       });
     } catch (error) {
       setApiError(
@@ -395,6 +398,7 @@ function AddTeacherForm({
     teachingLanguage: "english" | "german";
     bio: string;
     avatar: string;
+    videoUrl: string;
   }>({
     name: "",
     subject: "",
@@ -402,6 +406,7 @@ function AddTeacherForm({
     teachingLanguage: "english",
     bio: "",
     avatar: "/images/Women teacher1.jpeg",
+    videoUrl: "",
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -485,6 +490,18 @@ function AddTeacherForm({
             className="w-full px-4 py-2.5 border border-line rounded-xl bg-cream outline-none focus:border-blue h-24 resize-none"
           />
         </div>
+        <div>
+          <label className="block text-[13px] font-bold text-ink mb-2">
+            Video URL (optional)
+          </label>
+          <input
+            type="url"
+            value={formData.videoUrl}
+            onChange={(e) => setFormData({ ...formData, videoUrl: e.target.value })}
+            placeholder="https://example.com/intro-video.mp4"
+            className="w-full px-4 py-2.5 border border-line rounded-xl bg-cream outline-none focus:border-blue"
+          />
+        </div>
       </div>
       <div className="flex gap-3 mt-6">
         <button
@@ -521,6 +538,7 @@ function EditTeacherForm({
     teachingLanguage: "english" | "german";
     bio: string;
     rating: number;
+    videoUrl: string;
   }>({
     name: teacher.name,
     subject: teacher.subject,
@@ -528,6 +546,7 @@ function EditTeacherForm({
     teachingLanguage: teacher.teachingLanguage,
     bio: teacher.bio,
     rating: teacher.rating,
+    videoUrl: (teacher as any).videoUrl || "",
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -602,6 +621,18 @@ function EditTeacherForm({
             value={formData.bio}
             onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
             className="w-full px-4 py-2.5 border border-line rounded-xl bg-cream outline-none focus:border-blue h-24 resize-none"
+          />
+        </div>
+        <div>
+          <label className="block text-[13px] font-bold text-ink mb-2">
+            Video URL (optional)
+          </label>
+          <input
+            type="url"
+            value={formData.videoUrl}
+            onChange={(e) => setFormData({ ...formData, videoUrl: e.target.value })}
+            placeholder="https://example.com/intro-video.mp4"
+            className="w-full px-4 py-2.5 border border-line rounded-xl bg-cream outline-none focus:border-blue"
           />
         </div>
       </div>

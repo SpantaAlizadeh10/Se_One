@@ -471,6 +471,7 @@ Get all teachers with availability.
     "level": "A2 - C1",
     "rating": 4.9,
     "bio": "Teacher bio",
+    "videoUrl": "https://example.com/intro-video.mp4",
     "slots": [
       {
         "id": "slot-id",

@@ -14,5 +14,6 @@ export type TeacherProfile = {
   level: string;
   rating: number;
   bio: string;
+  videoUrl?: string;
   slots: AvailabilitySlot[];
 };

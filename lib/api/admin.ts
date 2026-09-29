@@ -323,6 +323,7 @@ export type AdminTeacher = {
   level: string;
   rating: number;
   bio: string;
+  videoUrl?: string;
   status: TeacherWorkflowStatus;
 };
 
@@ -352,6 +353,7 @@ function normalizeTeacher(raw: unknown, index: number): AdminTeacher | null {
     level: text(r, "level", "Level"),
     rating: numberValue(r, "rating", "Rating"),
     bio: text(r, "bio", "Bio"),
+    videoUrl: text(r, "videoUrl", "VideoUrl") || undefined,
     status,
   };
 }

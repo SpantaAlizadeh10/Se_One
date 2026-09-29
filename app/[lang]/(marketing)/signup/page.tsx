@@ -50,7 +50,12 @@ export default function SignupPage() {
         role,
       });
       storeAuth(auth);
-      router.push(href("/login"));
+      // Redirect teachers to profile completion, students to login
+      if (role === "teacher") {
+        router.push(href("/teacher/complete-profile"));
+      } else {
+        router.push(href("/login"));
+      }
     } catch (err) {
       setError(err instanceof ApiError ? err.message : String(err));
       setLoading(false);
@@ -135,11 +140,10 @@ export default function SignupPage() {
               <button
                 type="button"
                 onClick={() => setRole("student")}
-                className={`flex items-center gap-3 rounded-2xl border-2 px-4 py-3.5 text-start transition-colors ${
-                  role === "student"
+                className={`flex items-center gap-3 rounded-2xl border-2 px-4 py-3.5 text-start transition-colors ${role === "student"
                     ? "border-gold bg-goldSoft"
                     : "border-line bg-white"
-                }`}
+                  }`}
               >
                 <span className="w-[38px] h-[38px] rounded-full bg-[#E4ECFF] text-ink70 flex items-center justify-center shrink-0">
                   <GraduationCap size={18} />
@@ -156,11 +160,10 @@ export default function SignupPage() {
               <button
                 type="button"
                 onClick={() => setRole("teacher")}
-                className={`flex items-center gap-3 rounded-2xl border-2 px-4 py-3.5 text-start transition-colors ${
-                  role === "teacher"
+                className={`flex items-center gap-3 rounded-2xl border-2 px-4 py-3.5 text-start transition-colors ${role === "teacher"
                     ? "border-blue bg-[#E4ECFF]"
                     : "border-line bg-white"
-                }`}
+                  }`}
               >
                 <span className="w-[38px] h-[38px] rounded-full bg-[#E4ECFF] text-ink70 flex items-center justify-center shrink-0">
                   <Briefcase size={18} />

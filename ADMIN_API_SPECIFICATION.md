@@ -341,6 +341,7 @@ Query: `search`, `status` (`pending` | `active` | `suspended`), pagination.
   "level": "A2 - C1",
   "rating": 4.9,
   "bio": "...",
+  "videoUrl": "https://...",
   "status": "active"
 }
 ```
@@ -349,11 +350,38 @@ Query: `search`, `status` (`pending` | `active` | `suspended`), pagination.
 
 Create teacher (user + profile), default `status`: `pending`.
 
+**Request:**
+```json
+{
+  "fullName": "Ms. Harlow",
+  "email": "harlow@example.com",
+  "subject": "Speaking & Conversation",
+  "level": "A2 - C1",
+  "teachingLanguage": "english",
+  "bio": "Teacher bio...",
+  "avatarUrl": "https://...",
+  "videoUrl": "https://..."
+}
+```
+
 ### GET /api/admin/teachers/{teacherId}
 
 ### PATCH /api/admin/teachers/{teacherId}
 
 Update profile fields and `rating` if manually curated.
+
+**Request (partial):**
+```json
+{
+  "fullName": "Updated Name",
+  "avatarUrl": "https://...",
+  "teachingLanguage": "english",
+  "subject": "Updated Subject",
+  "level": "A1 - C1",
+  "bio": "Updated bio",
+  "videoUrl": "https://..."
+}
+```
 
 ### PATCH /api/admin/teachers/{teacherId}/status
 

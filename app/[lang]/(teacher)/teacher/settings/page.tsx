@@ -1,9 +1,9 @@
-import SettingsView from "@/components/settings/SettingsView";
+import TeacherSettingsView from "@/components/teacher-settings/TeacherSettingsView";
 
 export default function TeacherSettingsPage() {
   return (
     <div>
-      <SettingsView />
+      <TeacherSettingsView />
     </div>
   );
 }

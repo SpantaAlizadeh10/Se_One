@@ -18,6 +18,7 @@ The following API clients have been added to the frontend to handle features tha
 10. **Course Search/Filtering** (`lib/api/search.ts`)
 11. **Student Dashboard Data** (`lib/api/student-dashboard.ts`)
 12. **Teacher Dashboard Data** (`lib/api/teacher-dashboard.ts`)
+13. **Teacher Profile** (`lib/api/teacher-profile.ts`)
 
 ## 1. Wishlist API
 
@@ -759,6 +760,77 @@ Use the existing test infrastructure in `lib/api/__tests__/` to test the new end
 
 ---
 
+## 13. Teacher Profile API
+
+### Endpoints
+
+- `GET /api/teacher/profile` - Get current teacher's profile
+- `POST /api/teacher/profile/complete` - Complete teacher profile (after registration)
+- `PATCH /api/teacher/profile` - Update teacher profile settings (including video)
+- `POST /api/teacher/profile/avatar` - Upload teacher avatar image
+- `POST /api/teacher/profile/video` - Upload teacher introduction video
+
+### Data Model
+
+```typescript
+TeacherProfileData: {
+  subject: string;
+  level: string;
+  teachingLanguage: "english" | "german";
+  bio: string;
+  avatarUrl?: string;
+  videoUrl?: string;
+}
+
+TeacherProfileResponse: {
+  id: string;
+  userId: string;
+  fullName: string;
+  email: string;
+  avatarUrl: string;
+  teachingLanguage: "english" | "german";
+  subject: string;
+  level: string;
+  rating: number;
+  bio: string;
+  videoUrl?: string;
+  status: "pending" | "active" | "suspended";
+}
+```
+
+### Endpoint Details
+
+#### GET /api/teacher/profile
+Get the current authenticated teacher's complete profile.
+
+**Response:** `TeacherProfileResponse`
+
+#### POST /api/teacher/profile/complete
+Called after a new teacher registers to complete their profile with teaching-specific information.
+
+**Request:** `Omit<TeacherProfileData, "videoUrl">` (subject, level, teachingLanguage, bio, avatarUrl)
+**Response:** `TeacherProfileResponse`
+
+#### PATCH /api/teacher/profile
+Update teacher profile fields. Used when teacher updates their settings.
+
+**Request:** `Partial<TeacherProfileData>` (any combination of fields)
+**Response:** `TeacherProfileResponse`
+
+#### POST /api/teacher/profile/avatar
+Upload teacher avatar image file.
+
+**Request:** `FormData` with `file` field
+**Response:** `{ avatarUrl: string }`
+
+#### POST /api/teacher/profile/video
+Upload teacher introduction video file.
+
+**Request:** `FormData` with `file` field
+**Response:** `{ videoUrl: string }`
+
+---
+
 ## Priority Implementation Order
 
 Recommended implementation order for backend developers:
@@ -766,15 +838,16 @@ Recommended implementation order for backend developers:
 1. **Wishlist** - Simple CRUD, high value
 2. **Course Reviews & Ratings** - Critical for course pages
 3. **User Settings/Profile** - Essential user management
-4. **Notifications** - Core engagement feature
-5. **Contact / Support** - Customer service requirement
-6. **Newsletter** - Marketing requirement
-7. **Course Search/Filtering** - User experience improvement
-8. **Student Dashboard Data** - Student experience
-9. **Teacher Dashboard Data** - Teacher experience
-10. **Assignments** - Academic feature
-11. **Practice / Exercises** - Learning feature
-12. **Messaging** - Advanced feature (consider SignalR)
+4. **Teacher Profile** - Essential for teacher registration flow
+5. **Notifications** - Core engagement feature
+6. **Contact / Support** - Customer service requirement
+7. **Newsletter** - Marketing requirement
+8. **Course Search/Filtering** - User experience improvement
+9. **Student Dashboard Data** - Student experience
+10. **Teacher Dashboard Data** - Teacher experience
+11. **Assignments** - Academic feature
+12. **Practice / Exercises** - Learning feature
+13. **Messaging** - Advanced feature (consider SignalR)
 
 ---
 
