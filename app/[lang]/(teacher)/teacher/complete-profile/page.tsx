@@ -2,22 +2,66 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
+import { Upload, X } from "lucide-react";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
-import { completeTeacherProfile } from "@/lib/api/teacher-profile";
+import { completeTeacherProfile, uploadTeacherAvatar } from "@/lib/api/teacher-profile";
 import { getName } from "@/lib/auth-client";
 import { isApiConfigured } from "@/lib/is-api-configured";
+
+const SUBJECT_OPTIONS = [
+  "Speaking & Conversation",
+  "Grammar",
+  "Business English",
+  "IELTS Preparation",
+  "TOEFL Preparation",
+  "Academic Writing",
+  "Pronunciation",
+  "English for Kids",
+  "English for Professionals",
+  "Exam Preparation",
+  "General English",
+] as const;
+
+const LEVEL_OPTIONS = [
+  "A1 - Beginner",
+  "A2 - Elementary",
+  "B1 - Intermediate",
+  "B2 - Upper Intermediate",
+  "C1 - Advanced",
+  "C2 - Proficiency",
+  "All Levels",
+] as const;
 
 export default function TeacherCompleteProfilePage() {
   const { t, href } = useLanguage();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     subject: "",
     level: "",
     teachingLanguage: "english" as "english" | "german",
     bio: "",
   });
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingAvatar(true);
+    setError(null);
+    try {
+      const result = await uploadTeacherAvatar(file);
+      setAvatarUrl(result.avatarUrl);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to upload avatar");
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,7 +74,10 @@ export default function TeacherCompleteProfilePage() {
 
     setLoading(true);
     try {
-      await completeTeacherProfile(formData);
+      await completeTeacherProfile({
+        ...formData,
+        avatarUrl: avatarUrl || undefined,
+      });
       router.push(href("/teacher"));
     } catch (err) {
       setError(
@@ -62,30 +109,82 @@ export default function TeacherCompleteProfilePage() {
         <div className="space-y-4">
           <div>
             <label className="block text-[13px] font-bold text-ink mb-2">
+              Profile Photo
+            </label>
+            <div className="flex items-center gap-4">
+              <div className="relative w-20 h-20 rounded-full overflow-hidden bg-ink/5">
+                {avatarUrl ? (
+                  <>
+                    <Image
+                      src={avatarUrl}
+                      alt="Profile"
+                      fill
+                      className="object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setAvatarUrl(null)}
+                      className="absolute top-1 right-1 bg-white/90 hover:bg-white rounded-full p-1 shadow-lg"
+                    >
+                      <X size={14} className="text-danger" />
+                    </button>
+                  </>
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-muted text-[12px]">
+                    No photo
+                  </div>
+                )}
+              </div>
+              <label className="bg-white border border-line text-ink px-3.5 py-2.5 rounded-[9px] text-[12.5px] font-semibold hover:border-ink transition-colors cursor-pointer flex items-center gap-2">
+                <Upload size={14} />
+                {uploadingAvatar ? "Uploading..." : "Upload photo"}
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleAvatarUpload}
+                  disabled={uploadingAvatar}
+                  className="hidden"
+                />
+              </label>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-[13px] font-bold text-ink mb-2">
               Subject / Specialty
             </label>
-            <input
-              type="text"
+            <select
               value={formData.subject}
               onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-              placeholder="e.g., Speaking & Conversation, Grammar, Business English"
               className="w-full px-4 py-2.5 border border-line rounded-xl bg-cream outline-none focus:border-blue text-[13.5px]"
               required
-            />
+            >
+              <option value="">Select a subject</option>
+              {SUBJECT_OPTIONS.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div>
             <label className="block text-[13px] font-bold text-ink mb-2">
               Teaching Level
             </label>
-            <input
-              type="text"
+            <select
               value={formData.level}
               onChange={(e) => setFormData({ ...formData, level: e.target.value })}
-              placeholder="e.g., A1 - C1, Beginner to Advanced"
               className="w-full px-4 py-2.5 border border-line rounded-xl bg-cream outline-none focus:border-blue text-[13.5px]"
               required
-            />
+            >
+              <option value="">Select a level</option>
+              {LEVEL_OPTIONS.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div>

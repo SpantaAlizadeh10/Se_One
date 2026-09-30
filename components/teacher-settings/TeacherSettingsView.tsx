@@ -14,6 +14,30 @@ import {
 } from "@/lib/api/teacher-profile";
 import { isApiConfigured } from "@/lib/is-api-configured";
 
+const SUBJECT_OPTIONS = [
+  "Speaking & Conversation",
+  "Grammar",
+  "Business English",
+  "IELTS Preparation",
+  "TOEFL Preparation",
+  "Academic Writing",
+  "Pronunciation",
+  "English for Kids",
+  "English for Professionals",
+  "Exam Preparation",
+  "General English",
+] as const;
+
+const LEVEL_OPTIONS = [
+  "A1 - Beginner",
+  "A2 - Elementary",
+  "B1 - Intermediate",
+  "B2 - Upper Intermediate",
+  "C1 - Advanced",
+  "C2 - Proficiency",
+  "All Levels",
+] as const;
+
 const tabs = [
   { id: "profile", label: "Profile", Icon: User },
   { id: "teacher", label: "Teacher Profile", Icon: Video },
@@ -144,9 +168,8 @@ export default function TeacherSettingsView() {
             <button
               key={id}
               onClick={() => setTab(id)}
-              className={`flex items-center gap-2.5 shrink-0 lg:w-full text-start px-3 py-2.5 rounded-[10px] text-[13.5px] mb-0 lg:mb-0.5 whitespace-nowrap ${
-                tab === id ? "bg-ink text-white font-semibold" : "text-ink70 font-medium hover:bg-cream"
-              }`}
+              className={`flex items-center gap-2.5 shrink-0 lg:w-full text-start px-3 py-2.5 rounded-[10px] text-[13.5px] mb-0 lg:mb-0.5 whitespace-nowrap ${tab === id ? "bg-ink text-white font-semibold" : "text-ink70 font-medium hover:bg-cream"
+                }`}
             >
               <Icon size={16} />
               {label}
@@ -228,24 +251,34 @@ export default function TeacherSettingsView() {
               <div className="space-y-4">
                 <div>
                   <label className={labelClass}>Subject / Specialty</label>
-                  <input
-                    type="text"
+                  <select
                     value={teacherFormData.subject}
                     onChange={(e) => setTeacherFormData({ ...teacherFormData, subject: e.target.value })}
                     className={fieldClass}
-                    placeholder="e.g., Speaking & Conversation, Grammar"
-                  />
+                  >
+                    <option value="">Select a subject</option>
+                    {SUBJECT_OPTIONS.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 <div>
                   <label className={labelClass}>Teaching Level</label>
-                  <input
-                    type="text"
+                  <select
                     value={teacherFormData.level}
                     onChange={(e) => setTeacherFormData({ ...teacherFormData, level: e.target.value })}
                     className={fieldClass}
-                    placeholder="e.g., A1 - C1, Beginner to Advanced"
-                  />
+                  >
+                    <option value="">Select a level</option>
+                    {LEVEL_OPTIONS.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 <div>
