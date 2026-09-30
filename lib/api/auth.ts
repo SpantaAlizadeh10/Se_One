@@ -71,7 +71,7 @@ export async function register(input: {
 }): Promise<AuthResponse> {
   const nameParts = input.fullName.trim().split(/\s+/);
   const firstName = nameParts[0] || "";
-  const lastName = nameParts.slice(1).join(" ") || "";
+  const lastName = nameParts.slice(1).join(" ") || "-";
 
   const data = await apiFetch<any>("/api/auth/register", {
     method: "POST",
