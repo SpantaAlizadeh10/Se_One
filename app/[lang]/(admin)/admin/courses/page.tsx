@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Check, Eye, EyeOff, Plus, X } from "lucide-react";
+import { Check, Eye, EyeOff, Plus, X, Star, Upload } from "lucide-react";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 import { getDiscountedPrice, formatPrice } from "@/lib/courses-pricing";
 import { isApiConfigured } from "@/lib/is-api-configured";
@@ -10,8 +10,11 @@ import {
   patchAdminCoursePricing,
   updateAdminCourse,
   createAdminCourse,
+  uploadCourseImage,
+  listAdminTeachers,
   type AdminCourse,
   type CreateCourseInput,
+  type AdminTeacher,
 } from "@/lib/api/admin";
 
 export default function AdminCoursesPage() {
@@ -25,6 +28,8 @@ export default function AdminCoursesPage() {
   const [savedId, setSavedId] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [teachers, setTeachers] = useState<AdminTeacher[]>([]);
   const [newCourse, setNewCourse] = useState<CreateCourseInput>({
     title: "",
     description: "",
@@ -33,8 +38,11 @@ export default function AdminCoursesPage() {
     currency: "IRR",
     duration: "",
     category: "",
-    language: "",
+    language: "english",
+    discountPercent: 0,
     isFeatured: false,
+    imageUrl: "",
+    teacherId: "",
   });
 
   useEffect(() => {
@@ -50,6 +58,18 @@ export default function AdminCoursesPage() {
         ),
       );
   }, []);
+
+  useEffect(() => {
+    if (showCreateModal && isApiConfigured()) {
+      listAdminTeachers()
+        .then((result) => setTeachers(result.items))
+        .catch((error) =>
+          setApiError(
+            error instanceof Error ? error.message : "Could not load teachers",
+          ),
+        );
+    }
+  }, [showCreateModal]);
 
   const setDraft = (id: string, value: string) =>
     setDrafts((prev) => ({ ...prev, [id]: value }));
@@ -94,6 +114,41 @@ export default function AdminCoursesPage() {
     }
   };
 
+  const toggleFeatured = async (course: AdminCourse) => {
+    try {
+      const updated = await updateAdminCourse(course.id, {
+        isFeatured: !course.isFeatured,
+      });
+      setApiCourses(
+        (prev) => prev.map((item) => (item.id === course.id ? updated : item)),
+      );
+    } catch (error) {
+      setApiError(
+        error instanceof Error
+          ? error.message
+          : "Could not update course featured status",
+      );
+    }
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingImage(true);
+    setApiError(null);
+    try {
+      const result = await uploadCourseImage(file);
+      setNewCourse({ ...newCourse, imageUrl: result.imageUrl });
+    } catch (error) {
+      setApiError(
+        error instanceof Error ? error.message : "Failed to upload image",
+      );
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
   const handleCreateCourse = async (e: React.FormEvent) => {
     e.preventDefault();
     setCreating(true);
@@ -111,8 +166,11 @@ export default function AdminCoursesPage() {
         currency: "IRR",
         duration: "",
         category: "",
-        language: "",
+        language: "english",
+        discountPercent: 0,
         isFeatured: false,
+        imageUrl: "",
+        teacherId: "",
       });
     } catch (error) {
       setApiError(
@@ -172,6 +230,40 @@ export default function AdminCoursesPage() {
                   className="w-full border border-line rounded-lg px-3.5 py-2.5 text-[13.5px] outline-none focus:border-blue h-24 resize-none"
                   required
                 />
+              </div>
+              <div>
+                <label className="block text-[12.5px] font-semibold text-ink70 mb-2">
+                  Course Image
+                </label>
+                <div className="space-y-3">
+                  {newCourse.imageUrl && (
+                    <div className="relative w-full h-40 rounded-lg overflow-hidden bg-ink/5">
+                      <img
+                        src={newCourse.imageUrl}
+                        alt="Course preview"
+                        className="w-full h-full object-cover"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setNewCourse({ ...newCourse, imageUrl: "" })}
+                        className="absolute top-2 right-2 bg-white/90 hover:bg-white rounded-full p-2 shadow-lg"
+                      >
+                        <X size={14} className="text-danger" />
+                      </button>
+                    </div>
+                  )}
+                  <label className="flex items-center gap-2.5 bg-white border border-line px-4 py-3 rounded-xl text-[13.5px] font-semibold hover:border-ink transition-colors cursor-pointer w-fit">
+                    <Upload size={16} />
+                    {uploadingImage ? "Uploading..." : newCourse.imageUrl ? "Change image" : "Upload image"}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      disabled={uploadingImage}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -252,13 +344,49 @@ export default function AdminCoursesPage() {
                   <label className="block text-[12.5px] font-semibold text-ink70 mb-2">
                     Language
                   </label>
-                  <input
-                    type="text"
+                  <select
                     value={newCourse.language}
                     onChange={(e) => setNewCourse({ ...newCourse, language: e.target.value })}
                     className="w-full border border-line rounded-lg px-3.5 py-2.5 text-[13.5px] outline-none focus:border-blue"
-                  />
+                  >
+                    <option value="english">English</option>
+                    <option value="german">German</option>
+                  </select>
                 </div>
+              </div>
+              <div>
+                <label className="block text-[12.5px] font-semibold text-ink70 mb-2">
+                  Discount Percent
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="0.01"
+                    value={newCourse.discountPercent}
+                    onChange={(e) => setNewCourse({ ...newCourse, discountPercent: Number(e.target.value) })}
+                    className="w-24 border border-line rounded-lg px-3.5 py-2.5 text-[13.5px] outline-none focus:border-blue"
+                  />
+                  <span className="text-[12px] text-muted">%</span>
+                </div>
+              </div>
+              <div>
+                <label className="block text-[12.5px] font-semibold text-ink70 mb-2">
+                  Teacher
+                </label>
+                <select
+                  value={newCourse.teacherId}
+                  onChange={(e) => setNewCourse({ ...newCourse, teacherId: e.target.value })}
+                  className="w-full border border-line rounded-lg px-3.5 py-2.5 text-[13.5px] outline-none focus:border-blue"
+                >
+                  <option value="">Select a teacher (optional)</option>
+                  {teachers.map((teacher) => (
+                    <option key={teacher.id} value={teacher.id}>
+                      {teacher.fullName}
+                    </option>
+                  ))}
+                </select>
               </div>
               <div className="flex items-center gap-2">
                 <input
@@ -302,6 +430,7 @@ export default function AdminCoursesPage() {
                 s.colBasePrice,
                 s.colDiscount,
                 s.colFinalPrice,
+                "Status",
                 s.colActions,
               ].map((h) => (
                 <th
@@ -320,6 +449,7 @@ export default function AdminCoursesPage() {
               discountPercent: course.discountPercent,
               title: course.title,
               isPublished: course.isPublished,
+              isFeatured: course.isFeatured,
             })).map((p) => {
               const course = coursesData.find((c) => c.id === p.id);
               const courseTitle =
@@ -329,6 +459,10 @@ export default function AdminCoursesPage() {
               const isPublished =
                 "isPublished" in p && typeof p.isPublished === "boolean"
                   ? p.isPublished
+                  : false;
+              const isFeatured =
+                "isFeatured" in p && typeof p.isFeatured === "boolean"
+                  ? p.isFeatured
                   : false;
               const draftValue = drafts[p.id] ?? String(p.discountPercent);
               const previewDiscount = Math.max(
@@ -377,6 +511,24 @@ export default function AdminCoursesPage() {
                   </td>
                   <td className="px-5 py-3.5">
                     <div className="flex items-center gap-2">
+                      <span
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold ${isPublished
+                          ? "bg-sage text-sageDeep"
+                          : "bg-cream text-muted"
+                          }`}
+                      >
+                        {isPublished ? "Published" : "Draft"}
+                      </span>
+                      {isFeatured && (
+                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[11px] font-bold bg-gold/20 text-goldDeep">
+                          <Star size={10} fill="currentColor" />
+                          Featured
+                        </span>
+                      )}
+                    </div>
+                  </td>
+                  <td className="px-5 py-3.5">
+                    <div className="flex items-center gap-2">
                       <button
                         onClick={() => save(p.id)}
                         className="inline-flex items-center gap-1.5 text-[12px] font-bold text-white bg-blue hover:bg-blueDeep px-3.5 py-1.5 rounded-full transition-colors"
@@ -403,6 +555,22 @@ export default function AdminCoursesPage() {
                           )}
                         </button>
                       )}
+                      <button
+                        onClick={() =>
+                          toggleFeatured(
+                            apiCourses.find((course) => course.id === p.id)!,
+                          )
+                        }
+                        className={`inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors ${isFeatured
+                          ? "text-goldDeep bg-gold hover:bg-gold/80"
+                          : "text-muted bg-cream hover:bg-cream/80"
+                          }`}
+                        title={
+                          isFeatured ? "Remove from featured" : "Add to featured"
+                        }
+                      >
+                        <Star size={14} fill={isFeatured ? "currentColor" : "none"} />
+                      </button>
                     </div>
                   </td>
                 </tr>

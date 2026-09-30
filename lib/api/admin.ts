@@ -525,6 +525,7 @@ export type CreateCourseInput = {
   category?: string;
   language?: string;
   teacherId?: string;
+  discountPercent?: number;
   isFeatured?: boolean;
 };
 
@@ -580,6 +581,20 @@ export async function createAdminCourse(
   return normalizeAdminCourse(data, 0)!;
 }
 
+export async function uploadCourseImage(file: File): Promise<{ imageUrl: string }> {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const data = await apiFetch<unknown>("/api/admin/courses/upload-image", {
+    method: "POST",
+    body: formData,
+  });
+
+  return {
+    imageUrl: text(data as ApiRecord, "imageUrl", "ImageUrl"),
+  };
+}
+
 export async function patchAdminCoursePricing(
   courseId: string,
   body: { basePrice?: number; discountPercent?: number; currency?: string },
@@ -596,7 +611,7 @@ export async function patchAdminCoursePricing(
 
 export async function updateAdminCourse(
   courseId: string,
-  body: Partial<Pick<AdminCourse, "title" | "level" | "isPublished">>,
+  body: Partial<Pick<AdminCourse, "title" | "level" | "isPublished" | "isFeatured">>,
 ): Promise<AdminCourse> {
   const data = await apiFetch<unknown>(`/api/admin/courses/${courseId}`, {
     method: "PATCH",
