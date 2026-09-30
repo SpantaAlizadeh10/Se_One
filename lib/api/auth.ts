@@ -43,22 +43,28 @@ function normalizeRole(raw: unknown): Role {
   return "student";
 }
 
-function toAuthResponse(data: any, fallback: { fullName?: string; email?: string; role?: Role } = {}): AuthResponse {
+function toAuthResponse(
+  data: any,
+  fallback: { fullName?: string; email?: string; role?: Role } = {},
+): AuthResponse {
   return {
     token: data.token ?? data.accessToken ?? "",
     user: {
       id: data.user?.id ?? data.id ?? "",
       fullName: data.user?.fullName ?? data.fullName ?? fallback.fullName ?? "",
       email: data.user?.email ?? data.email ?? fallback.email ?? "",
-      role: normalizeRole(data.user?.role ?? data.role ?? fallback.role)
-    }
+      role: normalizeRole(data.user?.role ?? data.role ?? fallback.role),
+    },
   };
 }
 
-export async function login(email: string, password: string): Promise<AuthResponse> {
+export async function login(
+  email: string,
+  password: string,
+): Promise<AuthResponse> {
   const data = await apiFetch<any>("/api/auth/login", {
     method: "POST",
-    body: { email, password }
+    body: { email, password },
   });
   return toAuthResponse(data, { email });
 }
@@ -71,22 +77,26 @@ export async function register(input: {
 }): Promise<AuthResponse> {
   const nameParts = input.fullName.trim().split(/\s+/);
   const firstName = nameParts[0] || "";
-  const lastName = nameParts.slice(1).join(" ") || "-";
+  const familyName = nameParts.slice(1).join(" ") || "-";
 
   const data = await apiFetch<any>("/api/auth/register", {
     method: "POST",
     body: {
       firstName,
-      lastName,
+      familyName,
       email: input.email,
       password: input.password,
       // Adjust casing here if your .NET enum expects "Student"/"Teacher"
       // vs. lowercase — this sends the capitalized form since that's the
       // more common ASP.NET convention.
-      role: input.role === "teacher" ? "Teacher" : "Student"
-    }
+      role: input.role === "teacher" ? "Teacher" : "Student",
+    },
   });
-  return toAuthResponse(data, { fullName: input.fullName, email: input.email, role: input.role });
+  return toAuthResponse(data, {
+    fullName: input.fullName,
+    email: input.email,
+    role: input.role,
+  });
 }
 
 export async function fetchCurrentUser(): Promise<AuthUser> {
@@ -95,7 +105,7 @@ export async function fetchCurrentUser(): Promise<AuthUser> {
     id: data.id ?? "",
     fullName: data.fullName ?? "",
     email: data.email ?? "",
-    role: normalizeRole(data.role)
+    role: normalizeRole(data.role),
   };
 }
 
@@ -116,14 +126,17 @@ export async function logoutApi(): Promise<void> {
 export async function requestOtp(phone: string): Promise<void> {
   await apiFetch("/api/auth/otp/request", {
     method: "POST",
-    body: { phone }
+    body: { phone },
   });
 }
 
-export async function verifyOtp(phone: string, code: string): Promise<AuthResponse> {
+export async function verifyOtp(
+  phone: string,
+  code: string,
+): Promise<AuthResponse> {
   const data = await apiFetch<any>("/api/auth/otp/verify", {
     method: "POST",
-    body: { phone, code }
+    body: { phone, code },
   });
   return toAuthResponse(data);
 }
@@ -134,6 +147,6 @@ export async function verifyOtp(phone: string, code: string): Promise<AuthRespon
 export async function requestPasswordReset(email: string): Promise<void> {
   await apiFetch("/api/auth/forgot-password", {
     method: "POST",
-    body: { email }
+    body: { email },
   });
 }
