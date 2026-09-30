@@ -69,10 +69,15 @@ export async function register(input: {
   password: string;
   role: Role;
 }): Promise<AuthResponse> {
+  const nameParts = input.fullName.trim().split(/\s+/);
+  const firstName = nameParts[0] || "";
+  const lastName = nameParts.slice(1).join(" ") || "";
+
   const data = await apiFetch<any>("/api/auth/register", {
     method: "POST",
     body: {
-      fullName: input.fullName,
+      firstName,
+      lastName,
       email: input.email,
       password: input.password,
       // Adjust casing here if your .NET enum expects "Student"/"Teacher"
