@@ -55,13 +55,14 @@ export default function DashboardPage() {
     Promise.all([getCourses(lang), getUserEnrollments(), getDashboardOverview()])
       .then(([catalog, enrollments, overview]) => {
         if (!active) return;
-        setCourses(enrollments
+        const coursesList = enrollments
           .filter((enrollment) => enrollment.status === "active")
           .map((enrollment, index) => {
             const course = catalog.find((item) => item.id === enrollment.courseId);
-            return course ? { id: course.id, title: course.title, level: course.level, progress: enrollment.progress ?? 0, gradient: gradients[index % gradients.length], price: course.price } : null;
+            return course ? { id: course.id, title: course.title, level: course.level, progress: enrollment.progress ?? 0, gradient: gradients[index % gradients.length], price: course.price } as DashboardCourse | null : null;
           })
-          .filter((course): course is DashboardCourse => course !== null));
+          .filter((course): course is DashboardCourse => course !== null);
+        setCourses(coursesList);
         setUpcomingClasses(overview.upcomingClasses.map(classToPanelItem));
         setRecentActivity(overview.recentActivity.map(activityToPanelItem));
       })

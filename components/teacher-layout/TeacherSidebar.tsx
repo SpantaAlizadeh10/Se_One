@@ -91,12 +91,12 @@ export default function TeacherSidebar({ isOpen, onClose }: { isOpen: boolean; o
         {t("auth.signup.teacher")}
       </div>
 
-      <div className="text-[11px] font-bold tracking-widest uppercase text-muted mx-2.5 mb-2">
+      <div className="text-[11px] font-bold tracking-widest uppercase text-muted mx-2.5 mb-2 ltr:tracking-widest ltr:uppercase">
         {t("teacherNav.section1")}
       </div>
       {dashboardItems.map(renderItem)}
 
-      <div className="text-[11px] font-bold tracking-widest uppercase text-muted mx-2.5 mt-5 mb-2">
+      <div className="text-[11px] font-bold tracking-widest uppercase text-muted mx-2.5 mt-5 mb-2 ltr:tracking-widest ltr:uppercase">
         {t("teacherNav.section2")}
       </div>
       {profileItems.map(renderItem)}
@@ -108,7 +108,7 @@ export default function TeacherSidebar({ isOpen, onClose }: { isOpen: boolean; o
       </div>
 
       <div className="bg-cream border border-line rounded-md p-4">
-        <div className="text-[11px] font-bold tracking-wider uppercase text-muted mb-3">{t("teacherNav.dangerZone")}</div>
+        <div className="text-[11px] font-bold tracking-wider uppercase text-muted mb-3 ltr:tracking-wider ltr:uppercase">{t("teacherNav.dangerZone")}</div>
         <button onClick={logout} className="w-full flex items-center gap-2 px-3 py-2.5 rounded-[10px] text-[13.5px] font-semibold mb-2 bg-white border border-line text-ink70 hover:border-ink70 transition-colors">
           <LogOut size={15} />
           {t("teacherNav.logout")}

@@ -35,7 +35,7 @@ export default function TeacherClassesPage() {
               <div className="text-[12px] text-muted mb-3">{c.subject}</div>
               <div className="flex items-center gap-4 text-[12px] text-ink70">
                 <span className="flex items-center gap-1.5">
-                  <Users size={13} /> {c.students} {t("common.students")}
+                  <Users size={13} /> {c.studentName}
                 </span>
                 <span className="flex items-center gap-1.5">
                   <Clock size={13} /> {c.startTime}{c.endTime ? ` – ${c.endTime}` : ""}
