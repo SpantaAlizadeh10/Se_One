@@ -505,6 +505,27 @@ export type AdminCourse = {
   isPublished: boolean;
   studentCount: number;
   lessonCount: number;
+  description?: string;
+  duration?: string;
+  imageUrl?: string;
+  category?: string;
+  language?: string;
+  teacherId?: string;
+  isFeatured?: boolean;
+};
+
+export type CreateCourseInput = {
+  title: string;
+  description: string;
+  level: string;
+  basePrice: number;
+  currency?: string;
+  duration?: string;
+  imageUrl?: string;
+  category?: string;
+  language?: string;
+  teacherId?: string;
+  isFeatured?: boolean;
 };
 
 function normalizeAdminCourse(raw: unknown, index: number): AdminCourse | null {
@@ -534,12 +555,29 @@ function normalizeAdminCourse(raw: unknown, index: number): AdminCourse | null {
       "lessons",
       "Lessons",
     ),
+    description: text(r, "description", "Description") || undefined,
+    duration: text(r, "duration", "Duration") || undefined,
+    imageUrl: text(r, "imageUrl", "ImageUrl") || undefined,
+    category: text(r, "category", "Category") || undefined,
+    language: text(r, "language", "Language") || undefined,
+    teacherId: text(r, "teacherId", "TeacherId") || undefined,
+    isFeatured: Boolean(value(r, "isFeatured", "IsFeatured")),
   };
 }
 
 export async function listAdminCourses(): Promise<AdminCourse[]> {
   const data = await apiFetch<unknown>("/api/admin/courses");
   return unwrapList(data, normalizeAdminCourse);
+}
+
+export async function createAdminCourse(
+  body: CreateCourseInput,
+): Promise<AdminCourse> {
+  const data = await apiFetch<unknown>("/api/admin/courses", {
+    method: "POST",
+    body,
+  });
+  return normalizeAdminCourse(data, 0)!;
 }
 
 export async function patchAdminCoursePricing(
