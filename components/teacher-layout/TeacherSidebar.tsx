@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import {
   LayoutDashboard,
+  Home,
   BookOpen,
   Users,
   CalendarDays,
@@ -40,6 +41,11 @@ export default function TeacherSidebar({ isOpen, onClose }: { isOpen: boolean; o
 
   const dashboardItems = teacherNavItems.filter((i) => i.group === "dashboard");
   const profileItems = teacherNavItems.filter((i) => i.group === "profile");
+
+  const goHome = () => {
+    router.push(href("/"));
+    onClose();
+  };
 
   const logout = async () => {
     await logoutApi();
@@ -90,6 +96,14 @@ export default function TeacherSidebar({ isOpen, onClose }: { isOpen: boolean; o
       <div className="bg-blue/10 text-blue text-[11px] font-bold px-3 py-2 rounded-lg mb-6 text-center">
         {t("auth.signup.teacher")}
       </div>
+
+      <button
+        onClick={goHome}
+        className="flex items-center gap-3 rounded-[11px] px-3 py-2.5 mb-0.5 text-[14.5px] font-medium transition-colors text-ink70 hover:bg-cream hover:text-ink w-full"
+      >
+        <Home size={17} className="flex-shrink-0" />
+        <span className="truncate">Home</span>
+      </button>
 
       <div className="text-[11px] font-bold tracking-widest uppercase text-muted mx-2.5 mb-2 ltr:tracking-widest ltr:uppercase">
         {t("teacherNav.section1")}

@@ -2,16 +2,23 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
-import { ChevronDown, ArrowRight } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { ChevronDown, ArrowRight, User, LogOut } from "lucide-react";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 import { stripLocale } from "@/lib/i18n/paths";
 import LanguageSwitcher from "@/components/shared/LanguageSwitcher";
+import { getRole, getName, clearSession, dashboardPathFor } from "@/lib/auth-client";
+import { logoutApi } from "@/lib/api/auth";
 
 export default function Navbar() {
   const { t, href } = useLanguage();
   const pathname = usePathname();
+  const router = useRouter();
   const currentPath = stripLocale(pathname || "/");
+
+  const role = getRole();
+  const userName = getName();
+  const isLoggedIn = role !== null;
 
   const navLinks = [
     { label: t("nav.home"), path: "/" },
@@ -21,6 +28,18 @@ export default function Navbar() {
     { label: t("nav.contact"), path: "/contact" },
     { label: t("nav.about"), path: "/about" },
   ];
+
+  const handleLogout = async () => {
+    await logoutApi();
+    clearSession();
+    router.push(href("/login"));
+  };
+
+  const handleDashboard = () => {
+    if (role) {
+      router.push(href(dashboardPathFor(role)));
+    }
+  };
 
   return (
     <header className="sticky top-0 z-50 bg-cream/90 backdrop-blur border-b border-line">
@@ -67,12 +86,31 @@ export default function Navbar() {
 
         <div className="flex items-center gap-3">
           <LanguageSwitcher compact />
-          <Link
-            href={href("/login")}
-            className="inline-flex items-center gap-2 bg-blue text-white px-5 py-2.5 rounded-full text-[13.5px] font-semibold hover:bg-blueDeep transition-colors"
-          >
-            {t("nav.logIn")} <ArrowRight size={14} className="rtl:rotate-180" />
-          </Link>
+          {isLoggedIn ? (
+            <div className="flex items-center gap-3">
+              <button
+                onClick={handleDashboard}
+                className="flex items-center gap-2 bg-cream border border-line px-4 py-2.5 rounded-full text-[13.5px] font-semibold hover:border-ink transition-colors"
+              >
+                <User size={14} />
+                <span className="hidden sm:inline">{userName || "Dashboard"}</span>
+              </button>
+              <button
+                onClick={handleLogout}
+                className="flex items-center gap-2 text-ink70 hover:text-ink text-[13.5px] font-medium transition-colors"
+                title="Logout"
+              >
+                <LogOut size={14} />
+              </button>
+            </div>
+          ) : (
+            <Link
+              href={href("/login")}
+              className="inline-flex items-center gap-2 bg-blue text-white px-5 py-2.5 rounded-full text-[13.5px] font-semibold hover:bg-blueDeep transition-colors"
+            >
+              {t("nav.logIn")} <ArrowRight size={14} className="rtl:rotate-180" />
+            </Link>
+          )}
         </div>
 
       </div>
