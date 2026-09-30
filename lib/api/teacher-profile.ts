@@ -82,23 +82,23 @@ function normalizeTeacherProfile(raw: unknown): TeacherProfileResponse {
 }
 
 /**
- * GET /api/teacher/profile
+ * GET /api/teachers/me
  * Get current teacher's profile
  */
 export async function getTeacherProfile(): Promise<TeacherProfileResponse> {
-  const data = await apiFetch<unknown>("/api/teacher/profile");
+  const data = await apiFetch<unknown>("/api/teachers/me");
   return normalizeTeacherProfile(data);
 }
 
 /**
- * POST /api/teacher/profile/complete
- * Complete teacher profile (after registration)
+ * PUT /api/teachers/me
+ * Complete/Update teacher profile
  */
 export async function completeTeacherProfile(
   data: Omit<TeacherProfileData, "videoUrl">
 ): Promise<TeacherProfileResponse> {
-  const response = await apiFetch<unknown>("/api/teacher/profile/complete", {
-    method: "POST",
+  const response = await apiFetch<unknown>("/api/teachers/me", {
+    method: "PUT",
     body: {
       subject: data.subject,
       level: data.level,
@@ -111,14 +111,14 @@ export async function completeTeacherProfile(
 }
 
 /**
- * PATCH /api/teacher/profile
+ * PUT /api/teachers/me
  * Update teacher profile settings (including video)
  */
 export async function updateTeacherProfile(
   data: Partial<TeacherProfileData>
 ): Promise<TeacherProfileResponse> {
-  const response = await apiFetch<unknown>("/api/teacher/profile", {
-    method: "PATCH",
+  const response = await apiFetch<unknown>("/api/teachers/me", {
+    method: "PUT",
     body: data,
   });
   return normalizeTeacherProfile(response);
