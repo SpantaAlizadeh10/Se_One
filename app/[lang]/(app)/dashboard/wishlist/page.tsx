@@ -3,6 +3,9 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Heart, BookOpen, X } from "lucide-react";
+
+export const dynamic = 'force-dynamic';
+export const fetchCache = 'force-no-store';
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 import { getWishlist, removeFromWishlist, type WishlistItem } from "@/lib/api/wishlist";
 import { useCourses } from "@/lib/use-courses";

@@ -2,6 +2,8 @@ import StreakBanner from "@/components/practice/StreakBanner";
 import SkillGrid from "@/components/practice/SkillGrid";
 import PracticeList from "@/components/practice/PracticeList";
 
+export const dynamic = 'force-dynamic';
+
 export default function PracticePage() {
   return (
     <div>

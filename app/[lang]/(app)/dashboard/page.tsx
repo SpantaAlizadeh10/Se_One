@@ -6,37 +6,73 @@ import { useLanguage } from "@/lib/i18n/LanguageProvider";
 import { getName } from "@/lib/auth-client";
 import { getCourses } from "@/lib/api/courses";
 import { getUserEnrollments } from "@/lib/api/enrollment";
-import { getDashboardOverview, type UpcomingClass, type RecentActivity } from "@/lib/api/student-dashboard";
+import {
+  getDashboardOverview,
+  type UpcomingClass,
+  type RecentActivity,
+} from "@/lib/api/student-dashboard";
 import MilestoneBanner from "@/components/dashboard/MilestoneBanner";
+
+export const dynamic = "force-dynamic";
+export const fetchCache = "force-no-store";
 import CourseCard from "@/components/dashboard/CourseCard";
 import StudyChart from "@/components/dashboard/StudyChart";
 import Calendar from "@/components/dashboard/Calendar";
 import ClassPanel from "@/components/dashboard/ClassPanel";
+import { formatApiDate, parseApiDate } from "@/lib/date-utils";
 
-const gradients = ["from-[#CFE7E4] to-[#9FCFC9]", "from-[#D9D2F0] to-[#B7A8E6]", "from-[#CDE0D6] to-[#9CC4AC]"];
+const gradients = [
+  "from-[#CFE7E4] to-[#9FCFC9]",
+  "from-[#D9D2F0] to-[#B7A8E6]",
+  "from-[#CDE0D6] to-[#9CC4AC]",
+];
 
-type DashboardCourse = { id: string; title: string; level: string; progress: number; gradient: string; price?: string };
-type PanelItem = { id: string; title: string; level: string; day: string; time: string; kind: "speak" | "grammar" | "write" };
+type DashboardCourse = {
+  id: string;
+  title: string;
+  level: string;
+  progress: number;
+  gradient: string;
+  price?: string;
+};
+type PanelItem = {
+  id: string;
+  title: string;
+  level: string;
+  day: string;
+  date: string;
+  time: string;
+  kind: "speak" | "grammar" | "write";
+};
 
-function classToPanelItem(item: UpcomingClass): PanelItem {
-  const start = item.scheduledDate ? new Date(item.scheduledDate) : null;
+function classToPanelItem(item: UpcomingClass, lang: "fa" | "en"): PanelItem {
+  const start = parseApiDate(item.scheduledDate);
   return {
     id: item.id,
     title: item.subject || item.courseTitle,
     level: item.courseTitle,
-    day: start && !Number.isNaN(start.getTime()) ? start.toLocaleDateString() : "",
+    day: start ? formatApiDate(item.scheduledDate, lang) : "",
+    date: item.scheduledDate,
     time: item.startTime,
-    kind: /grammar/i.test(item.subject) ? "grammar" : /writ/i.test(item.subject) ? "write" : "speak",
+    kind: /grammar/i.test(item.subject)
+      ? "grammar"
+      : /writ/i.test(item.subject)
+        ? "write"
+        : "speak",
   };
 }
 
-function activityToPanelItem(item: RecentActivity): PanelItem {
-  const date = item.timestamp ? new Date(item.timestamp) : null;
+function activityToPanelItem(
+  item: RecentActivity,
+  lang: "fa" | "en",
+): PanelItem {
+  const date = parseApiDate(item.timestamp);
   return {
     id: item.id,
     title: item.title,
     level: item.description,
-    day: date && !Number.isNaN(date.getTime()) ? date.toLocaleDateString() : "",
+    day: date ? formatApiDate(item.timestamp, lang) : "",
+    date: item.timestamp,
     time: "",
     kind: /assignment/i.test(item.type) ? "write" : "grammar",
   };
@@ -52,19 +88,40 @@ export default function DashboardPage() {
   useEffect(() => {
     setName(getName() || "");
     let active = true;
-    Promise.all([getCourses(lang), getUserEnrollments(), getDashboardOverview()])
+    Promise.all([
+      getCourses(lang),
+      getUserEnrollments(),
+      getDashboardOverview(),
+    ])
       .then(([catalog, enrollments, overview]) => {
         if (!active) return;
         const coursesList = enrollments
           .filter((enrollment) => enrollment.status === "active")
           .map((enrollment, index) => {
-            const course = catalog.find((item) => item.id === enrollment.courseId);
-            return course ? { id: course.id, title: course.title, level: course.level, progress: enrollment.progress ?? 0, gradient: gradients[index % gradients.length], price: course.price } as DashboardCourse | null : null;
+            const course = catalog.find(
+              (item) => item.id === enrollment.courseId,
+            );
+            return course
+              ? ({
+                  id: course.id,
+                  title: course.title,
+                  level: course.level,
+                  progress: enrollment.progress ?? 0,
+                  gradient: gradients[index % gradients.length],
+                  price: course.price,
+                } as DashboardCourse | null)
+              : null;
           })
           .filter((course): course is DashboardCourse => course !== null);
         setCourses(coursesList);
-        setUpcomingClasses(overview.upcomingClasses.map(classToPanelItem));
-        setRecentActivity(overview.recentActivity.map(activityToPanelItem));
+        setUpcomingClasses(
+          overview.upcomingClasses.map((item) => classToPanelItem(item, lang)),
+        );
+        setRecentActivity(
+          overview.recentActivity.map((item) =>
+            activityToPanelItem(item, lang),
+          ),
+        );
       })
       .catch(() => {
         if (active) {
@@ -73,7 +130,9 @@ export default function DashboardPage() {
           setRecentActivity([]);
         }
       });
-    return () => { active = false; };
+    return () => {
+      active = false;
+    };
   }, [lang]);
 
   return (

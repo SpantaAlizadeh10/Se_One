@@ -386,6 +386,8 @@ NotificationStats: {
 - `POST /api/support/tickets/{ticketId}/messages/{messageId}/upload` - Upload attachment
 - `GET /api/support/faq` - Get FAQ articles
 
+`PATCH /api/support/tickets/{ticketId}` accepts any supported subset of `subject`, `category`, `priority`, and `status`. Status values are `open`, `in_progress`, `resolved`, and `closed`; closing and reopening may also use the dedicated endpoints above. Ticket/message visibility and status changes must be authorized by the backend for the current role.
+
 ### Data Model
 
 ```typescript
@@ -691,6 +693,7 @@ All endpoints except public ones (contact form, newsletter subscription) require
 ### Response Format
 
 Follow the existing response format conventions:
+
 - Use camelCase for JSON properties (or configure ASP.NET to output camelCase)
 - Use ISO 8601 format for dates
 - Return appropriate HTTP status codes
@@ -699,6 +702,7 @@ Follow the existing response format conventions:
 ### Pagination
 
 For list endpoints, support:
+
 - `page` (default: 1)
 - `pageSize` (default: 20, max: 100)
 - Return paged response with `items`, `page`, `pageSize`, `totalCount`, `totalPages`
@@ -706,6 +710,7 @@ For list endpoints, support:
 ### Error Handling
 
 Return appropriate HTTP status codes:
+
 - 200 OK - Successful GET
 - 201 Created - Successful POST
 - 204 No Content - Successful DELETE/PUT with no response body
@@ -718,6 +723,7 @@ Return appropriate HTTP status codes:
 ### File Uploads
 
 For file upload endpoints (avatar, attachments):
+
 - Accept `multipart/form-data`
 - Return the uploaded file URL in the response
 - Validate file types and sizes
@@ -725,6 +731,7 @@ For file upload endpoints (avatar, attachments):
 ### Real-time Features
 
 For messaging and typing status:
+
 - Consider implementing SignalR for real-time updates
 - The API endpoints provided are polling-based fallbacks
 - Real-time implementation can replace polling where beneficial
@@ -736,9 +743,9 @@ For messaging and typing status:
 All API clients are exported from `lib/api/index.ts` for easy importing:
 
 ```typescript
-import { 
-  getWishlist, 
-  addToWishlist, 
+import {
+  getWishlist,
+  addToWishlist,
   getCourseReviews,
   createReview,
   getConversations,
@@ -748,6 +755,7 @@ import {
 ```
 
 Each API client follows the same pattern:
+
 - Type definitions for request/response
 - Normalization functions to handle backend response format
 - Consistent error handling via `apiFetch`
@@ -801,29 +809,34 @@ TeacherProfileResponse: {
 ### Endpoint Details
 
 #### GET /api/teacher/profile
+
 Get the current authenticated teacher's complete profile.
 
 **Response:** `TeacherProfileResponse`
 
 #### POST /api/teacher/profile/complete
+
 Called after a new teacher registers to complete their profile with teaching-specific information.
 
 **Request:** `Omit<TeacherProfileData, "videoUrl">` (subject, level, teachingLanguage, bio, avatarUrl)
 **Response:** `TeacherProfileResponse`
 
 #### PATCH /api/teacher/profile
+
 Update teacher profile fields. Used when teacher updates their settings.
 
 **Request:** `Partial<TeacherProfileData>` (any combination of fields)
 **Response:** `TeacherProfileResponse`
 
 #### POST /api/teacher/profile/avatar
+
 Upload teacher avatar image file.
 
 **Request:** `FormData` with `file` field
 **Response:** `{ avatarUrl: string }`
 
 #### POST /api/teacher/profile/video
+
 Upload teacher introduction video file.
 
 **Request:** `FormData` with `file` field

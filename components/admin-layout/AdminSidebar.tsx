@@ -14,6 +14,7 @@ import {
   Trash2,
   X,
   ShieldCheck,
+  Ticket,
 } from "lucide-react";
 import { adminNavItems } from "@/lib/admin-nav";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
@@ -28,6 +29,7 @@ const icons: Record<string, React.ElementType> = {
   "/admin/teachers": GraduationCap,
   "/admin/courses": Tag,
   "/admin/blog": FileText,
+  "/admin/tickets": Ticket,
   "/admin/settings": SettingsIcon,
 };
 

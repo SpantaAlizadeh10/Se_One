@@ -14,7 +14,8 @@ import {
   ChevronRight,
   LogOut,
   Trash2,
-  X
+  Ticket,
+  X,
 } from "lucide-react";
 import { navItems } from "@/lib/nav";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
@@ -30,12 +31,13 @@ const icons: Record<string, React.ElementType> = {
   "/dashboard/teachers": GraduationCap,
   "/dashboard/wishlist": Heart,
   "/dashboard/messages": MessageSquare,
-  "/dashboard/settings": SettingsIcon
+  "/dashboard/tickets": Ticket,
+  "/dashboard/settings": SettingsIcon,
 };
 
 export default function Sidebar({
   isOpen,
-  onClose
+  onClose,
 }: {
   isOpen: boolean;
   onClose: () => void;
@@ -62,10 +64,16 @@ export default function Sidebar({
         key={item.href}
         href={href(item.href)}
         onClick={onClose}
-        className={`flex items-center gap-3 rounded-[11px] px-3 py-2.5 mb-0.5 text-[14.5px] font-medium transition-colors ${active ? "bg-ink text-white font-semibold" : "text-ink70 hover:bg-cream hover:text-ink"
-          }`}
+        className={`flex items-center gap-3 rounded-[11px] px-3 py-2.5 mb-0.5 text-[14.5px] font-medium transition-colors ${
+          active
+            ? "bg-ink text-white font-semibold"
+            : "text-ink70 hover:bg-cream hover:text-ink"
+        }`}
       >
-        <Icon size={17} className={active ? "text-gold flex-shrink-0" : "flex-shrink-0"} />
+        <Icon
+          size={17}
+          className={active ? "text-gold flex-shrink-0" : "flex-shrink-0"}
+        />
         <span className="truncate">{t(item.labelKey)}</span>
         {item.badge && !active && (
           <span className="ms-auto bg-danger text-white text-[10.5px] font-bold px-[7px] py-[2px] rounded-full">
@@ -73,7 +81,10 @@ export default function Sidebar({
           </span>
         )}
         {item.href === "/dashboard" && (
-          <ChevronRight size={14} className="ms-auto opacity-50 rtl:rotate-180" />
+          <ChevronRight
+            size={14}
+            className="ms-auto opacity-50 rtl:rotate-180"
+          />
         )}
       </Link>
     );
@@ -84,11 +95,14 @@ export default function Sidebar({
       className={`bg-white border-e border-line px-5 py-6 lg:py-7 flex flex-col
         fixed inset-y-0 start-0 rtl:end-0 rtl:start-auto z-50 w-[248px] overflow-y-auto thin-scroll
         transform transition-transform duration-300 ease-in-out
-        lg:static lg:z-auto lg:translate-x-0 lg:sticky lg:top-0 lg:h-screen lg:shrink-0
+        lg:z-auto lg:!translate-x-0 lg:sticky lg:top-0 lg:h-screen lg:shrink-0
         ${isOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full rtl:translate-x-full"}`}
     >
       <div className="flex items-center justify-between mb-6 lg:mb-7">
-        <Link href={href("/dashboard")} className="font-serif font-bold text-[22px] tracking-wide text-goldDeep mx-1.5">
+        <Link
+          href={href("/dashboard")}
+          className="font-serif font-bold text-[22px] tracking-wide text-goldDeep mx-1.5"
+        >
           SE <span className="text-ink font-medium">ONE</span>
         </Link>
         <button
@@ -129,7 +143,10 @@ export default function Sidebar({
         <div className="text-[11px] font-bold tracking-wider uppercase text-muted mb-3 ltr:tracking-wider ltr:uppercase">
           {t("studentNav.dangerZone")}
         </div>
-        <button onClick={logout} className="w-full flex items-center gap-2 px-3 py-2.5 rounded-[10px] text-[13.5px] font-semibold mb-2 bg-white border border-line text-ink70 hover:border-ink70 transition-colors">
+        <button
+          onClick={logout}
+          className="w-full flex items-center gap-2 px-3 py-2.5 rounded-[10px] text-[13.5px] font-semibold mb-2 bg-white border border-line text-ink70 hover:border-ink70 transition-colors"
+        >
           <LogOut size={15} />
           {t("studentNav.logout")}
         </button>

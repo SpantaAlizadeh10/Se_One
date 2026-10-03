@@ -4,7 +4,8 @@ import withPWA from 'next-pwa';
 const nextConfig = {
   images: {
     remotePatterns: [{ protocol: "https", hostname: "i.pravatar.cc" }]
-  }
+  },
+  output: undefined, // Disable static export for client-side pages
 };
 
 export default withPWA({

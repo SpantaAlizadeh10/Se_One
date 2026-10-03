@@ -47,6 +47,8 @@ export async function apiFetch<T>(
   }
 
   const { body, headers, signal, ...rest } = options;
+  const isFormData =
+    typeof FormData !== "undefined" && body instanceof FormData;
   const token = getToken();
   const controller = new AbortController();
   const forwardAbort = () => controller.abort(signal?.reason);
@@ -68,11 +70,16 @@ export async function apiFetch<T>(
       signal: controller.signal,
       credentials: "include",
       headers: {
-        "Content-Type": "application/json",
+        ...(!isFormData ? { "Content-Type": "application/json" } : {}),
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
         ...headers,
       },
-      body: body !== undefined ? JSON.stringify(body) : undefined,
+      body:
+        body === undefined
+          ? undefined
+          : isFormData
+            ? body
+            : JSON.stringify(body),
     });
 
     const contentType = res.headers.get("content-type") || "";

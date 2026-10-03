@@ -1,5 +1,7 @@
 import MessagesView from "@/components/messages/MessagesView";
 
+export const dynamic = 'force-dynamic';
+
 export default function MessagesPage() {
   return (
     <div>

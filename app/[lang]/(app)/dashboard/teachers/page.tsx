@@ -3,6 +3,9 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+
+export const dynamic = 'force-dynamic';
+export const fetchCache = 'force-no-store';
 import { Star, Clock, Check, ChevronDown, ChevronUp, Video } from "lucide-react";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 import { useTeachers } from "@/lib/use-teachers";
@@ -119,9 +122,8 @@ export default function FindTeacherPage() {
                       {teacher.slots.map((slot) => (
                         <div
                           key={slot.id}
-                          className={`flex items-center justify-between gap-2 rounded-xl border px-3.5 py-2.5 ${
-                            slot.booked ? "bg-cream border-line" : "bg-white border-sage"
-                          }`}
+                          className={`flex items-center justify-between gap-2 rounded-xl border px-3.5 py-2.5 ${slot.booked ? "bg-cream border-line" : "bg-white border-sage"
+                            }`}
                         >
                           <div>
                             <div className="text-[12.5px] font-semibold">{slot.day}</div>
@@ -130,9 +132,8 @@ export default function FindTeacherPage() {
                           <button
                             disabled={slot.booked}
                             onClick={() => bookSlot(teacher.id, slot.id)}
-                            className={`text-[11px] font-bold px-3 py-1.5 rounded-full shrink-0 transition-colors ${
-                              slot.booked ? "bg-line text-muted cursor-not-allowed" : "bg-blue text-white hover:bg-blueDeep"
-                            }`}
+                            className={`text-[11px] font-bold px-3 py-1.5 rounded-full shrink-0 transition-colors ${slot.booked ? "bg-line text-muted cursor-not-allowed" : "bg-blue text-white hover:bg-blueDeep"
+                              }`}
                           >
                             {slot.booked ? p.bookedBtn : p.bookBtn}
                           </button>
