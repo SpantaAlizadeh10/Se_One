@@ -6,6 +6,7 @@ import AdminSidebar from "@/components/admin-layout/AdminSidebar";
 import AdminTopbar from "@/components/admin-layout/AdminTopbar";
 import { isAdminAuthenticated } from "@/lib/admin-auth";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
+import DailyProverb from "@/components/shared/DailyProverb";
 
 export default function AdminAppShell({
   children,
@@ -61,6 +62,7 @@ export default function AdminAppShell({
       <main className="flex-1 min-w-0 px-4 sm:px-6 lg:px-8 py-5 lg:py-7 pb-16">
         <AdminTopbar onMenuClick={() => setSidebarOpen(true)} />
         {children}
+        <DailyProverb />
       </main>
     </div>
   );

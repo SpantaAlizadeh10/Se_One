@@ -491,6 +491,28 @@ Implement these for the **teacher dashboard**; admin uses `/api/admin/teachers/*
 
 Admin does **not** call these with a teacher token; admin uses admin routes above.
 
+### PUT /api/teacher/availability
+
+Replace the authenticated teacher's weekly availability. Existing slot IDs are included when editing the schedule so the service can preserve their booking associations; new slots omit `id`. The server must validate ownership, valid day/time ranges, and overlaps, and must reject removal or alteration of a booked slot.
+
+**Request:**
+
+```json
+{
+  "slots": [
+    {
+      "id": "existing-slot-id",
+      "dayOfWeek": "Monday",
+      "startTime": "09:00",
+      "endTime": "10:00"
+    },
+    { "dayOfWeek": "Wednesday", "startTime": "13:30", "endTime": "14:30" }
+  ]
+}
+```
+
+Return the saved array with `id`, `dayOfWeek`, `startTime`, `endTime`, and `isBooked`. `GET /api/teachers` must expose the same teacher slots in its public directory data as `{ id, day, time, booked }` (or the equivalent `dayOfWeek`, `startTime`, `endTime`, `isBooked` fields), so students see the updated open slots and cannot book an already-taken slot.
+
 ---
 
 ## 9. Enrollments & progress (cross-cutting)

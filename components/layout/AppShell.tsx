@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import Sidebar from "@/components/layout/Sidebar";
 import Topbar from "@/components/layout/Topbar";
 import { CallProvider } from "@/components/calls/CallProvider";
+import DailyProverb from "@/components/shared/DailyProverb";
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -32,6 +33,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         <main className="px-4 sm:px-6 lg:px-8 py-5 lg:py-7 pb-16 min-w-0">
           <Topbar onMenuClick={() => setSidebarOpen(true)} />
           {children}
+          <DailyProverb />
         </main>
       </div>
     </CallProvider>

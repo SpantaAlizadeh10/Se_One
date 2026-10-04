@@ -40,10 +40,14 @@ function normalizeSlots(raw: unknown): AvailabilitySlot[] {
 
   return raw.map((slot, index) => {
     const record = (slot ?? {}) as ApiRecord;
+    const startTime = text(record, "startTime", "StartTime");
+    const endTime = text(record, "endTime", "EndTime");
     return {
       id: text(record, "id", "Id") || `api-slot-${index}`,
       day: text(record, "day", "Day", "dayOfWeek", "DayOfWeek"),
-      time: text(record, "time", "Time", "timeRange", "TimeRange"),
+      time:
+        text(record, "time", "Time", "timeRange", "TimeRange") ||
+        (startTime && endTime ? `${startTime} - ${endTime}` : startTime),
       booked: Boolean(
         value(record, "booked", "Booked", "isBooked", "IsBooked"),
       ),
