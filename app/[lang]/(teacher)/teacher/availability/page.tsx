@@ -83,7 +83,7 @@ export default function TeacherAvailabilityPage() {
 
   const [teacherId, setTeacherId] = useState("");
   const [slots, setSlots] = useState<AvailabilitySlot[]>([]);
-  const [day, setDay] = useState(dayOptions[0]);
+  const [selectedDays, setSelectedDays] = useState<string[]>([dayOptions[0]]);
   const [startTime, setStartTime] = useState(initialStartTime);
   const [endTime, setEndTime] = useState(initialEndTime);
   const [loading, setLoading] = useState(true);
@@ -130,38 +130,48 @@ export default function TeacherAvailabilityPage() {
       setError(a.invalidTimeRange);
       return;
     }
+    if (selectedDays.length === 0) {
+      setError(a.selectDay);
+      return;
+    }
     if (slots.some((slot) => !parseTimeRange(slot.time))) {
       setError(a.legacyTimeError);
       return;
     }
-    const conflict = slots.some((slot) => {
-      if (slot.day !== day) return false;
-      const existing = parseTimeRange(slot.time);
-      if (!existing) return slot.time === `${startTime} - ${endTime}`;
-      return (
-        minutes(startTime) < minutes(existing.endTime) &&
-        minutes(endTime) > minutes(existing.startTime)
-      );
-    });
-    if (conflict) {
+    const conflicts = selectedDays.filter((selectedDay) =>
+      slots.some((slot) => {
+        if (slot.day !== selectedDay) return false;
+        const existing = parseTimeRange(slot.time);
+        return (
+          existing != null &&
+          minutes(startTime) < minutes(existing.endTime) &&
+          minutes(endTime) > minutes(existing.startTime)
+        );
+      }),
+    );
+    const daysToAdd = selectedDays.filter(
+      (selectedDay) => !conflicts.includes(selectedDay),
+    );
+    if (daysToAdd.length === 0) {
       setError(a.overlappingSlot);
       return;
     }
 
     const nextSlots = [
       ...slots,
-      {
-        id: `draft-${day}-${startTime}-${endTime}`,
-        day,
+      ...daysToAdd.map((selectedDay) => ({
+        id: `draft-${selectedDay}-${startTime}-${endTime}`,
+        day: selectedDay,
         time: `${startTime} - ${endTime}`,
         booked: false,
-      },
+      })),
     ];
     setSaving(true);
     try {
       const saved = await replaceMyAvailability(toApiSlots(nextSlots));
       setSlots(saved);
       setSuccess(a.saved);
+      if (conflicts.length > 0) setError(a.overlappingSomeDays);
       setEndTime(
         `${String(Math.min(23, Number(startTime.slice(0, 2)) + 1)).padStart(2, "0")}:${startTime.slice(3)}`,
       );
@@ -201,6 +211,16 @@ export default function TeacherAvailabilityPage() {
       minutes(parseTimeRange(right.time)?.startTime || "00:00")
     );
   });
+
+  const toggleDay = (selectedDay: string) => {
+    setSelectedDays((current) =>
+      current.includes(selectedDay)
+        ? current.filter((item) => item !== selectedDay)
+        : [...current, selectedDay],
+    );
+    setError("");
+    setSuccess("");
+  };
 
   return (
     <div>
@@ -242,20 +262,57 @@ export default function TeacherAvailabilityPage() {
             </div>
           </div>
           <form onSubmit={addSlot} className="space-y-4">
-            <label className="block text-[12px] font-semibold text-ink70">
-              {a.day}
-              <select
-                value={day}
-                onChange={(event) => setDay(event.target.value)}
-                className="mt-1.5 w-full rounded-xl border border-line bg-cream px-3.5 py-3 text-[13px] outline-none focus:border-blue focus:bg-white"
-              >
-                {dayOptions.map((option) => (
-                  <option key={option} value={option}>
-                    {a.days[option.toLowerCase()]}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <div role="group" aria-label={a.day}>
+              <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                <span className="text-[12px] font-semibold text-ink70">
+                  {a.day}
+                </span>
+                <div className="flex gap-3 text-[11px] font-semibold">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedDays(dayOptions);
+                      setError("");
+                    }}
+                    className="text-blue hover:text-blueDeep"
+                  >
+                    {a.selectAllDays}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedDays([]);
+                      setError("");
+                    }}
+                    className="text-muted hover:text-ink"
+                  >
+                    {a.clearDays}
+                  </button>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                {dayOptions.map((option) => {
+                  const isSelected = selectedDays.includes(option);
+                  return (
+                    <button
+                      key={option}
+                      type="button"
+                      aria-pressed={isSelected}
+                      onClick={() => toggleDay(option)}
+                      className={`min-h-11 rounded-xl border px-3 py-2.5 text-[12px] font-semibold transition-colors ${isSelected ? "border-blue bg-blue text-white shadow-sm" : "border-line bg-cream text-ink70 hover:border-blue/40 hover:bg-blue/5"}`}
+                    >
+                      {isSelected && (
+                        <Check
+                          size={13}
+                          className="me-1 inline-block align-[-2px]"
+                        />
+                      )}
+                      {a.days[option.toLowerCase()]}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
             <div className="grid grid-cols-2 gap-3">
               <label className="block text-[12px] font-semibold text-ink70">
                 {a.startTime}
@@ -285,7 +342,12 @@ export default function TeacherAvailabilityPage() {
               />
               {a.slotPreview}:{" "}
               <strong>
-                {a.days[day.toLowerCase()]}, {startTime} – {endTime}
+                {selectedDays.length > 0
+                  ? selectedDays
+                      .map((selectedDay) => a.days[selectedDay.toLowerCase()])
+                      .join("، ")
+                  : a.noDaysSelected}
+                {selectedDays.length > 0 && ` · ${startTime} – ${endTime}`}
               </strong>
             </div>
             <button
