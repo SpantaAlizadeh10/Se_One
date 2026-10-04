@@ -716,6 +716,7 @@ export const dictionary = {
     },
     teacherAccountMenu: {
       open: "باز کردن منوی حساب کاربری",
+      profileNameLoading: "در حال دریافت نام...",
       profileSettings: "پروفایل و تنظیمات",
       messages: "پیام‌ها",
       schedule: "برنامه کلاس‌ها",
@@ -1952,6 +1953,7 @@ export const dictionary = {
     },
     teacherAccountMenu: {
       open: "Open account menu",
+      profileNameLoading: "Loading name...",
       profileSettings: "Profile and settings",
       messages: "Messages",
       schedule: "Class schedule",

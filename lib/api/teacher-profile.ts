@@ -66,7 +66,14 @@ function normalizeTeacherProfile(raw: unknown): TeacherProfileResponse {
   return {
     id: text(record, "id", "Id"),
     userId: text(record, "userId", "UserId"),
-    fullName: text(record, "fullName", "FullName", "name", "Name"),
+    fullName:
+      text(record, "fullName", "FullName", "name", "Name") ||
+      [
+        text(record, "firstName", "FirstName", "givenName", "GivenName"),
+        text(record, "lastName", "LastName", "familyName", "FamilyName"),
+      ]
+        .filter(Boolean)
+        .join(" "),
     email: text(record, "email", "Email"),
     avatarUrl: text(record, "avatarUrl", "AvatarUrl", "avatar", "Avatar"),
     teachingLanguage: normalizeTeacherLanguage(
@@ -95,7 +102,7 @@ export async function getTeacherProfile(): Promise<TeacherProfileResponse> {
  * Complete/Update teacher profile
  */
 export async function completeTeacherProfile(
-  data: Omit<TeacherProfileData, "videoUrl">
+  data: Omit<TeacherProfileData, "videoUrl">,
 ): Promise<TeacherProfileResponse> {
   const response = await apiFetch<unknown>("/api/teachers/me", {
     method: "PUT",
@@ -115,7 +122,7 @@ export async function completeTeacherProfile(
  * Update teacher profile settings (including video)
  */
 export async function updateTeacherProfile(
-  data: Partial<TeacherProfileData>
+  data: Partial<TeacherProfileData>,
 ): Promise<TeacherProfileResponse> {
   const response = await apiFetch<unknown>("/api/teachers/me", {
     method: "PUT",
@@ -128,7 +135,9 @@ export async function updateTeacherProfile(
  * POST /api/teacher/profile/avatar
  * Upload teacher avatar image
  */
-export async function uploadTeacherAvatar(file: File): Promise<{ avatarUrl: string }> {
+export async function uploadTeacherAvatar(
+  file: File,
+): Promise<{ avatarUrl: string }> {
   const formData = new FormData();
   formData.append("file", file);
 
@@ -146,7 +155,9 @@ export async function uploadTeacherAvatar(file: File): Promise<{ avatarUrl: stri
  * POST /api/teacher/profile/video
  * Upload teacher introduction video
  */
-export async function uploadTeacherVideo(file: File): Promise<{ videoUrl: string }> {
+export async function uploadTeacherVideo(
+  file: File,
+): Promise<{ videoUrl: string }> {
   const formData = new FormData();
   formData.append("file", file);
 

@@ -43,6 +43,31 @@ function normalizeRole(raw: unknown): Role {
   return "student";
 }
 
+function fullNameFrom(...records: any[]): string {
+  for (const record of records) {
+    if (!record) continue;
+    const fullName =
+      record.fullName ?? record.FullName ?? record.name ?? record.Name;
+    if (typeof fullName === "string" && fullName.trim()) return fullName.trim();
+    const firstName =
+      record.firstName ??
+      record.FirstName ??
+      record.givenName ??
+      record.GivenName;
+    const lastName =
+      record.lastName ??
+      record.LastName ??
+      record.familyName ??
+      record.FamilyName;
+    const combined = [firstName, lastName]
+      .filter((part) => typeof part === "string" && part.trim())
+      .join(" ")
+      .trim();
+    if (combined) return combined;
+  }
+  return "";
+}
+
 function toAuthResponse(
   data: any,
   fallback: { fullName?: string; email?: string; role?: Role } = {},
@@ -51,7 +76,7 @@ function toAuthResponse(
     token: data.token ?? data.accessToken ?? "",
     user: {
       id: data.user?.id ?? data.id ?? "",
-      fullName: data.user?.fullName ?? data.fullName ?? fallback.fullName ?? "",
+      fullName: fullNameFrom(data.user, data) || fallback.fullName || "",
       email: data.user?.email ?? data.email ?? fallback.email ?? "",
       role: normalizeRole(data.user?.role ?? data.role ?? fallback.role),
     },
@@ -101,11 +126,12 @@ export async function register(input: {
 
 export async function fetchCurrentUser(): Promise<AuthUser> {
   const data = await apiFetch<any>("/api/auth/me");
+  const user = data.user ?? data;
   return {
-    id: data.id ?? "",
-    fullName: data.fullName ?? "",
-    email: data.email ?? "",
-    role: normalizeRole(data.role),
+    id: user.id ?? user.Id ?? "",
+    fullName: fullNameFrom(user, data),
+    email: user.email ?? user.Email ?? "",
+    role: normalizeRole(user.role ?? user.Role),
   };
 }
 

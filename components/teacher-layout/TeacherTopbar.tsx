@@ -18,7 +18,7 @@ import { teacherNavItems } from "@/lib/teacher-nav";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 import { stripLocale } from "@/lib/i18n/paths";
 import { clearSession, getEmail, getName } from "@/lib/auth-client";
-import { logoutApi } from "@/lib/api/auth";
+import { fetchCurrentUser, logoutApi } from "@/lib/api/auth";
 import { getTeacherProfile } from "@/lib/api/teacher-profile";
 import {
   getNotifications,
@@ -40,7 +40,7 @@ export default function TeacherTopbar({
   const current = teacherNavItems.find(
     (i) => i.href === stripLocale(pathname || "/"),
   );
-  const [name, setName] = useState("Teacher");
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
   const [unreadCount, setUnreadCount] = useState(0);
@@ -52,21 +52,27 @@ export default function TeacherTopbar({
 
   useEffect(() => {
     const n = getName();
-    if (n) setName(n);
+    if (n && n.trim().toLowerCase() !== "teacher") setName(n);
     setEmail(getEmail() || "");
 
     if (!isApiConfigured()) return;
     let active = true;
-    getTeacherProfile()
-      .then((profile) => {
+    Promise.allSettled([getTeacherProfile(), fetchCurrentUser()]).then(
+      ([profileResult, userResult]) => {
         if (!active) return;
-        if (profile.fullName) setName(profile.fullName);
-        if (profile.email) setEmail(profile.email);
-        if (profile.avatarUrl) setAvatarUrl(profile.avatarUrl);
-      })
-      .catch(() => {
-        // Keep the locally stored identity when profile data is unavailable.
-      });
+        if (profileResult.status === "fulfilled") {
+          const profile = profileResult.value;
+          if (profile.fullName) setName(profile.fullName);
+          if (profile.email) setEmail(profile.email);
+          if (profile.avatarUrl) setAvatarUrl(profile.avatarUrl);
+        }
+        if (userResult.status === "fulfilled") {
+          const user = userResult.value;
+          setName((currentName) => currentName || user.fullName);
+          setEmail((currentEmail) => currentEmail || user.email);
+        }
+      },
+    );
     return () => {
       active = false;
     };
@@ -251,10 +257,7 @@ export default function TeacherTopbar({
             />
             <div className="hidden sm:block text-start">
               <div className="text-[13.5px] font-semibold leading-tight">
-                {name}
-              </div>
-              <div className="text-[11px] text-muted leading-tight">
-                {t("auth.signup.teacher")}
+                {name || email || t("teacherAccountMenu.profileNameLoading")}
               </div>
             </div>
             <ChevronDown
