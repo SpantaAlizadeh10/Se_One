@@ -613,9 +613,11 @@ StudyStatistics: {
 - `GET /api/teacher/dashboard/schedule` - Get teacher's schedule
 - `GET /api/teacher/dashboard/students` - Get teacher's students
 - `GET /api/teacher/dashboard/earnings` - Get teacher's earnings
-- `POST /api/teacher/dashboard/withdrawals` - Submit a teacher withdrawal request (`{ amount, iban }`)
+- `POST /api/teacher/dashboard/withdrawals` - Submit and reserve a teacher withdrawal request (`{ amount, iban }`); server rejects amounts exceeding the withdrawable balance
 - `GET /api/teacher/dashboard/analytics` - Get teacher's analytics
 - `GET /api/teacher/dashboard/overview` - Get complete dashboard overview
+- `GET /api/admin/withdrawals` - Admin-only withdrawal request queue
+- `PATCH /api/admin/withdrawals/{withdrawalId}/status` - Admin approves/rejects a pending request and triggers a teacher payment notification
 
 ### Data Model
 
@@ -657,11 +659,24 @@ TeacherEarnings: {
   teacherId: string;
   period: string;
   totalEarnings: number;
+  availableBalance: number; // after pending reservations and paid withdrawals
   currency: string;
   completedClasses: number;
   totalHours: number;
   hourlyRate: number;
   breakdown: { date: string; earnings: number; hours: number; classes: number }[];
+}
+
+WithdrawalRequest: {
+  id: string;
+  teacherId: string;
+  teacherName: string;
+  teacherEmail: string;
+  amount: number;
+  currency: string;
+  iban: string;
+  status: "pending" | "approved" | "rejected";
+  requestedAt: string;
 }
 
 TeacherAnalytics: {
@@ -736,6 +751,8 @@ For messaging and typing status:
 - Consider implementing SignalR for real-time updates
 - The API endpoints provided are polling-based fallbacks
 - Real-time implementation can replace polling where beneficial
+
+For native WebRTC calls, implement authenticated `POST /api/calls/realtime-token`. It returns a short-lived Supabase-compatible JWT for the current app user and optional ICE servers. The signed token must scope call access to actual teacher/student relationships; do not trust caller-supplied IDs. The public teacher directory must include the teacher's identity `userId`, and teacher student records must use the student identity ID. See [WEBRTC_CALLING_SETUP.md](WEBRTC_CALLING_SETUP.md) for Supabase RLS, the expiring `call_invites` table, and token claims.
 
 ---
 

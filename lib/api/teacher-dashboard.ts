@@ -46,6 +46,8 @@ export type TeacherEarnings = {
   teacherId: string;
   period: string;
   totalEarnings: number;
+  /** Earnings not already paid or reserved by a pending withdrawal. */
+  availableBalance: number;
   currency: string;
   completedClasses: number;
   totalHours: number;
@@ -287,6 +289,11 @@ export async function getTeacherEarnings(
     teacherId: text(record, "teacherId", "TeacherId"),
     period: text(record, "period", "Period"),
     totalEarnings: numberValue(record, "totalEarnings", "TotalEarnings"),
+    availableBalance: numberValue(
+      record,
+      "availableBalance",
+      "AvailableBalance",
+    ),
     currency: text(record, "currency", "Currency"),
     completedClasses: numberValue(
       record,
@@ -437,6 +444,11 @@ export async function getTeacherDashboardOverview(): Promise<{
               "totalEarnings",
               "TotalEarnings",
             ),
+            availableBalance: numberValue(
+              earnings,
+              "availableBalance",
+              "AvailableBalance",
+            ),
             currency: text(earnings, "currency", "Currency"),
             completedClasses: numberValue(
               earnings,
@@ -460,6 +472,7 @@ export async function getTeacherDashboardOverview(): Promise<{
           teacherId: "",
           period: "",
           totalEarnings: 0,
+          availableBalance: 0,
           currency: "IRR",
           completedClasses: 0,
           totalHours: 0,

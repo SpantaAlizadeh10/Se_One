@@ -2,20 +2,20 @@
 
 This document defines **`/api/admin/*`** endpoints for the C# backend. The admin panel uses them to manage:
 
-1. **Public site** — courses, pricing/discounts, blog, site settings  
-2. **Student dashboard data** — student accounts, enrollments, progress, account status  
-3. **Teacher dashboard data** — teacher profiles, approval workflow, availability, assigned students  
+1. **Public site** — courses, pricing/discounts, blog, site settings
+2. **Student dashboard data** — student accounts, enrollments, progress, account status
+3. **Teacher dashboard data** — teacher profiles, approval workflow, availability, assigned students
 
 All admin routes require an authenticated user with role **`Admin`**. Return **403 Forbidden** for other roles.
 
 ## Relationship to existing APIs
 
-| Audience | Base path | Who calls it |
-|----------|-----------|--------------|
-| Public / marketing | `/api/courses`, `/api/blog`, `/api/teachers` | Website visitors |
-| Student | `/api/enrollment/*`, `/api/progress/*`, `/api/learning/*` | Student dashboard |
-| Teacher | `/api/teacher/*` (see below) | Teacher dashboard |
-| Admin | `/api/admin/*` | Admin panel |
+| Audience           | Base path                                                 | Who calls it      |
+| ------------------ | --------------------------------------------------------- | ----------------- |
+| Public / marketing | `/api/courses`, `/api/blog`, `/api/teachers`              | Website visitors  |
+| Student            | `/api/enrollment/*`, `/api/progress/*`, `/api/learning/*` | Student dashboard |
+| Teacher            | `/api/teacher/*` (see below)                              | Teacher dashboard |
+| Admin              | `/api/admin/*`                                            | Admin panel       |
 
 Student and teacher dashboards keep using their own endpoints. Admin endpoints **read and override** the same underlying entities (users, courses, enrollments) without replacing student/teacher APIs.
 
@@ -70,19 +70,19 @@ Frontend accepts a bare array **or** this shape (see `lib/api/admin.ts`).
 
 Used for students (and optionally teachers):
 
-| Value | Meaning |
-|-------|---------|
-| `active` | Full access to dashboard |
+| Value       | Meaning                                  |
+| ----------- | ---------------------------------------- |
+| `active`    | Full access to dashboard                 |
 | `suspended` | Read-only or limited login (your choice) |
-| `banned` | Cannot log in |
+| `banned`    | Cannot log in                            |
 
 Teacher-specific workflow status:
 
-| Value | Meaning |
-|-------|---------|
-| `pending` | Awaiting admin approval |
-| `active` | Listed on site + teacher dashboard |
-| `suspended` | Hidden / no new bookings |
+| Value       | Meaning                            |
+| ----------- | ---------------------------------- |
+| `pending`   | Awaiting admin approval            |
+| `active`    | Listed on site + teacher dashboard |
+| `suspended` | Hidden / no new bookings           |
 
 ### Errors
 
@@ -167,16 +167,16 @@ Update publish flag and/or metadata (not student-facing lesson content if you pr
 
 Admin can manage content used by **student learning flow**. Reuse the same DTOs as public APIs; require Admin role on write operations.
 
-| Method | Path | Purpose |
-|--------|------|---------|
-| GET | `/api/admin/courses/{courseId}/modules` | List modules |
-| POST | `/api/admin/courses/{courseId}/modules` | Create module |
-| PATCH | `/api/admin/modules/{moduleId}` | Update module |
-| DELETE | `/api/admin/modules/{moduleId}` | Delete module |
-| GET | `/api/admin/modules/{moduleId}/lessons` | List lessons |
-| POST | `/api/admin/modules/{moduleId}/lessons` | Create lesson |
-| PATCH | `/api/admin/lessons/{lessonId}` | Update lesson body, video URLs |
-| DELETE | `/api/admin/lessons/{lessonId}` | Delete lesson |
+| Method | Path                                    | Purpose                        |
+| ------ | --------------------------------------- | ------------------------------ |
+| GET    | `/api/admin/courses/{courseId}/modules` | List modules                   |
+| POST   | `/api/admin/courses/{courseId}/modules` | Create module                  |
+| PATCH  | `/api/admin/modules/{moduleId}`         | Update module                  |
+| DELETE | `/api/admin/modules/{moduleId}`         | Delete module                  |
+| GET    | `/api/admin/modules/{moduleId}/lessons` | List lessons                   |
+| POST   | `/api/admin/modules/{moduleId}/lessons` | Create lesson                  |
+| PATCH  | `/api/admin/lessons/{lessonId}`         | Update lesson body, video URLs |
+| DELETE | `/api/admin/lessons/{lessonId}`         | Delete lesson                  |
 
 Alternatively, add `[Authorize(Roles = "Admin")]` to existing module/lesson POST/PATCH/DELETE on `/api/modules` and `/api/lessons` if you prefer one route tree.
 
@@ -351,6 +351,7 @@ Query: `search`, `status` (`pending` | `active` | `suspended`), pagination.
 Create teacher (user + profile), default `status`: `pending`.
 
 **Request:**
+
 ```json
 {
   "fullName": "Ms. Harlow",
@@ -371,6 +372,7 @@ Create teacher (user + profile), default `status`: `pending`.
 Update profile fields and `rating` if manually curated.
 
 **Request (partial):**
+
 ```json
 {
   "fullName": "Updated Name",
@@ -433,23 +435,65 @@ Replace all slots (admin override).
 
 ---
 
-## 7. Teacher-facing API (non-admin, for reference)
+## 7. Teacher withdrawals (admin approval)
+
+All endpoints below require the indicated role. Withdrawal amounts are in the teacher's earnings currency.
+
+### GET /api/admin/withdrawals
+
+Admin-only paginated list. Supports `status` (`pending` | `approved` | `rejected`), `page`, and `pageSize`. The admin dashboard initially filters to pending requests.
+
+**Response item:**
+
+```json
+{
+  "id": "withdrawal-id",
+  "teacherId": "teacher-id",
+  "teacherName": "Teacher Name",
+  "teacherEmail": "teacher@example.com",
+  "amount": 1200000,
+  "currency": "IRR",
+  "iban": "IR000000000000000000000000",
+  "status": "pending",
+  "requestedAt": "2026-10-04T10:30:00Z"
+}
+```
+
+### PATCH /api/admin/withdrawals/{withdrawalId}/status
+
+Admin approves or rejects a pending request. Only a `pending` request can transition; return 409 for a request already decided.
+
+**Request:** `{ "status": "approved" | "rejected" }`
+
+On approval, record the payout decision/actor/time and deduct the approved amount from the teacher's withdrawable balance. On rejection, release the pending reservation back to the teacher's available balance. In the same transaction (or via a reliable outbox), create a `payment` notification addressed to the request's teacher, with a localized-safe title/message indicating approved or rejected and an `actionUrl` back to `/teacher`. The notification must appear in `GET /api/notifications` and update `/api/notifications/stats`.
+
+### Teacher withdrawal contract and balance enforcement
+
+- `GET /api/teacher/dashboard/earnings` and the earnings object in `/api/teacher/dashboard/overview` must include `availableBalance`, the server-calculated amount currently eligible to withdraw after subtracting prior payouts and all pending withdrawal reservations.
+- `POST /api/teacher/dashboard/withdrawals` — Teacher-only; request body `{ "amount": 1200000, "iban": "IR..." }`; create a `pending` request and reserve its amount.
+- The backend MUST validate `amount > 0` and `amount <= availableBalance` against authoritative ledger data in an atomic transaction/row lock. Reject stale or excessive requests with HTTP 400/409 and a ProblemDetails message. Concurrent requests must not reserve more than the current balance. Frontend `min`/`max` checks are usability only and are not a security boundary.
+- Rejected requests release their reservation; approved requests become paid/deducted. Do not make the same request payable twice.
+- The teacher is notified after the admin decision through the notification record described above.
+
+---
+
+## 8. Teacher-facing API (non-admin, for reference)
 
 Implement these for the **teacher dashboard**; admin uses `/api/admin/teachers/*` to manage the same records.
 
-| Method | Path | Role |
-|--------|------|------|
-| GET | `/api/teacher/me` | Teacher |
-| GET | `/api/teacher/students` | Teacher |
-| GET | `/api/teacher/classes` | Teacher |
+| Method  | Path                        | Role    |
+| ------- | --------------------------- | ------- |
+| GET     | `/api/teacher/me`           | Teacher |
+| GET     | `/api/teacher/students`     | Teacher |
+| GET     | `/api/teacher/classes`      | Teacher |
 | GET/PUT | `/api/teacher/availability` | Teacher |
-| GET | `/api/teacher/schedule` | Teacher |
+| GET     | `/api/teacher/schedule`     | Teacher |
 
 Admin does **not** call these with a teacher token; admin uses admin routes above.
 
 ---
 
-## 8. Enrollments & progress (cross-cutting)
+## 9. Enrollments & progress (cross-cutting)
 
 ### GET /api/admin/enrollments
 
@@ -461,23 +505,23 @@ Query: `courseId`, `studentId`, `status`, pagination.
 
 ---
 
-## 9. Optional — messaging & assignments (later phase)
+## 10. Optional — messaging & assignments (later phase)
 
 When SignalR/messaging exists:
 
-- `GET /api/admin/conversations` — moderation list  
-- `DELETE /api/admin/messages/{messageId}` — remove abuse  
+- `GET /api/admin/conversations` — moderation list
+- `DELETE /api/admin/messages/{messageId}` — remove abuse
 
 Assignments (teacher/student dashboards):
 
-- `GET /api/admin/assignments`  
-- `PATCH /api/admin/assignments/{id}` — override grade or due date  
+- `GET /api/admin/assignments`
+- `PATCH /api/admin/assignments/{id}` — override grade or due date
 
 Keep as Phase 2; frontend can stay on `messages-store` until then.
 
 ---
 
-## 10. Suggested C# project structure
+## 11. Suggested C# project structure
 
 ```
 Controllers/
@@ -485,6 +529,7 @@ Controllers/
     AdminDashboardController.cs
     AdminStudentsController.cs
     AdminTeachersController.cs
+    AdminWithdrawalsController.cs
     AdminCoursesController.cs
     AdminBlogController.cs
     AdminSettingsController.cs
@@ -495,6 +540,7 @@ Controllers/
 Services/
   IAdminStudentService.cs
   IAdminTeacherService.cs
+  IAdminWithdrawalService.cs
   ICoursePricingService.cs
 ```
 
@@ -502,25 +548,26 @@ Use a single `ApplicationUser` with roles; `TeacherProfile` and `StudentProfile`
 
 ---
 
-## 11. Frontend integration
+## 12. Frontend integration
 
-- Client: `lib/api/admin.ts`  
-- Admin login: `POST /api/auth/login` → verify `user.role === "admin"`  
-- Replace mock state in `app/[lang]/(admin)/admin/**` with hooks calling `lib/api/admin.ts`  
-- Course discounts: remove reliance on `localStorage` once `PATCH /api/admin/courses/{id}/pricing` is live  
+- Client: `lib/api/admin.ts`
+- Admin login: `POST /api/auth/login` → verify `user.role === "admin"`
+- Replace mock state in `app/[lang]/(admin)/admin/**` with hooks calling `lib/api/admin.ts`
+- Course discounts: remove reliance on `localStorage` once `PATCH /api/admin/courses/{id}/pricing` is live
 
 See `BACKEND_INTEGRATION_PLAN.md` — **Phase Admin**.
 
 ---
 
-## 12. Implementation priority for C# team
+## 13. Implementation priority for C# team
 
-1. Auth with **Admin** role + authorize all `/api/admin/*`  
-2. `GET /api/admin/dashboard/stats`  
-3. Students CRUD + status + enrollments list  
-4. Teachers CRUD + status + availability  
-5. Course pricing PATCH (unblocks marketing site)  
-6. Blog CRUD  
-7. Modules/lessons admin writes  
-8. Settings PATCH  
-9. Messaging / assignments (Phase 2)
+1. Auth with **Admin** role + authorize all `/api/admin/*`
+2. `GET /api/admin/dashboard/stats`
+3. Students CRUD + status + enrollments list
+4. Teachers CRUD + status + availability
+5. Teacher withdrawal ledger + teacher/admin APIs + decision notifications
+6. Course pricing PATCH (unblocks marketing site)
+7. Blog CRUD
+8. Modules/lessons admin writes
+9. Settings PATCH
+10. Messaging / assignments (Phase 2)

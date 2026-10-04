@@ -4,13 +4,21 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 
-export const dynamic = 'force-dynamic';
-export const fetchCache = 'force-no-store';
-import { Star, Clock, Check, ChevronDown, ChevronUp, Video } from "lucide-react";
+export const dynamic = "force-dynamic";
+export const fetchCache = "force-no-store";
+import {
+  Star,
+  Clock,
+  Check,
+  ChevronDown,
+  ChevronUp,
+  Video,
+} from "lucide-react";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 import { useTeachers } from "@/lib/use-teachers";
 import { bookTeacherSlot } from "@/lib/api/availability";
 import { getRoomId } from "@/lib/video-call";
+import CallActions from "@/components/calls/CallActions";
 
 export default function FindTeacherPage() {
   const { t, href } = useLanguage();
@@ -20,11 +28,12 @@ export default function FindTeacherPage() {
   const [toast, setToast] = useState<string | null>(null);
 
   useEffect(() => {
-    if (teachers.length > 0) setExpandedId((current) => current ?? teachers[0].id);
+    if (teachers.length > 0)
+      setExpandedId((current) => current ?? teachers[0].id);
   }, [teachers]);
 
   const bookedSlots = teachers.flatMap((teacher) =>
-    teacher.slots.filter((s) => s.booked).map((s) => ({ teacher, slot: s }))
+    teacher.slots.filter((s) => s.booked).map((s) => ({ teacher, slot: s })),
   );
 
   const bookSlot = async (teacherId: string, slotId: string) => {
@@ -43,7 +52,9 @@ export default function FindTeacherPage() {
     <div>
       <div className="mb-6 flex items-center justify-between gap-4 flex-wrap">
         <div>
-          <h2 className="font-serif text-[22px] sm:text-[25px] font-semibold mb-1">{p.heading}</h2>
+          <h2 className="font-serif text-[22px] sm:text-[25px] font-semibold mb-1">
+            {p.heading}
+          </h2>
           <p className="text-muted text-[14px] m-0">{p.sub}</p>
         </div>
       </div>
@@ -60,16 +71,29 @@ export default function FindTeacherPage() {
           <h3 className="text-[13.5px] font-bold mb-3">{p.myBookings}</h3>
           <div className="flex flex-col gap-2">
             {bookedSlots.map(({ teacher, slot }) => (
-              <div key={slot.id} className="flex items-center gap-3 bg-cream rounded-xl p-2.5 flex-wrap">
-                <Image src={teacher.avatar} alt={teacher.name} width={32} height={32} className="rounded-full object-cover shrink-0" />
+              <div
+                key={slot.id}
+                className="flex items-center gap-3 bg-cream rounded-xl p-2.5 flex-wrap"
+              >
+                <Image
+                  src={teacher.avatar}
+                  alt={teacher.name}
+                  width={32}
+                  height={32}
+                  className="rounded-full object-cover shrink-0"
+                />
                 <div className="min-w-0 flex-1">
-                  <div className="text-[12.5px] font-semibold truncate">{teacher.name}</div>
+                  <div className="text-[12.5px] font-semibold truncate">
+                    {teacher.name}
+                  </div>
                   <div className="text-[11px] text-muted">
                     {slot.day} · {slot.time}
                   </div>
                 </div>
                 <Link
-                  href={href(`/dashboard/call/${getRoomId(teacher.id, slot.id)}?with=${encodeURIComponent(teacher.name)}`)}
+                  href={href(
+                    `/dashboard/call/${getRoomId(teacher.id, slot.id)}?with=${encodeURIComponent(teacher.name)}`,
+                  )}
                   className="inline-flex items-center gap-1.5 text-[11px] font-bold text-white bg-blue hover:bg-blueDeep px-3 py-1.5 rounded-full shrink-0 transition-colors"
                 >
                   <Video size={12} />
@@ -85,15 +109,26 @@ export default function FindTeacherPage() {
         {teachers.map((teacher) => {
           const isExpanded = expandedId === teacher.id;
           return (
-            <div key={teacher.id} className="bg-white border border-line rounded-lg shadow-card overflow-hidden">
+            <div
+              key={teacher.id}
+              className="bg-white border border-line rounded-lg shadow-card overflow-hidden"
+            >
               <button
                 onClick={() => setExpandedId(isExpanded ? null : teacher.id)}
                 className="w-full flex items-center gap-4 p-4 text-start"
               >
-                <Image src={teacher.avatar} alt={teacher.name} width={52} height={52} className="rounded-full object-cover shrink-0" />
+                <Image
+                  src={teacher.avatar}
+                  alt={teacher.name}
+                  width={52}
+                  height={52}
+                  className="rounded-full object-cover shrink-0"
+                />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-[14.5px] font-semibold">{teacher.name}</span>
+                    <span className="text-[14.5px] font-semibold">
+                      {teacher.name}
+                    </span>
                     <span className="flex items-center gap-1 text-[11.5px] font-bold text-goldDeep bg-goldSoft px-2 py-0.5 rounded-full">
                       <Star size={11} fill="currentColor" /> {teacher.rating}
                     </span>
@@ -101,7 +136,9 @@ export default function FindTeacherPage() {
                   <div className="text-[12px] text-muted mt-0.5">
                     {teacher.subject} · {teacher.level}
                   </div>
-                  <p className="text-[12px] text-ink70 mt-1 leading-relaxed hidden sm:block">{teacher.bio}</p>
+                  <p className="text-[12px] text-ink70 mt-1 leading-relaxed hidden sm:block">
+                    {teacher.bio}
+                  </p>
                 </div>
                 {isExpanded ? (
                   <ChevronUp size={18} className="text-ink70 shrink-0" />
@@ -112,6 +149,10 @@ export default function FindTeacherPage() {
 
               {isExpanded && (
                 <div className="border-t border-line p-4">
+                  <CallActions
+                    peerId={teacher.userId}
+                    peerName={teacher.name}
+                  />
                   <p className="text-[12px] font-semibold text-ink70 mb-3 flex items-center gap-1.5">
                     <Clock size={13} /> {p.viewSlots}
                   </p>
@@ -122,18 +163,28 @@ export default function FindTeacherPage() {
                       {teacher.slots.map((slot) => (
                         <div
                           key={slot.id}
-                          className={`flex items-center justify-between gap-2 rounded-xl border px-3.5 py-2.5 ${slot.booked ? "bg-cream border-line" : "bg-white border-sage"
-                            }`}
+                          className={`flex items-center justify-between gap-2 rounded-xl border px-3.5 py-2.5 ${
+                            slot.booked
+                              ? "bg-cream border-line"
+                              : "bg-white border-sage"
+                          }`}
                         >
                           <div>
-                            <div className="text-[12.5px] font-semibold">{slot.day}</div>
-                            <div className="text-[11px] text-muted">{slot.time}</div>
+                            <div className="text-[12.5px] font-semibold">
+                              {slot.day}
+                            </div>
+                            <div className="text-[11px] text-muted">
+                              {slot.time}
+                            </div>
                           </div>
                           <button
                             disabled={slot.booked}
                             onClick={() => bookSlot(teacher.id, slot.id)}
-                            className={`text-[11px] font-bold px-3 py-1.5 rounded-full shrink-0 transition-colors ${slot.booked ? "bg-line text-muted cursor-not-allowed" : "bg-blue text-white hover:bg-blueDeep"
-                              }`}
+                            className={`text-[11px] font-bold px-3 py-1.5 rounded-full shrink-0 transition-colors ${
+                              slot.booked
+                                ? "bg-line text-muted cursor-not-allowed"
+                                : "bg-blue text-white hover:bg-blueDeep"
+                            }`}
                           >
                             {slot.booked ? p.bookedBtn : p.bookBtn}
                           </button>

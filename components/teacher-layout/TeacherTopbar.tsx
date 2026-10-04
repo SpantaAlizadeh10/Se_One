@@ -21,8 +21,11 @@ import { clearSession, getEmail, getName } from "@/lib/auth-client";
 import { logoutApi } from "@/lib/api/auth";
 import { getTeacherProfile } from "@/lib/api/teacher-profile";
 import {
+  getNotifications,
   getNotificationStats,
   markAllNotificationsAsRead,
+  markNotificationAsRead,
+  type Notification,
 } from "@/lib/api/notifications";
 import { isApiConfigured } from "@/lib/is-api-configured";
 
@@ -41,6 +44,7 @@ export default function TeacherTopbar({
   const [email, setEmail] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
   const [unreadCount, setUnreadCount] = useState(0);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showAccountMenu, setShowAccountMenu] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
@@ -90,8 +94,12 @@ export default function TeacherTopbar({
 
     const loadNotifications = async () => {
       try {
-        const stats = await getNotificationStats();
+        const [stats, items] = await Promise.all([
+          getNotificationStats(),
+          getNotifications({ limit: 6 }),
+        ]);
         setUnreadCount(stats.unread);
+        setNotifications(items);
       } catch (error) {
         console.error("Failed to load notifications:", error);
       }
@@ -106,8 +114,26 @@ export default function TeacherTopbar({
     try {
       await markAllNotificationsAsRead();
       setUnreadCount(0);
+      setNotifications((items) =>
+        items.map((item) => ({ ...item, isRead: true })),
+      );
     } catch (error) {
       console.error("Failed to mark all as read:", error);
+    }
+  };
+
+  const handleMarkRead = async (notification: Notification) => {
+    if (notification.isRead) return;
+    try {
+      await markNotificationAsRead(notification.id);
+      setNotifications((items) =>
+        items.map((item) =>
+          item.id === notification.id ? { ...item, isRead: true } : item,
+        ),
+      );
+      setUnreadCount((count) => Math.max(0, count - 1));
+    } catch (error) {
+      console.error("Failed to mark notification as read:", error);
     }
   };
 
@@ -136,7 +162,12 @@ export default function TeacherTopbar({
       <div className="flex items-center gap-2 sm:gap-3 shrink-0">
         <div className="relative">
           <button
-            onClick={() => setShowNotifications(!showNotifications)}
+            onClick={() => {
+              setShowAccountMenu(false);
+              setShowNotifications((open) => !open);
+            }}
+            aria-label={t("teacherNotifications.title")}
+            aria-expanded={showNotifications}
             className="relative w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white border border-line flex items-center justify-center text-ink70 hover:border-ink transition-colors"
           >
             <Bell size={17} />
@@ -147,21 +178,48 @@ export default function TeacherTopbar({
           {showNotifications && (
             <div className="absolute top-full right-0 mt-2 w-80 bg-white border border-line rounded-lg shadow-card z-50">
               <div className="p-4 border-b border-line flex items-center justify-between">
-                <h3 className="text-[13.5px] font-semibold">Notifications</h3>
+                <h3 className="text-[13.5px] font-semibold">
+                  {t("teacherNotifications.title")}
+                </h3>
                 {unreadCount > 0 && (
                   <button
                     onClick={handleMarkAllRead}
                     className="text-[12px] text-blue hover:text-blueDeep font-medium"
                   >
-                    Mark all as read
+                    {t("teacherNotifications.markAllRead")}
                   </button>
                 )}
               </div>
-              <div className="p-4 text-center text-muted text-[13px]">
-                {unreadCount === 0
-                  ? "No new notifications"
-                  : `${unreadCount} unread notification${unreadCount > 1 ? "s" : ""}`}
-              </div>
+              {notifications.length === 0 ? (
+                <div className="p-5 text-center text-muted text-[13px]">
+                  {t("teacherNotifications.empty")}
+                </div>
+              ) : (
+                <div className="max-h-80 overflow-y-auto divide-y divide-line">
+                  {notifications.map((notification) => (
+                    <button
+                      key={notification.id}
+                      type="button"
+                      onClick={() => handleMarkRead(notification)}
+                      className={`w-full px-4 py-3 text-start hover:bg-cream ${notification.isRead ? "bg-white" : "bg-blue/5"}`}
+                    >
+                      <span className="flex items-start gap-2">
+                        <span
+                          className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${notification.isRead ? "bg-transparent" : "bg-blue"}`}
+                        />
+                        <span className="min-w-0">
+                          <span className="block text-[12.5px] font-semibold text-ink">
+                            {notification.title}
+                          </span>
+                          <span className="mt-0.5 block text-[11.5px] leading-relaxed text-muted">
+                            {notification.message}
+                          </span>
+                        </span>
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
               <button
                 onClick={() => setShowNotifications(false)}
                 className="absolute top-2 right-2 w-6 h-6 rounded-full flex items-center justify-center text-muted hover:text-ink hover:bg-cream"

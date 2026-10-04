@@ -411,6 +411,85 @@ export async function deleteAdminTeacher(teacherId: string): Promise<void> {
   await apiFetch(`/api/admin/teachers/${teacherId}`, { method: "DELETE" });
 }
 
+// --- Teacher withdrawals ---
+
+export type AdminWithdrawalStatus = "pending" | "approved" | "rejected";
+
+export type AdminWithdrawalRequest = {
+  id: string;
+  teacherId: string;
+  teacherName: string;
+  teacherEmail: string;
+  amount: number;
+  currency: string;
+  iban: string;
+  status: AdminWithdrawalStatus;
+  requestedAt: string;
+};
+
+function normalizeWithdrawal(
+  raw: unknown,
+  index: number,
+): AdminWithdrawalRequest | null {
+  const r = (raw ?? {}) as ApiRecord;
+  const id = text(r, "id", "Id", "withdrawalId", "WithdrawalId");
+  if (!id) return null;
+  const rawStatus = text(r, "status", "Status").toLowerCase();
+  const status: AdminWithdrawalStatus =
+    rawStatus === "approved" || rawStatus === "rejected"
+      ? rawStatus
+      : "pending";
+  return {
+    id: id || `withdrawal-${index}`,
+    teacherId: text(r, "teacherId", "TeacherId"),
+    teacherName: text(r, "teacherName", "TeacherName", "fullName", "FullName"),
+    teacherEmail: text(r, "teacherEmail", "TeacherEmail", "email", "Email"),
+    amount: numberValue(r, "amount", "Amount"),
+    currency: text(r, "currency", "Currency") || "IRR",
+    iban: text(r, "iban", "Iban", "IBAN"),
+    status,
+    requestedAt: text(
+      r,
+      "requestedAt",
+      "RequestedAt",
+      "createdAt",
+      "CreatedAt",
+    ),
+  };
+}
+
+export async function listAdminWithdrawals(
+  query: ListQuery = {},
+): Promise<PagedResult<AdminWithdrawalRequest>> {
+  const data = await apiFetch<unknown>(
+    `/api/admin/withdrawals${toQuery(query)}`,
+  );
+  return unwrapPaged(data, normalizeWithdrawal);
+}
+
+export async function setAdminWithdrawalStatus(
+  withdrawalId: string,
+  status: Exclude<AdminWithdrawalStatus, "pending">,
+): Promise<AdminWithdrawalRequest> {
+  const data = await apiFetch<unknown>(
+    `/api/admin/withdrawals/${encodeURIComponent(withdrawalId)}/status`,
+    { method: "PATCH", body: { status } },
+  );
+  return (
+    normalizeWithdrawal(data, 0) ?? {
+      id: withdrawalId,
+      teacherId: "",
+      teacherName: "",
+      teacherEmail: "",
+      amount: 0,
+      currency: "IRR",
+      iban: "",
+      status,
+      requestedAt: "",
+    }
+  );
+}
+
 export type AdminTeacherStudentLink = {
   studentId: string;
   fullName: string;
@@ -581,7 +660,9 @@ export async function createAdminCourse(
   return normalizeAdminCourse(data, 0)!;
 }
 
-export async function uploadCourseImage(file: File): Promise<{ imageUrl: string }> {
+export async function uploadCourseImage(
+  file: File,
+): Promise<{ imageUrl: string }> {
   const formData = new FormData();
   formData.append("file", file);
 
@@ -611,7 +692,9 @@ export async function patchAdminCoursePricing(
 
 export async function updateAdminCourse(
   courseId: string,
-  body: Partial<Pick<AdminCourse, "title" | "level" | "isPublished" | "isFeatured">>,
+  body: Partial<
+    Pick<AdminCourse, "title" | "level" | "isPublished" | "isFeatured">
+  >,
 ): Promise<AdminCourse> {
   const data = await apiFetch<unknown>(`/api/admin/courses/${courseId}`, {
     method: "PATCH",

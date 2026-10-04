@@ -15,6 +15,7 @@ import {
   X,
   ShieldCheck,
   Ticket,
+  Wallet,
 } from "lucide-react";
 import { adminNavItems } from "@/lib/admin-nav";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
@@ -27,6 +28,7 @@ const icons: Record<string, React.ElementType> = {
   "/admin": LayoutDashboard,
   "/admin/students": Users,
   "/admin/teachers": GraduationCap,
+  "/admin/withdrawals": Wallet,
   "/admin/courses": Tag,
   "/admin/blog": FileText,
   "/admin/tickets": Ticket,

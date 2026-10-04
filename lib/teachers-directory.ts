@@ -7,6 +7,8 @@ export type AvailabilitySlot = {
 
 export type TeacherProfile = {
   id: string;
+  /** ASP.NET identity user id; used as the call recipient and Realtime identity. */
+  userId?: string;
   name: string;
   avatar: string;
   teachingLanguage: "english" | "german";

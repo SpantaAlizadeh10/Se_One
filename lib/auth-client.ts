@@ -6,6 +6,7 @@ import type { AuthResponse } from "./api/auth";
 export type Role = "student" | "teacher" | "admin";
 
 const ROLE_KEY = "se-one-role";
+const USER_ID_KEY = "se-one-user-id";
 const NAME_KEY = "se-one-name";
 const EMAIL_KEY = "se-one-email";
 
@@ -13,6 +14,7 @@ const EMAIL_KEY = "se-one-email";
 export function storeAuth(auth: AuthResponse) {
   if (typeof window === "undefined") return;
   setToken(auth.token || null);
+  window.localStorage.setItem(USER_ID_KEY, auth.user.id || "");
   window.localStorage.setItem(ROLE_KEY, auth.user.role);
   window.localStorage.setItem(NAME_KEY, auth.user.fullName || "");
   window.localStorage.setItem(EMAIL_KEY, auth.user.email || "");
@@ -22,6 +24,16 @@ export function getRole(): Role | null {
   if (typeof window === "undefined") return null;
   const r = window.localStorage.getItem(ROLE_KEY);
   return r === "student" || r === "teacher" || r === "admin" ? r : null;
+}
+
+export function getUserId(): string | null {
+  if (typeof window === "undefined") return null;
+  return window.localStorage.getItem(USER_ID_KEY);
+}
+
+export function setUserId(userId: string): void {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(USER_ID_KEY, userId);
 }
 
 export function getName(): string | null {
@@ -37,6 +49,7 @@ export function getEmail(): string | null {
 export function clearSession() {
   if (typeof window === "undefined") return;
   setToken(null);
+  window.localStorage.removeItem(USER_ID_KEY);
   window.localStorage.removeItem(ROLE_KEY);
   window.localStorage.removeItem(NAME_KEY);
   window.localStorage.removeItem(EMAIL_KEY);

@@ -87,6 +87,7 @@ function normalizeTeacher(raw: unknown, index: number): TeacherProfile | null {
 
   return {
     id,
+    userId: text(record, "userId", "UserId") || undefined,
     name,
     avatar:
       text(

@@ -62,6 +62,7 @@ export default function TeacherOverviewPage() {
 
   const monthlyEarnings =
     earnings?.totalEarnings ?? analytics?.currentMonthEarnings ?? 0;
+  const availableBalance = earnings?.availableBalance ?? 0;
   const formatNumber = (value: number) =>
     new Intl.NumberFormat(lang === "fa" ? "fa-IR" : "en-US").format(value);
   const currency = earnings?.currency || "IRR";
@@ -69,7 +70,7 @@ export default function TeacherOverviewPage() {
   const submitWithdrawal = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const amount = Number(withdrawalAmount);
-    if (!Number.isFinite(amount) || amount <= 0 || amount > monthlyEarnings) {
+    if (!Number.isFinite(amount) || amount <= 0 || amount > availableBalance) {
       setWithdrawalState("error");
       setWithdrawalError(d.earnings.invalidAmount);
       return;
@@ -81,6 +82,14 @@ export default function TeacherOverviewPage() {
       await requestTeacherWithdrawal(amount, iban.trim());
       setWithdrawalState("success");
       setWithdrawalAmount("");
+      getTeacherDashboardOverview()
+        .then((overview) => {
+          setEarnings(overview.earnings);
+          setAnalytics(overview.analytics);
+        })
+        .catch(() => {
+          // Keep the accepted request state if the balance refresh fails.
+        });
     } catch (error) {
       setWithdrawalState("error");
       setWithdrawalError(
@@ -198,7 +207,7 @@ export default function TeacherOverviewPage() {
                 {d.earnings.withdrawTitle}
               </h3>
               <p className="text-[12px] text-muted m-0 mt-1">
-                {d.earnings.available}: {formatNumber(monthlyEarnings)}{" "}
+                {d.earnings.available}: {formatNumber(availableBalance)}{" "}
                 {currency}
               </p>
             </div>
@@ -212,7 +221,7 @@ export default function TeacherOverviewPage() {
               <input
                 type="number"
                 min="1"
-                max={monthlyEarnings}
+                max={availableBalance}
                 step="1"
                 required
                 value={withdrawalAmount}
@@ -243,7 +252,7 @@ export default function TeacherOverviewPage() {
               <button
                 type="submit"
                 disabled={
-                  withdrawalState === "submitting" || monthlyEarnings <= 0
+                  withdrawalState === "submitting" || availableBalance <= 0
                 }
                 className="rounded-lg bg-blue px-4 py-2.5 text-[13px] font-semibold text-white hover:bg-blue/90 disabled:cursor-not-allowed disabled:opacity-50"
               >
@@ -251,6 +260,11 @@ export default function TeacherOverviewPage() {
                   ? d.earnings.sending
                   : d.earnings.requestButton}
               </button>
+              {availableBalance <= 0 && withdrawalState !== "submitting" && (
+                <p className="text-[12px] text-muted m-0">
+                  {d.earnings.noAvailableBalance}
+                </p>
+              )}
               {withdrawalState === "success" && (
                 <p role="status" className="text-[12px] text-sageDeep m-0">
                   {d.earnings.requestSuccess}
