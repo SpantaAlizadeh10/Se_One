@@ -613,6 +613,7 @@ StudyStatistics: {
 - `GET /api/teacher/dashboard/schedule` - Get teacher's schedule
 - `GET /api/teacher/dashboard/students` - Get teacher's students
 - `GET /api/teacher/dashboard/earnings` - Get teacher's earnings
+- `POST /api/teacher/dashboard/withdrawals` - Submit a teacher withdrawal request (`{ amount, iban }`)
 - `GET /api/teacher/dashboard/analytics` - Get teacher's analytics
 - `GET /api/teacher/dashboard/overview` - Get complete dashboard overview
 
