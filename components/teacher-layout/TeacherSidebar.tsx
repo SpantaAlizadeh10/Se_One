@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
+import { useCallback, useEffect, useState } from "react";
 import {
   LayoutDashboard,
   Home,
@@ -21,6 +22,8 @@ import { useLanguage } from "@/lib/i18n/LanguageProvider";
 import { stripLocale } from "@/lib/i18n/paths";
 import { clearSession } from "@/lib/auth-client";
 import { logoutApi } from "@/lib/api/auth";
+import { getConversations } from "@/lib/api/messaging";
+import { isApiConfigured } from "@/lib/is-api-configured";
 import LanguageSwitcher from "@/components/shared/LanguageSwitcher";
 
 const icons: Record<string, React.ElementType> = {
@@ -44,9 +47,35 @@ export default function TeacherSidebar({
   const currentPath = stripLocale(pathname || "/");
   const router = useRouter();
   const { t, href } = useLanguage();
+  const [unreadMessages, setUnreadMessages] = useState(0);
 
   const dashboardItems = teacherNavItems.filter((i) => i.group === "dashboard");
   const profileItems = teacherNavItems.filter((i) => i.group === "profile");
+
+  const refreshUnreadMessages = useCallback(async () => {
+    if (!isApiConfigured()) {
+      setUnreadMessages(0);
+      return;
+    }
+    try {
+      const conversations = await getConversations();
+      setUnreadMessages(
+        conversations.reduce(
+          (total, conversation) => total + conversation.unreadCount,
+          0,
+        ),
+      );
+    } catch {
+      // Do not display a made-up count when the messaging API is unavailable.
+      setUnreadMessages(0);
+    }
+  }, []);
+
+  useEffect(() => {
+    void refreshUnreadMessages();
+    const interval = setInterval(() => void refreshUnreadMessages(), 30000);
+    return () => clearInterval(interval);
+  }, [pathname, refreshUnreadMessages]);
 
   const goHome = () => {
     router.push(href("/"));
@@ -78,9 +107,9 @@ export default function TeacherSidebar({
           className={active ? "text-blue flex-shrink-0" : "flex-shrink-0"}
         />
         <span className="truncate">{t(item.labelKey)}</span>
-        {item.badge && !active && (
+        {item.href === "/teacher/messages" && unreadMessages > 0 && !active && (
           <span className="ms-auto bg-danger text-white text-[10.5px] font-bold px-[7px] py-[2px] rounded-full">
-            {item.badge}
+            {unreadMessages}
           </span>
         )}
         {item.href === "/teacher" && (
