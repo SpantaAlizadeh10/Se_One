@@ -45,7 +45,7 @@ export default function Sidebar({
   const pathname = usePathname();
   const currentPath = stripLocale(pathname || "/");
   const router = useRouter();
-  const { t, href } = useLanguage();
+  const { t, href, dir } = useLanguage();
 
   const dashboardItems = navItems.filter((i) => i.group === "dashboard");
   const profileItems = navItems.filter((i) => i.group === "profile");
@@ -92,11 +92,13 @@ export default function Sidebar({
 
   return (
     <aside
+      id="student-dashboard-sidebar"
+      style={{ insetInlineStart: 0, insetInlineEnd: "auto" }}
       className={`bg-white border-e border-line px-5 py-6 lg:py-7 flex flex-col
-        fixed inset-y-0 start-0 rtl:end-0 rtl:start-auto z-50 w-[248px] overflow-y-auto thin-scroll
+        fixed inset-y-0 z-50 w-[248px] max-w-[85vw] overflow-y-auto overscroll-contain thin-scroll
         transform transition-transform duration-300 ease-in-out
         lg:z-auto lg:!translate-x-0 lg:sticky lg:top-0 lg:h-screen lg:shrink-0
-        ${isOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full rtl:translate-x-full"}`}
+        ${isOpen ? "translate-x-0 shadow-2xl" : dir === "rtl" ? "translate-x-full" : "-translate-x-full"}`}
     >
       <div className="flex items-center justify-between mb-6 lg:mb-7">
         <Link
@@ -106,9 +108,14 @@ export default function Sidebar({
           SE <span className="text-ink font-medium">ONE</span>
         </Link>
         <button
-          onClick={onClose}
+          type="button"
+          onClick={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            onClose();
+          }}
           aria-label="Close menu"
-          className="lg:hidden w-8 h-8 rounded-full flex items-center justify-center text-ink70 hover:bg-cream"
+          className="relative z-[60] lg:hidden w-10 h-10 rounded-full flex items-center justify-center text-ink70 hover:bg-cream active:bg-line"
         >
           <X size={18} />
         </button>

@@ -45,7 +45,7 @@ export default function AdminSidebar({
   const pathname = usePathname();
   const currentPath = stripLocale(pathname || "/");
   const router = useRouter();
-  const { t, href } = useLanguage();
+  const { t, href, dir } = useLanguage();
 
   const dashboardItems = adminNavItems.filter((i) => i.group === "dashboard");
   const profileItems = adminNavItems.filter((i) => i.group === "profile");
@@ -89,8 +89,10 @@ export default function AdminSidebar({
 
   return (
     <aside
-      className={`fixed inset-y-0 start-0 z-50 flex w-[248px] max-w-[85vw] shrink-0 flex-col self-stretch overflow-y-auto border-e border-line bg-white px-4 py-6 thin-scroll transition-transform duration-300 ease-in-out sm:px-5 lg:sticky lg:top-0 lg:z-auto lg:h-screen lg:max-w-none lg:translate-x-0 lg:py-7 lg:shadow-none
-        ${isOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full rtl:translate-x-full"}`}
+      id="admin-dashboard-sidebar"
+      style={{ insetInlineStart: 0, insetInlineEnd: "auto" }}
+      className={`fixed inset-y-0 z-50 flex w-[248px] max-w-[85vw] shrink-0 flex-col self-stretch overscroll-contain overflow-y-auto border-e border-line bg-white px-4 py-6 thin-scroll transition-transform duration-300 ease-in-out sm:px-5 lg:sticky lg:top-0 lg:z-auto lg:h-screen lg:max-w-none lg:translate-x-0 lg:py-7 lg:shadow-none
+        ${isOpen ? "translate-x-0 shadow-2xl" : dir === "rtl" ? "translate-x-full" : "-translate-x-full"}`}
     >
       <div className="flex items-center justify-between mb-6 lg:mb-7">
         <Link
@@ -100,9 +102,14 @@ export default function AdminSidebar({
           SE <span className="text-ink font-medium">ONE</span>
         </Link>
         <button
-          onClick={onClose}
+          type="button"
+          onClick={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            onClose();
+          }}
           aria-label="Close menu"
-          className="lg:hidden w-8 h-8 rounded-full flex items-center justify-center text-ink70 hover:bg-cream"
+          className="relative z-[60] lg:hidden w-10 h-10 rounded-full flex items-center justify-center text-ink70 hover:bg-cream active:bg-line"
         >
           <X size={18} />
         </button>

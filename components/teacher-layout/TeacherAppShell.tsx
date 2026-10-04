@@ -6,6 +6,7 @@ import TeacherSidebar from "@/components/teacher-layout/TeacherSidebar";
 import TeacherTopbar from "@/components/teacher-layout/TeacherTopbar";
 import { CallProvider } from "@/components/calls/CallProvider";
 import DailyProverb from "@/components/shared/DailyProverb";
+import DashboardMobileNav from "@/components/shared/DashboardMobileNav";
 
 export default function TeacherAppShell({
   children,
@@ -50,12 +51,16 @@ export default function TeacherAppShell({
           />
         )}
 
-        <main className="px-4 sm:px-6 lg:px-8 py-5 lg:py-7 pb-16 min-w-0">
-          <TeacherTopbar onMenuClick={() => setSidebarOpen(true)} />
-          {children}
+        <main className="w-full min-w-0 max-w-full px-3 sm:px-6 lg:px-8 py-4 sm:py-5 lg:py-7 pb-28 lg:pb-16 max-lg:overflow-x-clip">
+          <TeacherTopbar
+            onMenuClick={() => setSidebarOpen((open) => !open)}
+            isMenuOpen={sidebarOpen}
+          />
+          <div className="w-full min-w-0 max-w-full">{children}</div>
           <DailyProverb />
         </main>
       </div>
+      {!sidebarOpen && <DashboardMobileNav role="teacher" />}
     </CallProvider>
   );
 }

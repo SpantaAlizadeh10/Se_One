@@ -13,7 +13,13 @@ import {
 } from "@/lib/api/notifications";
 import { isApiConfigured } from "@/lib/is-api-configured";
 
-export default function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
+export default function Topbar({
+  onMenuClick,
+  isMenuOpen = false,
+}: {
+  onMenuClick: () => void;
+  isMenuOpen?: boolean;
+}) {
   const pathname = usePathname();
   const { t } = useLanguage();
   const current = navItems.find((i) => i.href === stripLocale(pathname || "/"));
@@ -51,10 +57,13 @@ export default function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
       <div className="flex items-center gap-3 min-w-0">
         <button
           onClick={onMenuClick}
-          aria-label="Open menu"
-          className="lg:hidden w-10 h-10 shrink-0 rounded-full bg-white border border-line flex items-center justify-center text-ink70"
+          type="button"
+          aria-label={isMenuOpen ? "Close menu" : "Open menu"}
+          aria-controls="student-dashboard-sidebar"
+          aria-expanded={isMenuOpen}
+          className="relative z-[60] lg:hidden w-10 h-10 shrink-0 rounded-full bg-white border border-line flex items-center justify-center text-ink70 shadow-sm"
         >
-          <Menu size={18} />
+          {isMenuOpen ? <X size={18} /> : <Menu size={18} />}
         </button>
         <h1 className="text-[19px] sm:text-[22px] font-semibold m-0 truncate">
           {current ? t(current.titleKey) : t("studentNav.titles.dashboard")}

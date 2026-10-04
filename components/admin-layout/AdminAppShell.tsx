@@ -7,6 +7,7 @@ import AdminTopbar from "@/components/admin-layout/AdminTopbar";
 import { isAdminAuthenticated } from "@/lib/admin-auth";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 import DailyProverb from "@/components/shared/DailyProverb";
+import DashboardMobileNav from "@/components/shared/DashboardMobileNav";
 
 export default function AdminAppShell({
   children,
@@ -81,11 +82,15 @@ export default function AdminAppShell({
         />
       )}
 
-      <main className="flex-1 min-w-0 px-3 sm:px-6 lg:px-8 py-4 sm:py-5 lg:py-7 pb-16">
-        <AdminTopbar onMenuClick={() => setSidebarOpen(true)} />
-        {children}
+      <main className="w-full flex-1 min-w-0 max-w-full px-3 sm:px-6 lg:px-8 py-4 sm:py-5 lg:py-7 pb-28 lg:pb-16 max-lg:overflow-x-clip">
+        <AdminTopbar
+          onMenuClick={() => setSidebarOpen((open) => !open)}
+          isMenuOpen={sidebarOpen}
+        />
+        <div className="w-full min-w-0 max-w-full">{children}</div>
         <DailyProverb />
       </main>
+      {!sidebarOpen && <DashboardMobileNav role="admin" />}
     </div>
   );
 }

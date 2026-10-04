@@ -6,6 +6,7 @@ import Sidebar from "@/components/layout/Sidebar";
 import Topbar from "@/components/layout/Topbar";
 import { CallProvider } from "@/components/calls/CallProvider";
 import DailyProverb from "@/components/shared/DailyProverb";
+import DashboardMobileNav from "@/components/shared/DashboardMobileNav";
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -45,12 +46,16 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           />
         )}
 
-        <main className="px-4 sm:px-6 lg:px-8 py-5 lg:py-7 pb-16 min-w-0">
-          <Topbar onMenuClick={() => setSidebarOpen(true)} />
-          {children}
+        <main className="w-full min-w-0 max-w-full px-3 sm:px-6 lg:px-8 py-4 sm:py-5 lg:py-7 pb-28 lg:pb-16 max-lg:overflow-x-clip">
+          <Topbar
+            onMenuClick={() => setSidebarOpen((open) => !open)}
+            isMenuOpen={sidebarOpen}
+          />
+          <div className="w-full min-w-0 max-w-full">{children}</div>
           <DailyProverb />
         </main>
       </div>
+      {!sidebarOpen && <DashboardMobileNav role="student" />}
     </CallProvider>
   );
 }

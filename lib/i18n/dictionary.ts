@@ -44,6 +44,30 @@ export const dictionary = {
       translationLabel: "معنی",
       dailyHint: "هر روز یک جمله تازه",
     },
+    dashboardMobileNav: {
+      label: "منوی اصلی داشبورد",
+      student: {
+        dashboard: "داشبورد",
+        teachers: "معلم‌ها",
+        assignments: "تکالیف",
+        practice: "تمرین",
+        messages: "پیام‌ها",
+      },
+      teacher: {
+        dashboard: "داشبورد",
+        classes: "کلاس‌ها",
+        students: "دانشجوها",
+        availability: "زمان‌ها",
+        messages: "پیام‌ها",
+      },
+      admin: {
+        dashboard: "داشبورد",
+        students: "دانش‌آموز",
+        teachers: "معلم‌ها",
+        withdrawals: "برداشت‌ها",
+        courses: "دوره‌ها",
+      },
+    },
     pwa: {
       installTitle: "نصب اپلیکیشن SE ONE",
       installMessage:
@@ -1347,6 +1371,30 @@ export const dictionary = {
       label: "English Proverb of the Day",
       translationLabel: "Meaning",
       dailyHint: "A fresh thought every day",
+    },
+    dashboardMobileNav: {
+      label: "Dashboard primary navigation",
+      student: {
+        dashboard: "Dashboard",
+        teachers: "Teachers",
+        assignments: "Tasks",
+        practice: "Practice",
+        messages: "Messages",
+      },
+      teacher: {
+        dashboard: "Dashboard",
+        classes: "Classes",
+        students: "Students",
+        availability: "Availability",
+        messages: "Messages",
+      },
+      admin: {
+        dashboard: "Dashboard",
+        students: "Students",
+        teachers: "Teachers",
+        withdrawals: "Payouts",
+        courses: "Courses",
+      },
     },
     pwa: {
       installTitle: "Install SE ONE App",
