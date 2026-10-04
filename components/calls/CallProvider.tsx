@@ -125,6 +125,10 @@ function signalPayload(
   };
 }
 
+function getActiveCallSnapshot(callRef: { current: ActiveCall }): ActiveCall {
+  return callRef.current;
+}
+
 export function CallProvider({ children }: { children: ReactNode }) {
   const { t } = useLanguage();
   const callCopy = t("calls");
@@ -931,15 +935,17 @@ export function CallProvider({ children }: { children: ReactNode }) {
       }
       try {
         await subscribeRoom(topic);
+        const subscribedCall = getActiveCallSnapshot(callRef);
         if (
-          callRef.current.id === callId &&
-          callRef.current.status === "incoming"
+          subscribedCall.id === callId &&
+          subscribedCall.status === "incoming"
         ) {
           timeoutRef.current = setTimeout(
             () => {
+              const currentCall = getActiveCallSnapshot(callRef);
               if (
-                callRef.current.id === callId &&
-                callRef.current.status === "incoming"
+                currentCall.id === callId &&
+                currentCall.status === "incoming"
               ) {
                 finishCall("noAnswer");
               }
