@@ -204,8 +204,8 @@ export default function AdminTeachersPage() {
   return (
     <div>
       <AdminDataSourceBanner apiError={apiError} />
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-2.5 bg-white border border-line rounded-full px-4 py-2.5 shadow-card max-w-[320px]">
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex w-full items-center gap-2.5 rounded-full border border-line bg-white px-4 py-2.5 shadow-card sm:max-w-[320px]">
           <Search size={16} className="text-muted shrink-0" />
           <input
             type="text"
@@ -218,7 +218,7 @@ export default function AdminTeachersPage() {
         {isApiConfigured() && (
           <button
             onClick={() => setShowAddModal(true)}
-            className="flex items-center gap-2 bg-blue text-white rounded-full px-4 py-2.5 text-[13.5px] font-semibold hover:bg-blueDeep transition-colors"
+            className="flex w-full items-center justify-center gap-2 rounded-full bg-blue px-4 py-2.5 text-[13.5px] font-semibold text-white transition-colors hover:bg-blueDeep sm:w-auto"
           >
             <Plus size={16} />
             Add Teacher
@@ -497,7 +497,9 @@ function AddTeacherForm({
           <input
             type="url"
             value={formData.videoUrl}
-            onChange={(e) => setFormData({ ...formData, videoUrl: e.target.value })}
+            onChange={(e) =>
+              setFormData({ ...formData, videoUrl: e.target.value })
+            }
             placeholder="https://example.com/intro-video.mp4"
             className="w-full px-4 py-2.5 border border-line rounded-xl bg-cream outline-none focus:border-blue"
           />
@@ -630,7 +632,9 @@ function EditTeacherForm({
           <input
             type="url"
             value={formData.videoUrl}
-            onChange={(e) => setFormData({ ...formData, videoUrl: e.target.value })}
+            onChange={(e) =>
+              setFormData({ ...formData, videoUrl: e.target.value })
+            }
             placeholder="https://example.com/intro-video.mp4"
             className="w-full px-4 py-2.5 border border-line rounded-xl bg-cream outline-none focus:border-blue"
           />

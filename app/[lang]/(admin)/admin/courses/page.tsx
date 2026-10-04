@@ -47,7 +47,9 @@ export default function AdminCoursesPage() {
 
   useEffect(() => {
     if (!isApiConfigured()) {
-      setApiError("Backend API URL is not configured. Course pricing is unavailable.");
+      setApiError(
+        "Backend API URL is not configured. Course pricing is unavailable.",
+      );
       return;
     }
     listAdminCourses()
@@ -83,8 +85,8 @@ export default function AdminCoursesPage() {
         const updated = await patchAdminCoursePricing(id, {
           discountPercent: clamped,
         });
-        setApiCourses(
-          (prev) => prev.map((course) => (course.id === id ? updated : course)),
+        setApiCourses((prev) =>
+          prev.map((course) => (course.id === id ? updated : course)),
         );
       } catch (error) {
         setApiError(
@@ -102,8 +104,8 @@ export default function AdminCoursesPage() {
       const updated = await updateAdminCourse(course.id, {
         isPublished: !course.isPublished,
       });
-      setApiCourses(
-        (prev) => prev.map((item) => (item.id === course.id ? updated : item)),
+      setApiCourses((prev) =>
+        prev.map((item) => (item.id === course.id ? updated : item)),
       );
     } catch (error) {
       setApiError(
@@ -119,8 +121,8 @@ export default function AdminCoursesPage() {
       const updated = await updateAdminCourse(course.id, {
         isFeatured: !course.isFeatured,
       });
-      setApiCourses(
-        (prev) => prev.map((item) => (item.id === course.id ? updated : item)),
+      setApiCourses((prev) =>
+        prev.map((item) => (item.id === course.id ? updated : item)),
       );
     } catch (error) {
       setApiError(
@@ -183,11 +185,11 @@ export default function AdminCoursesPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-muted text-[14px] max-w-[560px]">{s.sub}</p>
         <button
           onClick={() => setShowCreateModal(true)}
-          className="inline-flex items-center gap-2 bg-blue text-white px-4 py-2.5 rounded-full text-[13.5px] font-semibold hover:bg-blueDeep transition-colors"
+          className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-blue px-4 py-2.5 text-[13.5px] font-semibold text-white transition-colors hover:bg-blueDeep sm:w-auto"
         >
           <Plus size={14} />
           Create Course
@@ -215,7 +217,9 @@ export default function AdminCoursesPage() {
                 <input
                   type="text"
                   value={newCourse.title}
-                  onChange={(e) => setNewCourse({ ...newCourse, title: e.target.value })}
+                  onChange={(e) =>
+                    setNewCourse({ ...newCourse, title: e.target.value })
+                  }
                   className="w-full border border-line rounded-lg px-3.5 py-2.5 text-[13.5px] outline-none focus:border-blue"
                   required
                 />
@@ -226,7 +230,9 @@ export default function AdminCoursesPage() {
                 </label>
                 <textarea
                   value={newCourse.description}
-                  onChange={(e) => setNewCourse({ ...newCourse, description: e.target.value })}
+                  onChange={(e) =>
+                    setNewCourse({ ...newCourse, description: e.target.value })
+                  }
                   className="w-full border border-line rounded-lg px-3.5 py-2.5 text-[13.5px] outline-none focus:border-blue h-24 resize-none"
                   required
                 />
@@ -245,7 +251,9 @@ export default function AdminCoursesPage() {
                       />
                       <button
                         type="button"
-                        onClick={() => setNewCourse({ ...newCourse, imageUrl: "" })}
+                        onClick={() =>
+                          setNewCourse({ ...newCourse, imageUrl: "" })
+                        }
                         className="absolute top-2 right-2 bg-white/90 hover:bg-white rounded-full p-2 shadow-lg"
                       >
                         <X size={14} className="text-danger" />
@@ -254,7 +262,11 @@ export default function AdminCoursesPage() {
                   )}
                   <label className="flex items-center gap-2.5 bg-white border border-line px-4 py-3 rounded-xl text-[13.5px] font-semibold hover:border-ink transition-colors cursor-pointer w-fit">
                     <Upload size={16} />
-                    {uploadingImage ? "Uploading..." : newCourse.imageUrl ? "Change image" : "Upload image"}
+                    {uploadingImage
+                      ? "Uploading..."
+                      : newCourse.imageUrl
+                        ? "Change image"
+                        : "Upload image"}
                     <input
                       type="file"
                       accept="image/*"
@@ -265,14 +277,16 @@ export default function AdminCoursesPage() {
                   </label>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
                   <label className="block text-[12.5px] font-semibold text-ink70 mb-2">
                     Level *
                   </label>
                   <select
                     value={newCourse.level}
-                    onChange={(e) => setNewCourse({ ...newCourse, level: e.target.value })}
+                    onChange={(e) =>
+                      setNewCourse({ ...newCourse, level: e.target.value })
+                    }
                     className="w-full border border-line rounded-lg px-3.5 py-2.5 text-[13.5px] outline-none focus:border-blue"
                     required
                   >
@@ -294,20 +308,27 @@ export default function AdminCoursesPage() {
                     min="0"
                     step="0.01"
                     value={newCourse.basePrice}
-                    onChange={(e) => setNewCourse({ ...newCourse, basePrice: Number(e.target.value) })}
+                    onChange={(e) =>
+                      setNewCourse({
+                        ...newCourse,
+                        basePrice: Number(e.target.value),
+                      })
+                    }
                     className="w-full border border-line rounded-lg px-3.5 py-2.5 text-[13.5px] outline-none focus:border-blue"
                     required
                   />
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
                   <label className="block text-[12.5px] font-semibold text-ink70 mb-2">
                     Currency
                   </label>
                   <select
                     value={newCourse.currency}
-                    onChange={(e) => setNewCourse({ ...newCourse, currency: e.target.value })}
+                    onChange={(e) =>
+                      setNewCourse({ ...newCourse, currency: e.target.value })
+                    }
                     className="w-full border border-line rounded-lg px-3.5 py-2.5 text-[13.5px] outline-none focus:border-blue"
                   >
                     <option value="IRR">IRR</option>
@@ -322,13 +343,15 @@ export default function AdminCoursesPage() {
                   <input
                     type="text"
                     value={newCourse.duration}
-                    onChange={(e) => setNewCourse({ ...newCourse, duration: e.target.value })}
+                    onChange={(e) =>
+                      setNewCourse({ ...newCourse, duration: e.target.value })
+                    }
                     placeholder="e.g., 8 weeks"
                     className="w-full border border-line rounded-lg px-3.5 py-2.5 text-[13.5px] outline-none focus:border-blue"
                   />
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
                   <label className="block text-[12.5px] font-semibold text-ink70 mb-2">
                     Category
@@ -336,7 +359,9 @@ export default function AdminCoursesPage() {
                   <input
                     type="text"
                     value={newCourse.category}
-                    onChange={(e) => setNewCourse({ ...newCourse, category: e.target.value })}
+                    onChange={(e) =>
+                      setNewCourse({ ...newCourse, category: e.target.value })
+                    }
                     className="w-full border border-line rounded-lg px-3.5 py-2.5 text-[13.5px] outline-none focus:border-blue"
                   />
                 </div>
@@ -346,7 +371,9 @@ export default function AdminCoursesPage() {
                   </label>
                   <select
                     value={newCourse.language}
-                    onChange={(e) => setNewCourse({ ...newCourse, language: e.target.value })}
+                    onChange={(e) =>
+                      setNewCourse({ ...newCourse, language: e.target.value })
+                    }
                     className="w-full border border-line rounded-lg px-3.5 py-2.5 text-[13.5px] outline-none focus:border-blue"
                   >
                     <option value="english">English</option>
@@ -365,7 +392,12 @@ export default function AdminCoursesPage() {
                     max="100"
                     step="0.01"
                     value={newCourse.discountPercent}
-                    onChange={(e) => setNewCourse({ ...newCourse, discountPercent: Number(e.target.value) })}
+                    onChange={(e) =>
+                      setNewCourse({
+                        ...newCourse,
+                        discountPercent: Number(e.target.value),
+                      })
+                    }
                     className="w-24 border border-line rounded-lg px-3.5 py-2.5 text-[13.5px] outline-none focus:border-blue"
                   />
                   <span className="text-[12px] text-muted">%</span>
@@ -377,7 +409,9 @@ export default function AdminCoursesPage() {
                 </label>
                 <select
                   value={newCourse.teacherId}
-                  onChange={(e) => setNewCourse({ ...newCourse, teacherId: e.target.value })}
+                  onChange={(e) =>
+                    setNewCourse({ ...newCourse, teacherId: e.target.value })
+                  }
                   className="w-full border border-line rounded-lg px-3.5 py-2.5 text-[13.5px] outline-none focus:border-blue"
                 >
                   <option value="">Select a teacher (optional)</option>
@@ -393,7 +427,9 @@ export default function AdminCoursesPage() {
                   type="checkbox"
                   id="isFeatured"
                   checked={newCourse.isFeatured}
-                  onChange={(e) => setNewCourse({ ...newCourse, isFeatured: e.target.checked })}
+                  onChange={(e) =>
+                    setNewCourse({ ...newCourse, isFeatured: e.target.checked })
+                  }
                   className="w-4 h-4 rounded border-line text-blue focus:ring-blue"
                 />
                 <label htmlFor="isFeatured" className="text-[13px] text-ink70">
@@ -443,139 +479,152 @@ export default function AdminCoursesPage() {
             </tr>
           </thead>
           <tbody>
-            {apiCourses.map((course) => ({
-              id: course.id,
-              basePrice: course.basePrice,
-              discountPercent: course.discountPercent,
-              title: course.title,
-              isPublished: course.isPublished,
-              isFeatured: course.isFeatured,
-            })).map((p) => {
-              const course = coursesData.find((c) => c.id === p.id);
-              const courseTitle =
-                "title" in p && typeof p.title === "string"
-                  ? p.title
-                  : (course?.title ?? p.id);
-              const isPublished =
-                "isPublished" in p && typeof p.isPublished === "boolean"
-                  ? p.isPublished
-                  : false;
-              const isFeatured =
-                "isFeatured" in p && typeof p.isFeatured === "boolean"
-                  ? p.isFeatured
-                  : false;
-              const draftValue = drafts[p.id] ?? String(p.discountPercent);
-              const previewDiscount = Math.max(
-                0,
-                Math.min(100, Number(draftValue) || 0),
-              );
-              const discounted = getDiscountedPrice(
-                p.basePrice,
-                previewDiscount,
-              );
+            {apiCourses
+              .map((course) => ({
+                id: course.id,
+                basePrice: course.basePrice,
+                discountPercent: course.discountPercent,
+                title: course.title,
+                isPublished: course.isPublished,
+                isFeatured: course.isFeatured,
+              }))
+              .map((p) => {
+                const course = coursesData.find((c) => c.id === p.id);
+                const courseTitle =
+                  "title" in p && typeof p.title === "string"
+                    ? p.title
+                    : (course?.title ?? p.id);
+                const isPublished =
+                  "isPublished" in p && typeof p.isPublished === "boolean"
+                    ? p.isPublished
+                    : false;
+                const isFeatured =
+                  "isFeatured" in p && typeof p.isFeatured === "boolean"
+                    ? p.isFeatured
+                    : false;
+                const draftValue = drafts[p.id] ?? String(p.discountPercent);
+                const previewDiscount = Math.max(
+                  0,
+                  Math.min(100, Number(draftValue) || 0),
+                );
+                const discounted = getDiscountedPrice(
+                  p.basePrice,
+                  previewDiscount,
+                );
 
-              return (
-                <tr
-                  key={p.id}
-                  className="border-b border-line last:border-none hover:bg-cream/60"
-                >
-                  <td className="px-5 py-3.5 text-[13.5px] font-semibold">
-                    {courseTitle}
-                  </td>
-                  <td className="px-5 py-3.5 text-[13px] text-ink70">
-                    {formatPrice(p.basePrice, lang)}
-                  </td>
-                  <td className="px-5 py-3.5">
-                    <div className="flex items-center gap-1.5">
-                      <input
-                        type="number"
-                        min={0}
-                        max={100}
-                        value={draftValue}
-                        onChange={(e) => setDraft(p.id, e.target.value)}
-                        className="w-16 border border-line rounded-lg px-2.5 py-1.5 text-[13px] text-center outline-none focus:border-blue"
-                      />
-                      <span className="text-[12px] text-muted">%</span>
-                    </div>
-                  </td>
-                  <td className="px-5 py-3.5">
-                    {previewDiscount > 0 ? (
-                      <span className="text-[13px] font-bold text-goldDeep">
-                        {formatPrice(discounted, lang)}
-                      </span>
-                    ) : (
-                      <span className="text-[12px] text-muted">
-                        {s.noDiscount}
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-5 py-3.5">
-                    <div className="flex items-center gap-2">
-                      <span
-                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold ${isPublished
-                          ? "bg-sage text-sageDeep"
-                          : "bg-cream text-muted"
-                          }`}
-                      >
-                        {isPublished ? "Published" : "Draft"}
-                      </span>
-                      {isFeatured && (
-                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[11px] font-bold bg-gold/20 text-goldDeep">
-                          <Star size={10} fill="currentColor" />
-                          Featured
+                return (
+                  <tr
+                    key={p.id}
+                    className="border-b border-line last:border-none hover:bg-cream/60"
+                  >
+                    <td className="px-5 py-3.5 text-[13.5px] font-semibold">
+                      {courseTitle}
+                    </td>
+                    <td className="px-5 py-3.5 text-[13px] text-ink70">
+                      {formatPrice(p.basePrice, lang)}
+                    </td>
+                    <td className="px-5 py-3.5">
+                      <div className="flex items-center gap-1.5">
+                        <input
+                          type="number"
+                          min={0}
+                          max={100}
+                          value={draftValue}
+                          onChange={(e) => setDraft(p.id, e.target.value)}
+                          className="w-16 border border-line rounded-lg px-2.5 py-1.5 text-[13px] text-center outline-none focus:border-blue"
+                        />
+                        <span className="text-[12px] text-muted">%</span>
+                      </div>
+                    </td>
+                    <td className="px-5 py-3.5">
+                      {previewDiscount > 0 ? (
+                        <span className="text-[13px] font-bold text-goldDeep">
+                          {formatPrice(discounted, lang)}
+                        </span>
+                      ) : (
+                        <span className="text-[12px] text-muted">
+                          {s.noDiscount}
                         </span>
                       )}
-                    </div>
-                  </td>
-                  <td className="px-5 py-3.5">
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => save(p.id)}
-                        className="inline-flex items-center gap-1.5 text-[12px] font-bold text-white bg-blue hover:bg-blueDeep px-3.5 py-1.5 rounded-full transition-colors"
-                      >
-                        {savedId === p.id ? <Check size={13} /> : null}
-                        {savedId === p.id ? s.savedMsg : s.saveBtn}
-                      </button>
-                      {"isPublished" in p && (
+                    </td>
+                    <td className="px-5 py-3.5">
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold ${
+                            isPublished
+                              ? "bg-sage text-sageDeep"
+                              : "bg-cream text-muted"
+                          }`}
+                        >
+                          {isPublished ? "Published" : "Draft"}
+                        </span>
+                        {isFeatured && (
+                          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[11px] font-bold bg-gold/20 text-goldDeep">
+                            <Star size={10} fill="currentColor" />
+                            Featured
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-5 py-3.5">
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => save(p.id)}
+                          className="inline-flex items-center gap-1.5 text-[12px] font-bold text-white bg-blue hover:bg-blueDeep px-3.5 py-1.5 rounded-full transition-colors"
+                        >
+                          {savedId === p.id ? <Check size={13} /> : null}
+                          {savedId === p.id ? s.savedMsg : s.saveBtn}
+                        </button>
+                        {"isPublished" in p && (
+                          <button
+                            onClick={() =>
+                              togglePublished(
+                                apiCourses.find(
+                                  (course) => course.id === p.id,
+                                )!,
+                              )
+                            }
+                            className="inline-flex items-center justify-center w-8 h-8 rounded-full text-sageDeep bg-sage hover:bg-sage/80"
+                            title={
+                              isPublished
+                                ? "Unpublish course"
+                                : "Publish course"
+                            }
+                          >
+                            {isPublished ? (
+                              <Eye size={14} />
+                            ) : (
+                              <EyeOff size={14} />
+                            )}
+                          </button>
+                        )}
                         <button
                           onClick={() =>
-                            togglePublished(
+                            toggleFeatured(
                               apiCourses.find((course) => course.id === p.id)!,
                             )
                           }
-                          className="inline-flex items-center justify-center w-8 h-8 rounded-full text-sageDeep bg-sage hover:bg-sage/80"
+                          className={`inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors ${
+                            isFeatured
+                              ? "text-goldDeep bg-gold hover:bg-gold/80"
+                              : "text-muted bg-cream hover:bg-cream/80"
+                          }`}
                           title={
-                            isPublished ? "Unpublish course" : "Publish course"
+                            isFeatured
+                              ? "Remove from featured"
+                              : "Add to featured"
                           }
                         >
-                          {isPublished ? (
-                            <Eye size={14} />
-                          ) : (
-                            <EyeOff size={14} />
-                          )}
+                          <Star
+                            size={14}
+                            fill={isFeatured ? "currentColor" : "none"}
+                          />
                         </button>
-                      )}
-                      <button
-                        onClick={() =>
-                          toggleFeatured(
-                            apiCourses.find((course) => course.id === p.id)!,
-                          )
-                        }
-                        className={`inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors ${isFeatured
-                          ? "text-goldDeep bg-gold hover:bg-gold/80"
-                          : "text-muted bg-cream hover:bg-cream/80"
-                          }`}
-                        title={
-                          isFeatured ? "Remove from featured" : "Add to featured"
-                        }
-                      >
-                        <Star size={14} fill={isFeatured ? "currentColor" : "none"} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
           </tbody>
         </table>
       </div>

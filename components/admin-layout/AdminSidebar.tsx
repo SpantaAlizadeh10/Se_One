@@ -89,10 +89,8 @@ export default function AdminSidebar({
 
   return (
     <aside
-      className={`bg-white border-e border-line px-4 sm:px-5 py-6 lg:py-7 flex-col
-        w-[248px] max-w-[75vw] shrink-0 self-stretch overflow-y-auto thin-scroll
-        ${isOpen ? "flex" : "hidden"}
-        lg:flex lg:sticky lg:top-0 lg:h-screen`}
+      className={`fixed inset-y-0 start-0 z-50 flex w-[248px] max-w-[85vw] shrink-0 flex-col self-stretch overflow-y-auto border-e border-line bg-white px-4 py-6 thin-scroll transition-transform duration-300 ease-in-out sm:px-5 lg:sticky lg:top-0 lg:z-auto lg:h-screen lg:max-w-none lg:translate-x-0 lg:py-7 lg:shadow-none
+        ${isOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full rtl:translate-x-full"}`}
     >
       <div className="flex items-center justify-between mb-6 lg:mb-7">
         <Link

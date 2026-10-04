@@ -51,7 +51,7 @@ export default function TeacherStudentsPage() {
         {filtered.map((s) => (
           <div
             key={`${s.studentId}-${s.courseId}`}
-            className="flex items-center gap-4 p-4"
+            className="flex flex-wrap items-center gap-3 p-3 sm:flex-nowrap sm:gap-4 sm:p-4"
           >
             {s.studentAvatar ? (
               <Image

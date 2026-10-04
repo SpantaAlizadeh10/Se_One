@@ -3,7 +3,10 @@
 import { useEffect, useState } from "react";
 import { Users, Clock, Plus, BookOpen } from "lucide-react";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
-import { getTeacherClasses, type TeacherClass } from "@/lib/api/teacher-dashboard";
+import {
+  getTeacherClasses,
+  type TeacherClass,
+} from "@/lib/api/teacher-dashboard";
 
 export default function TeacherClassesPage() {
   const { t } = useLanguage();
@@ -11,8 +14,16 @@ export default function TeacherClassesPage() {
   const [teacherClasses, setTeacherClasses] = useState<TeacherClass[]>([]);
   useEffect(() => {
     let active = true;
-    getTeacherClasses().then((items) => { if (active) setTeacherClasses(items); }).catch(() => { if (active) setTeacherClasses([]); });
-    return () => { active = false; };
+    getTeacherClasses()
+      .then((items) => {
+        if (active) setTeacherClasses(items);
+      })
+      .catch(() => {
+        if (active) setTeacherClasses([]);
+      });
+    return () => {
+      active = false;
+    };
   }, []);
 
   return (
@@ -26,22 +37,32 @@ export default function TeacherClassesPage() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
         {teacherClasses.map((c) => (
-          <div key={c.id} className="bg-white border border-line rounded-lg overflow-hidden shadow-card hover:-translate-y-1 hover:shadow-cardHover transition-all">
+          <div
+            key={c.id}
+            className="bg-white border border-line rounded-lg overflow-hidden shadow-card hover:-translate-y-1 hover:shadow-cardHover transition-all"
+          >
             <div className="h-[110px] bg-gradient-to-br from-[#CFE7E4] to-[#9FCFC9] flex items-center justify-center">
               <BookOpen size={40} className="text-white/90" strokeWidth={1.5} />
             </div>
             <div className="p-4">
-              <h3 className="text-[15px] font-semibold mb-1">{c.courseTitle}</h3>
+              <h3 className="text-[15px] font-semibold mb-1">
+                {c.courseTitle}
+              </h3>
               <div className="text-[12px] text-muted mb-3">{c.subject}</div>
-              <div className="flex items-center gap-4 text-[12px] text-ink70">
+              <div className="flex flex-wrap items-center gap-4 text-[12px] text-ink70 sm:flex-nowrap">
                 <span className="flex items-center gap-1.5">
                   <Users size={13} /> {c.studentName}
                 </span>
                 <span className="flex items-center gap-1.5">
-                  <Clock size={13} /> {c.startTime}{c.endTime ? ` – ${c.endTime}` : ""}
+                  <Clock size={13} /> {c.startTime}
+                  {c.endTime ? ` – ${c.endTime}` : ""}
                 </span>
               </div>
-              <div className="text-[11.5px] text-muted mt-1.5">{c.scheduledDate ? new Date(c.scheduledDate).toLocaleDateString() : ""}</div>
+              <div className="text-[11.5px] text-muted mt-1.5">
+                {c.scheduledDate
+                  ? new Date(c.scheduledDate).toLocaleDateString()
+                  : ""}
+              </div>
             </div>
           </div>
         ))}

@@ -182,7 +182,7 @@ export default function TeacherTopbar({
             )}
           </button>
           {showNotifications && (
-            <div className="absolute top-full right-0 mt-2 w-80 bg-white border border-line rounded-lg shadow-card z-50">
+            <div className="absolute top-full right-0 mt-2 w-80 max-w-[calc(100vw-1.5rem)] bg-white border border-line rounded-lg shadow-card z-50">
               <div className="p-4 border-b border-line flex items-center justify-between">
                 <h3 className="text-[13.5px] font-semibold">
                   {t("teacherNotifications.title")}

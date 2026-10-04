@@ -36,6 +36,20 @@ export default function AdminAppShell({
     setSidebarOpen(false);
   }, [pathname]);
 
+  useEffect(() => {
+    if (!sidebarOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setSidebarOpen(false);
+    };
+    document.body.style.overflow = "hidden";
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [sidebarOpen]);
+
   // Prevent flash during SSR
   if (isLoading) {
     return (
@@ -58,8 +72,16 @@ export default function AdminAppShell({
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
       />
+      {sidebarOpen && (
+        <button
+          type="button"
+          aria-label="Close navigation menu"
+          onClick={() => setSidebarOpen(false)}
+          className="fixed inset-0 z-40 bg-ink/40 lg:hidden"
+        />
+      )}
 
-      <main className="flex-1 min-w-0 px-4 sm:px-6 lg:px-8 py-5 lg:py-7 pb-16">
+      <main className="flex-1 min-w-0 px-3 sm:px-6 lg:px-8 py-4 sm:py-5 lg:py-7 pb-16">
         <AdminTopbar onMenuClick={() => setSidebarOpen(true)} />
         {children}
         <DailyProverb />

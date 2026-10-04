@@ -7,7 +7,10 @@ import { Bell, LayoutGrid, ChevronDown, Menu, X } from "lucide-react";
 import { navItems } from "@/lib/nav";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 import { stripLocale } from "@/lib/i18n/paths";
-import { getNotificationStats, markAllNotificationsAsRead } from "@/lib/api/notifications";
+import {
+  getNotificationStats,
+  markAllNotificationsAsRead,
+} from "@/lib/api/notifications";
 import { isApiConfigured } from "@/lib/is-api-configured";
 
 export default function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
@@ -70,7 +73,7 @@ export default function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
             )}
           </button>
           {showNotifications && (
-            <div className="absolute top-full right-0 mt-2 w-80 bg-white border border-line rounded-lg shadow-card z-50">
+            <div className="absolute top-full right-0 mt-2 w-80 max-w-[calc(100vw-1.5rem)] bg-white border border-line rounded-lg shadow-card z-50">
               <div className="p-4 border-b border-line flex items-center justify-between">
                 <h3 className="text-[13.5px] font-semibold">Notifications</h3>
                 {unreadCount > 0 && (
@@ -83,7 +86,9 @@ export default function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
                 )}
               </div>
               <div className="p-4 text-center text-muted text-[13px]">
-                {unreadCount === 0 ? "No new notifications" : `${unreadCount} unread notification${unreadCount > 1 ? 's' : ''}`}
+                {unreadCount === 0
+                  ? "No new notifications"
+                  : `${unreadCount} unread notification${unreadCount > 1 ? "s" : ""}`}
               </div>
               <button
                 onClick={() => setShowNotifications(false)}
@@ -106,8 +111,12 @@ export default function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
             className="rounded-full object-cover"
           />
           <div className="hidden sm:block">
-            <div className="text-[13.5px] font-semibold leading-tight">Sepanta</div>
-            <div className="text-[11px] text-muted leading-tight">{t("auth.signup.student")}</div>
+            <div className="text-[13.5px] font-semibold leading-tight">
+              Sepanta
+            </div>
+            <div className="text-[11px] text-muted leading-tight">
+              {t("auth.signup.student")}
+            </div>
           </div>
           <ChevronDown size={14} className="hidden sm:block" />
         </div>

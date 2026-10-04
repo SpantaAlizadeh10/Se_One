@@ -19,6 +19,20 @@ export default function TeacherAppShell({
     setSidebarOpen(false);
   }, [pathname]);
 
+  useEffect(() => {
+    if (!sidebarOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setSidebarOpen(false);
+    };
+    document.body.style.overflow = "hidden";
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [sidebarOpen]);
+
   return (
     <CallProvider>
       <div className="min-h-screen lg:grid lg:grid-cols-[248px_1fr]">
@@ -28,10 +42,11 @@ export default function TeacherAppShell({
         />
 
         {sidebarOpen && (
-          <div
+          <button
+            type="button"
             onClick={() => setSidebarOpen(false)}
+            aria-label="Close navigation menu"
             className="fixed inset-0 z-40 bg-ink/40 lg:hidden"
-            aria-hidden="true"
           />
         )}
 

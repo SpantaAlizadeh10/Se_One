@@ -8,13 +8,22 @@ import { adminNavItems } from "@/lib/admin-nav";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 import { stripLocale } from "@/lib/i18n/paths";
 import { getName } from "@/lib/auth-client";
-import { getNotificationStats, markAllNotificationsAsRead } from "@/lib/api/notifications";
+import {
+  getNotificationStats,
+  markAllNotificationsAsRead,
+} from "@/lib/api/notifications";
 import { isApiConfigured } from "@/lib/is-api-configured";
 
-export default function AdminTopbar({ onMenuClick }: { onMenuClick: () => void }) {
+export default function AdminTopbar({
+  onMenuClick,
+}: {
+  onMenuClick: () => void;
+}) {
   const pathname = usePathname();
   const { t } = useLanguage();
-  const current = adminNavItems.find((i) => i.href === stripLocale(pathname || "/"));
+  const current = adminNavItems.find(
+    (i) => i.href === stripLocale(pathname || "/"),
+  );
   const [name, setName] = useState("Admin");
   const [unreadCount, setUnreadCount] = useState(0);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -77,7 +86,7 @@ export default function AdminTopbar({ onMenuClick }: { onMenuClick: () => void }
             )}
           </button>
           {showNotifications && (
-            <div className="absolute top-full right-0 mt-2 w-80 bg-white border border-line rounded-lg shadow-card z-50">
+            <div className="absolute top-full right-0 mt-2 w-80 max-w-[calc(100vw-1.5rem)] bg-white border border-line rounded-lg shadow-card z-50">
               <div className="p-4 border-b border-line flex items-center justify-between">
                 <h3 className="text-[13.5px] font-semibold">Notifications</h3>
                 {unreadCount > 0 && (
@@ -90,7 +99,9 @@ export default function AdminTopbar({ onMenuClick }: { onMenuClick: () => void }
                 )}
               </div>
               <div className="p-4 text-center text-muted text-[13px]">
-                {unreadCount === 0 ? "No new notifications" : `${unreadCount} unread notification${unreadCount > 1 ? 's' : ''}`}
+                {unreadCount === 0
+                  ? "No new notifications"
+                  : `${unreadCount} unread notification${unreadCount > 1 ? "s" : ""}`}
               </div>
               <button
                 onClick={() => setShowNotifications(false)}
@@ -105,10 +116,20 @@ export default function AdminTopbar({ onMenuClick }: { onMenuClick: () => void }
           <LayoutGrid size={17} />
         </button>
         <div className="flex items-center gap-2 sm:gap-2.5 bg-white border border-line rounded-full ps-1 pe-2 sm:pe-3 py-1">
-          <Image src="https://i.pravatar.cc/64?img=5" alt={name} width={32} height={32} className="rounded-full object-cover" />
+          <Image
+            src="https://i.pravatar.cc/64?img=5"
+            alt={name}
+            width={32}
+            height={32}
+            className="rounded-full object-cover"
+          />
           <div className="hidden sm:block">
-            <div className="text-[13.5px] font-semibold leading-tight">{name}</div>
-            <div className="text-[11px] text-muted leading-tight">{t("adminNav.badge")}</div>
+            <div className="text-[13.5px] font-semibold leading-tight">
+              {name}
+            </div>
+            <div className="text-[11px] text-muted leading-tight">
+              {t("adminNav.badge")}
+            </div>
           </div>
           <ChevronDown size={14} className="hidden sm:block" />
         </div>

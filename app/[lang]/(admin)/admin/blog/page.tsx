@@ -50,7 +50,9 @@ export default function AdminBlogPage() {
 
   useEffect(() => {
     if (!isApiConfigured()) {
-      setApiError("Backend API URL is not configured. Blog data is unavailable.");
+      setApiError(
+        "Backend API URL is not configured. Blog data is unavailable.",
+      );
       return;
     }
     listAdminBlogPosts({ pageSize: 100 })
@@ -137,10 +139,15 @@ export default function AdminBlogPage() {
         imageUrl: post.image,
         lang,
       });
-      setPosts((prev) => [{ ...post, id: created.id, views: created.views }, ...prev]);
+      setPosts((prev) => [
+        { ...post, id: created.id, views: created.views },
+        ...prev,
+      ]);
       setShowAddModal(false);
     } catch (error) {
-      setApiError(error instanceof Error ? error.message : "Could not create blog post");
+      setApiError(
+        error instanceof Error ? error.message : "Could not create blog post",
+      );
     }
   };
 
@@ -222,8 +229,8 @@ export default function AdminBlogPage() {
         </div>
       </div>
 
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-2.5 bg-white border border-line rounded-full px-4 py-2.5 shadow-card max-w-[320px]">
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex w-full items-center gap-2.5 rounded-full border border-line bg-white px-4 py-2.5 shadow-card sm:max-w-[320px]">
           <Search size={16} className="text-muted shrink-0" />
           <input
             type="text"
@@ -233,11 +240,11 @@ export default function AdminBlogPage() {
             className="flex-1 min-w-0 outline-none text-[13.5px] placeholder:text-muted bg-transparent"
           />
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:gap-3">
           <select
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value as any)}
-            className="px-4 py-2.5 border border-line rounded-full bg-white text-[13.5px] outline-none focus:border-blue"
+            className="min-w-0 flex-1 rounded-full border border-line bg-white px-3 py-2.5 text-[13.5px] outline-none focus:border-blue sm:flex-none sm:px-4"
           >
             <option value="all">All Status</option>
             <option value="published">Published</option>
@@ -245,7 +252,7 @@ export default function AdminBlogPage() {
           </select>
           <button
             onClick={() => setShowAddModal(true)}
-            className="flex items-center gap-2 bg-blue text-white rounded-full px-4 py-2.5 text-[13.5px] font-semibold hover:bg-blueDeep transition-colors"
+            className="flex flex-1 items-center justify-center gap-2 rounded-full bg-blue px-4 py-2.5 text-[13.5px] font-semibold text-white transition-colors hover:bg-blueDeep sm:flex-none"
           >
             <Plus size={16} />
             New Post
@@ -253,8 +260,8 @@ export default function AdminBlogPage() {
         </div>
       </div>
 
-      <div className="bg-white border border-line rounded-lg shadow-card overflow-hidden">
-        <table className="w-full border-collapse">
+      <div className="overflow-x-auto rounded-lg border border-line bg-white shadow-card">
+        <table className="w-full min-w-[680px] border-collapse">
           <thead>
             <tr className="bg-cream border-b border-line">
               <th className="text-start text-[11px] font-bold tracking-wider uppercase text-muted px-5 py-3.5">
