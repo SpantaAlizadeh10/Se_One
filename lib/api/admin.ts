@@ -820,6 +820,7 @@ export async function deleteAdminLesson(lessonId: string): Promise<void> {
 
 export type AdminBlogPost = {
   id: string;
+  slug: string;
   title: string;
   excerpt: string;
   content: string;
@@ -841,6 +842,7 @@ function normalizeBlogPost(raw: unknown, index: number): AdminBlogPost | null {
   const statusRaw = text(r, "status", "Status").toLowerCase();
   return {
     id: id || `post-${index}`,
+    slug: text(r, "slug", "Slug", "url", "Url", "permalink", "Permalink"),
     title,
     excerpt: text(r, "excerpt", "Excerpt"),
     content: text(

@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 import { stripLocale } from "@/lib/i18n/paths";
+import { useStudentExperience } from "@/components/shared/StudentExperienceProvider";
 
 type DashboardRole = "student" | "teacher" | "admin";
 type MobileNavItem = {
@@ -33,6 +34,11 @@ const navigation: Record<DashboardRole, MobileNavItem[]> = {
       href: "/dashboard/teachers",
       labelKey: "dashboardMobileNav.student.teachers",
       Icon: GraduationCap,
+    },
+    {
+      href: "/dashboard/classes",
+      labelKey: "dashboardMobileNav.student.classes",
+      Icon: CalendarDays,
     },
     {
       href: "/dashboard/assignments",
@@ -109,14 +115,25 @@ const navigation: Record<DashboardRole, MobileNavItem[]> = {
 export default function DashboardMobileNav({ role }: { role: DashboardRole }) {
   const pathname = usePathname();
   const currentPath = stripLocale(pathname || "/");
-  const { t, href } = useLanguage();
+  const { t, href, lang } = useLanguage();
+  const { isChildMode } = useStudentExperience();
+  const childLabels: Record<string, { fa: string; en: string }> = {
+    "/dashboard": { fa: "یادگیری", en: "Learn" },
+    "/dashboard/teachers": { fa: "معلم", en: "Teachers" },
+    "/dashboard/classes": { fa: "کلاس‌ها", en: "Classes" },
+    "/dashboard/assignments": { fa: "کارها", en: "My work" },
+    "/dashboard/practice": { fa: "تمرین", en: "Practice" },
+    "/dashboard/messages": { fa: "پیام‌ها", en: "Messages" },
+  };
 
   return (
     <nav
       aria-label={t("dashboardMobileNav.label")}
       className="fixed inset-x-0 bottom-0 z-40 px-3 pb-[max(env(safe-area-inset-bottom),12px)] pt-2 lg:hidden"
     >
-      <div className="mx-auto grid max-w-md grid-cols-5 gap-1 rounded-[24px] border border-white/20 bg-[#182163]/95 p-2 shadow-[0_-8px_24px_rgba(15,23,42,0.08)] backdrop-blur-xl">
+      <div
+        className={`mx-auto grid ${role === "student" ? "max-w-xl grid-cols-6" : "max-w-md grid-cols-5"} gap-1 rounded-[24px] border border-white/20 bg-[#182163]/95 p-2 shadow-[0_-8px_24px_rgba(15,23,42,0.08)] backdrop-blur-xl`}
+      >
         {navigation[role].map(({ href: path, labelKey, Icon }) => {
           const active =
             currentPath === path ||
@@ -137,7 +154,9 @@ export default function DashboardMobileNav({ role }: { role: DashboardRole }) {
                 <Icon size={14} strokeWidth={active ? 2.3 : 2} />
               </span>
               <span className="w-full truncate leading-none">
-                {t(labelKey)}
+                {role === "student" && isChildMode && childLabels[path]
+                  ? childLabels[path][lang]
+                  : t(labelKey)}
               </span>
             </Link>
           );

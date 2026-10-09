@@ -99,6 +99,8 @@ export async function register(input: {
   email: string;
   password: string;
   role: Role;
+  dateOfBirth?: string;
+  parentalConsent?: boolean;
 }): Promise<AuthResponse> {
   const nameParts = input.fullName.trim().split(/\s+/);
   const firstName = nameParts[0] || "";
@@ -111,6 +113,12 @@ export async function register(input: {
       familyName,
       email: input.email,
       password: input.password,
+      ...(input.role === "student"
+        ? {
+            dateOfBirth: input.dateOfBirth,
+            parentalConsent: input.parentalConsent ?? false,
+          }
+        : {}),
       // Adjust casing here if your .NET enum expects "Student"/"Teacher"
       // vs. lowercase — this sends the capitalized form since that's the
       // more common ASP.NET convention.

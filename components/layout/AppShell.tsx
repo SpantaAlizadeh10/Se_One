@@ -4,11 +4,23 @@ import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import Sidebar from "@/components/layout/Sidebar";
 import Topbar from "@/components/layout/Topbar";
-import { CallProvider } from "@/components/calls/CallProvider";
 import DailyProverb from "@/components/shared/DailyProverb";
 import DashboardMobileNav from "@/components/shared/DashboardMobileNav";
+import {
+  StudentExperienceProvider,
+  useStudentExperience,
+} from "@/components/shared/StudentExperienceProvider";
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
+  return (
+    <StudentExperienceProvider>
+      <StudentAppShell>{children}</StudentAppShell>
+    </StudentExperienceProvider>
+  );
+}
+
+function StudentAppShell({ children }: { children: React.ReactNode }) {
+  const { isChildMode } = useStudentExperience();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const pathname = usePathname();
 
@@ -32,8 +44,10 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   }, [sidebarOpen]);
 
   return (
-    <CallProvider>
-      <div className="min-h-screen lg:grid lg:grid-cols-[248px_1fr]">
+    <>
+      <div
+        className={`min-h-screen lg:grid lg:grid-cols-[248px_1fr] ${isChildMode ? "student-child-mode" : ""}`}
+      >
         <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
         {/* dim background behind the drawer on mobile */}
@@ -56,6 +70,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         </main>
       </div>
       {!sidebarOpen && <DashboardMobileNav role="student" />}
-    </CallProvider>
+    </>
   );
 }

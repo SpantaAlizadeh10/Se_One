@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import {
   AlertCircle,
   CalendarDays,
@@ -10,7 +9,6 @@ import {
   Plus,
   Trash2,
   User,
-  Video,
 } from "lucide-react";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 import type { AvailabilitySlot } from "@/lib/teachers-directory";
@@ -21,7 +19,6 @@ import {
   type AvailabilityInput,
 } from "@/lib/api/availability";
 import { getName } from "@/lib/auth-client";
-import { getRoomId } from "@/lib/video-call";
 
 const dayOptions = [
   "Monday",
@@ -78,7 +75,7 @@ function toApiSlots(slots: AvailabilitySlot[]): AvailabilityInput[] {
 }
 
 export default function TeacherAvailabilityPage() {
-  const { t, href } = useLanguage();
+  const { t } = useLanguage();
   const a = t("teacherAvailabilityPage");
 
   const [teacherId, setTeacherId] = useState("");
@@ -435,15 +432,6 @@ export default function TeacherAvailabilityPage() {
                       <User size={12} />
                       {a.bookedByStudent}
                     </span>
-                    <Link
-                      href={href(
-                        `/teacher/call/${getRoomId(teacherId, slot.id)}`,
-                      )}
-                      className="inline-flex items-center gap-1.5 rounded-full bg-blue px-3 py-1.5 text-[10.5px] font-bold text-white hover:bg-blueDeep"
-                    >
-                      <Video size={12} />
-                      {a.joinCall}
-                    </Link>
                   </div>
                 ) : (
                   <>

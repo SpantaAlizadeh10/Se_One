@@ -12,6 +12,7 @@ import {
   LogOut,
   X,
   Search,
+  CalendarDays,
 } from "lucide-react";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 import { stripLocale } from "@/lib/i18n/paths";
@@ -24,6 +25,7 @@ const icons: Record<string, React.ElementType> = {
   "/admin/courses": BookOpen,
   "/admin/students": Users,
   "/admin/teachers": GraduationCap,
+  "/admin/class-scheduling": CalendarDays,
   "/admin/blog": FileText,
   "/admin/settings": SettingsIcon,
 };
@@ -45,6 +47,11 @@ export default function AdminSidebar({
     { href: "/admin/courses", labelKey: "adminNav.courses", group: "main" },
     { href: "/admin/students", labelKey: "adminNav.students", group: "main" },
     { href: "/admin/teachers", labelKey: "adminNav.teachers", group: "main" },
+    {
+      href: "/admin/class-scheduling",
+      labelKey: "adminNav.classScheduling",
+      group: "main",
+    },
     { href: "/admin/blog", labelKey: "adminNav.blog", group: "main" },
     {
       href: "/admin/settings",

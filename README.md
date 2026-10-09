@@ -18,6 +18,7 @@ npm run dev
 The project now includes a complete set of API clients for backend integration:
 
 ### API Clients (lib/api/)
+
 - **`client.ts`** - Base API client with auth handling
 - **`auth.ts`** - Authentication endpoints
 - **`courses.ts`** - Course listing and details
@@ -31,6 +32,7 @@ The project now includes a complete set of API clients for backend integration:
 - **`payments.ts`** - Payment processing (mock)
 
 ### Documentation for Backend Developers
+
 - **`API_SPECIFICATION.md`** - Complete API reference with all endpoints
 - **`BACKEND_DEVELOPER_GUIDE.md`** - Step-by-step development guide
 - **`API_TESTING_EXAMPLES.md`** - Curl commands and testing examples
@@ -38,6 +40,7 @@ The project now includes a complete set of API clients for backend integration:
 - **`README_BACKEND.md`** - Quick start guide for backend developers
 
 ### Testing
+
 - **`lib/api/__tests__/api-test.ts`** - Automated API tests
 
 **For backend developers:** Start with `README_BACKEND.md` for a quick overview, then read `API_SPECIFICATION.md` for detailed endpoint information.
@@ -117,7 +120,7 @@ is a small, isolated layer:
 
 - **Login page** (`/login`) no longer has a role toggle — a real
   account already has a role, so it just calls `login(email,
-  password)` and redirects to `/dashboard` or `/teacher` based on
+password)` and redirects to `/dashboard` or `/teacher` based on
   whatever role the API returns.
 - **Signup page** (`/signup`) still has the Student/Teacher card
   picker — that's a real choice being made at registration — and
@@ -323,35 +326,7 @@ that teacher has published; teachers manage those slots themselves.
 - **Courses page search** is now real: typing filters the course grid
   client-side by title/level/description instead of being decorative.
 
-## Online class calls (student ↔ teacher)
-
-Once a session is booked, both sides get a real way to actually get on
-a call for it — not just a "Booked" label.
-
-- **`lib/video-call.ts`** — `getRoomId(teacherId, slotId)` builds a
-  deterministic room name from the two ids, and `getJitsiUrl(roomId)`
-  points it at Jitsi Meet's free public server (`meet.jit.si`). No
-  account, API key, or backend needed — this genuinely works, not just
-  a UI mock. Both the student and teacher land in the same room
-  because the room name is computed the same way on both sides from
-  the same `teacherId`/`slotId` pair.
-- **`components/shared/VideoCallRoom.tsx`** — the actual call screen:
-  an iframe embed with camera/mic/fullscreen permissions, a header
-  showing who you're in class with, and a back button.
-- **`/dashboard/call/[roomId]`** (student) and
-  **`/teacher/call/[roomId]`** (teacher) — thin pages that read the
-  other person's name from a `?with=` query param and render
-  `VideoCallRoom`.
-- **"Join Online Class"** buttons were added next to each booked slot
-  on both the student's "My Bookings" list and the teacher's
-  Availability page (next to "Booked by a student").
-
-**Production note:** the public Jitsi server is fine for testing this
-end to end, but for a real product you'd likely want a self-hosted
-Jitsi instance or a managed provider (Daily.co, Twilio Video, Zoom
-SDK) for reliability, recording, and moderation — swapping that in is
-a one-line change in `getJitsiUrl()`, everything else in this feature
-is provider-agnostic.
+Online classroom sessions use an external classroom provider (Adobe Connect initially). SE One owns authentication, scheduling, access control, attendance metadata, recordings links and persistent course materials; the provider owns all live classroom features. Sessions store a provider key and meeting URL so the provider can later be replaced without changing the course and access-control model.
 
 ## Booking sync across the student ↔ teacher dashboards (important caveat)
 
@@ -412,7 +387,7 @@ sidebar/topbar shell (`components/admin-layout/`), its own nav config
 reload. That's a deliberate scope call: real deletion needs a backend
 call (`DELETE /api/admin/students/:id` / `.../teachers/:id`) with
 consequences (their bookings, messages, etc.) that don't make sense to
-fake convincingly client-side. The discount feature *is* persisted
+fake convincingly client-side. The discount feature _is_ persisted
 (via localStorage) because it's meaningfully demonstrable without a
 backend — you can watch it change the storefront live.
 
@@ -442,6 +417,7 @@ item, and the signup page's Terms/Privacy checkbox (previously both
 **A real purchase flow** — this was a genuine gap: courses showed a
 price but clicking a course card did nothing, and there was no way to
 actually buy one.
+
 - Course cards now link to `/courses/[courseId]` — a real detail page
   (description, "what you'll learn," what's included, price with any
   active discount applied).
@@ -464,6 +440,7 @@ Policy. Basic GDPR-style compliance; doesn't yet distinguish
 compliance posture would want.
 
 **Basic SEO**:
+
 - `app/robots.ts` and `app/sitemap.ts` (the private dashboards and
   `/checkout` are excluded from both — they shouldn't be indexed).
   Set `NEXT_PUBLIC_SITE_URL` in your env once you have a real domain;
@@ -510,6 +487,7 @@ current pricing/discount applied and a remove button.
 
 **Course reviews & related courses** — the course detail page was
 fairly bare before (just a description and a buy button). Added:
+
 - `components/marketing/course-detail/CourseReviews.tsx` — star
   rating summary + individual reviews, from `lib/course-reviews.ts`
   (mock data, a few reviews per course).
@@ -551,6 +529,7 @@ form. Fixed:
 **RTL layout bugs** (fixed `left`/`right`/`ml`/`mr`/`pl`/`pr` that
 don't mirror in Persian, vs. logical `start`/`end`/`ms`/`me`/`ps`/`pe`
 that do):
+
 - Student dashboard `CourseCard` — the "In Progress" and price badges
   were pinned to physical left/right instead of flipping sides in RTL.
 - `MessagesView` — the active-conversation accent border and the

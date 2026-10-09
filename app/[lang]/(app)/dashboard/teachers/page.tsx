@@ -2,23 +2,13 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import Link from "next/link";
-
-export const dynamic = "force-dynamic";
-export const fetchCache = "force-no-store";
-import {
-  Star,
-  Clock,
-  Check,
-  ChevronDown,
-  ChevronUp,
-  Video,
-} from "lucide-react";
+import { Star, Clock, Check, ChevronDown, ChevronUp } from "lucide-react";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 import { useTeachers } from "@/lib/use-teachers";
 import { bookTeacherSlot } from "@/lib/api/availability";
-import { getRoomId } from "@/lib/video-call";
-import CallActions from "@/components/calls/CallActions";
+
+export const dynamic = "force-dynamic";
+export const fetchCache = "force-no-store";
 
 export default function FindTeacherPage() {
   const { t, href } = useLanguage();
@@ -49,16 +39,7 @@ export default function FindTeacherPage() {
   };
 
   return (
-    <div>
-      <div className="mb-6 flex items-center justify-between gap-4 flex-wrap">
-        <div>
-          <h2 className="font-serif text-[22px] sm:text-[25px] font-semibold mb-1">
-            {p.heading}
-          </h2>
-          <p className="text-muted text-[14px] m-0">{p.sub}</p>
-        </div>
-      </div>
-
+    <div className="space-y-5">
       {toast && (
         <div className="flex items-center gap-2.5 bg-sage text-sageDeep text-[13px] font-semibold rounded-xl px-4 py-3 mb-5">
           <Check size={16} className="shrink-0" />
@@ -90,15 +71,6 @@ export default function FindTeacherPage() {
                     {slot.day} · {slot.time}
                   </div>
                 </div>
-                <Link
-                  href={href(
-                    `/dashboard/call/${getRoomId(teacher.id, slot.id)}?with=${encodeURIComponent(teacher.name)}`,
-                  )}
-                  className="inline-flex items-center gap-1.5 text-[11px] font-bold text-white bg-blue hover:bg-blueDeep px-3 py-1.5 rounded-full shrink-0 transition-colors"
-                >
-                  <Video size={12} />
-                  {p.joinCall}
-                </Link>
               </div>
             ))}
           </div>
@@ -149,10 +121,6 @@ export default function FindTeacherPage() {
 
               {isExpanded && (
                 <div className="border-t border-line p-4">
-                  <CallActions
-                    peerId={teacher.userId}
-                    peerName={teacher.name}
-                  />
                   <p className="text-[12px] font-semibold text-ink70 mb-3 flex items-center gap-1.5">
                     <Clock size={13} /> {p.viewSlots}
                   </p>

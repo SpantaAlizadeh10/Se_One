@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import TeacherSidebar from "@/components/teacher-layout/TeacherSidebar";
 import TeacherTopbar from "@/components/teacher-layout/TeacherTopbar";
-import { CallProvider } from "@/components/calls/CallProvider";
 import DailyProverb from "@/components/shared/DailyProverb";
 import DashboardMobileNav from "@/components/shared/DashboardMobileNav";
 
@@ -35,7 +34,7 @@ export default function TeacherAppShell({
   }, [sidebarOpen]);
 
   return (
-    <CallProvider>
+    <>
       <div className="min-h-screen lg:grid lg:grid-cols-[248px_1fr]">
         <TeacherSidebar
           isOpen={sidebarOpen}
@@ -61,6 +60,6 @@ export default function TeacherAppShell({
         </main>
       </div>
       {!sidebarOpen && <DashboardMobileNav role="teacher" />}
-    </CallProvider>
+    </>
   );
 }

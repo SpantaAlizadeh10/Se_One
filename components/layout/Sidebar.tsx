@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
+import { useCallback, useEffect, useState } from "react";
 import {
   LayoutDashboard,
   Dumbbell,
@@ -22,10 +23,14 @@ import { useLanguage } from "@/lib/i18n/LanguageProvider";
 import { stripLocale } from "@/lib/i18n/paths";
 import { clearSession } from "@/lib/auth-client";
 import { logoutApi } from "@/lib/api/auth";
+import { getConversations } from "@/lib/api/messaging";
+import { isApiConfigured } from "@/lib/is-api-configured";
 import LanguageSwitcher from "@/components/shared/LanguageSwitcher";
+import { useStudentExperience } from "@/components/shared/StudentExperienceProvider";
 
 const icons: Record<string, React.ElementType> = {
   "/dashboard": LayoutDashboard,
+  "/dashboard/classes": GraduationCap,
   "/dashboard/practice": Dumbbell,
   "/dashboard/assignments": ClipboardCheck,
   "/dashboard/teachers": GraduationCap,
@@ -46,9 +51,49 @@ export default function Sidebar({
   const currentPath = stripLocale(pathname || "/");
   const router = useRouter();
   const { t, href, dir } = useLanguage();
+  const { isChildMode } = useStudentExperience();
+  const [unreadMessages, setUnreadMessages] = useState(0);
 
   const dashboardItems = navItems.filter((i) => i.group === "dashboard");
   const profileItems = navItems.filter((i) => i.group === "profile");
+  const childLabels: Record<string, { fa: string; en: string }> = {
+    "/dashboard": { fa: "یادگیری من", en: "My learning" },
+    "/dashboard/classes": { fa: "کلاس‌های من", en: "My classes" },
+    "/dashboard/practice": { fa: "تمرین‌های کوتاه", en: "Quick practice" },
+    "/dashboard/assignments": { fa: "کارهای من", en: "My assignments" },
+    "/dashboard/teachers": { fa: "پیدا کردن معلم", en: "Find a teacher" },
+    "/dashboard/wishlist": { fa: "علاقه‌مندی‌ها", en: "Favorites" },
+    "/dashboard/messages": { fa: "پیام به معلم", en: "Ask my teacher" },
+    "/dashboard/tickets": { fa: "کمک و پشتیبانی", en: "Get help" },
+  };
+
+  const refreshUnreadMessages = useCallback(async () => {
+    if (!isApiConfigured()) {
+      setUnreadMessages(0);
+      return;
+    }
+    try {
+      const conversations = await getConversations();
+      setUnreadMessages(
+        conversations.reduce(
+          (total, conversation) => total + conversation.unreadCount,
+          0,
+        ),
+      );
+    } catch {
+      // Never show a placeholder badge when the inbox could not be checked.
+      setUnreadMessages(0);
+    }
+  }, []);
+
+  useEffect(() => {
+    void refreshUnreadMessages();
+    const interval = window.setInterval(
+      () => void refreshUnreadMessages(),
+      30_000,
+    );
+    return () => window.clearInterval(interval);
+  }, [pathname, refreshUnreadMessages]);
 
   const logout = async () => {
     await logoutApi();
@@ -74,12 +119,18 @@ export default function Sidebar({
           size={17}
           className={active ? "text-gold flex-shrink-0" : "flex-shrink-0"}
         />
-        <span className="truncate">{t(item.labelKey)}</span>
-        {item.badge && !active && (
-          <span className="ms-auto bg-danger text-white text-[10.5px] font-bold px-[7px] py-[2px] rounded-full">
-            {item.badge}
-          </span>
-        )}
+        <span className="truncate">
+          {isChildMode && childLabels[item.href]
+            ? childLabels[item.href][dir === "rtl" ? "fa" : "en"]
+            : t(item.labelKey)}
+        </span>
+        {item.href === "/dashboard/messages" &&
+          unreadMessages > 0 &&
+          !active && (
+            <span className="ms-auto bg-danger text-white text-[10.5px] font-bold px-[7px] py-[2px] rounded-full">
+              {unreadMessages > 99 ? "99+" : unreadMessages}
+            </span>
+          )}
         {item.href === "/dashboard" && (
           <ChevronRight
             size={14}

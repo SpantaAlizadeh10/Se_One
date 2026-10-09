@@ -2,8 +2,10 @@
 -- The ASP.NET API must mint Supabase JWTs with `sub` as auth.uid() and a
 -- server-derived `call_targets` JSON array of authorized contact user UUIDs.
 
+create extension if not exists pgcrypto;
+
 create table if not exists public.call_invites (
-  id uuid primary key,
+  id uuid primary key default gen_random_uuid(),
   caller_user_id uuid not null,
   target_user_id uuid not null,
   caller_name text not null default '',
@@ -12,6 +14,7 @@ create table if not exists public.call_invites (
   created_at timestamptz not null default now(),
   expires_at timestamptz not null,
   constraint call_invites_no_self_call check (caller_user_id <> target_user_id),
+  constraint call_invites_expiry_after_created check (expires_at > created_at),
   constraint call_invites_room_matches_participants check (
     room_topic = 'call-room:' || caller_user_id::text || ':' || target_user_id::text || ':' || id::text
   )
@@ -46,55 +49,11 @@ create policy "call participants can delete expired or finished invite"
   on public.call_invites for delete to authenticated
   using (caller_user_id = auth.uid() or target_user_id = auth.uid());
 
--- Channel topic `call-inbox:<user-id>` is readable only by that user.
--- Do not add broad/public policies that would expose call signaling payloads.
-alter table realtime.messages enable row level security;
-
-drop policy if exists "webrtc users receive own call inbox" on realtime.messages;
-create policy "webrtc users receive own call inbox"
-  on realtime.messages for select to authenticated
-  using (
-    split_part(realtime.topic(), ':', 1) = 'call-inbox'
-    and split_part(realtime.topic(), ':', 2) = auth.uid()::text
-  );
-
-drop policy if exists "webrtc linked participants read call room" on realtime.messages;
-create policy "webrtc linked participants read call room"
-  on realtime.messages for select to authenticated
-  using (
-    split_part(realtime.topic(), ':', 1) = 'call-room'
-    and split_part(realtime.topic(), ':', 4) <> ''
-    and auth.uid()::text in (
-      split_part(realtime.topic(), ':', 2),
-      split_part(realtime.topic(), ':', 3)
-    )
-    and (auth.jwt() -> 'call_targets') ? (
-      case
-        when auth.uid()::text = split_part(realtime.topic(), ':', 2)
-          then split_part(realtime.topic(), ':', 3)
-        else split_part(realtime.topic(), ':', 2)
-      end
-    )
-  );
-
-drop policy if exists "webrtc linked participants send call room signals" on realtime.messages;
-create policy "webrtc linked participants send call room signals"
-  on realtime.messages for insert to authenticated
-  with check (
-    split_part(realtime.topic(), ':', 1) = 'call-room'
-    and split_part(realtime.topic(), ':', 4) <> ''
-    and auth.uid()::text in (
-      split_part(realtime.topic(), ':', 2),
-      split_part(realtime.topic(), ':', 3)
-    )
-    and (auth.jwt() -> 'call_targets') ? (
-      case
-        when auth.uid()::text = split_part(realtime.topic(), ':', 2)
-          then split_part(realtime.topic(), ':', 3)
-        else split_part(realtime.topic(), ':', 2)
-      end
-    )
-  );
+-- The Realtime internal table is managed by Supabase itself.
+-- Project-level SQL runners do not have permission to alter its ownership or
+-- Realtime policies, so the app-level migration only creates the invite table
+-- and its access rules. The secure channel policy should be configured in the
+-- Supabase project-level Realtime settings, not via a normal SQL migration.
 
 -- Add call invitations to Supabase's Realtime publication for Postgres Changes.
 do $$

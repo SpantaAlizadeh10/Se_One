@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Mic, BookOpen, PenLine, ChevronRight } from "lucide-react";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 import { parseApiDate } from "@/lib/date-utils";
+import Link from "next/link";
 
 type ClassItem = {
   id: string;
@@ -29,14 +30,16 @@ export default function ClassPanel({
   icon: HeaderIcon,
   items,
   withTabs,
+  href,
 }: {
   title: string;
   icon: React.ElementType;
   items: ClassItem[];
   withTabs?: boolean;
+  href?: string;
 }) {
   const { lang } = useLanguage();
-  const [tab, setTab] = useState<"today" | "yesterday" | "week">("today");
+  const [tab, setTab] = useState<"today" | "upcoming">("today");
   const visibleItems = withTabs
     ? items.filter((item) => {
         const date = parseApiDate(item.date);
@@ -56,22 +59,7 @@ export default function ClassPanel({
           (candidate.getTime() - current.getTime()) / 86_400_000,
         );
         if (tab === "today") return difference === 0;
-        if (tab === "yesterday") return difference === -1;
-        const weekStartOffset =
-          lang === "fa"
-            ? (current.getDay() + 1) % 7
-            : (current.getDay() + 6) % 7;
-        const weekStart = new Date(
-          current.getFullYear(),
-          current.getMonth(),
-          current.getDate() - weekStartOffset,
-        );
-        const weekEnd = new Date(
-          weekStart.getFullYear(),
-          weekStart.getMonth(),
-          weekStart.getDate() + 7,
-        );
-        return candidate >= weekStart && candidate < weekEnd;
+        return difference >= 0 && difference <= 7;
       })
     : items;
 
@@ -84,12 +72,15 @@ export default function ClassPanel({
           </div>
           <h3 className="text-[15.5px] font-semibold m-0">{title}</h3>
         </div>
-        <a
-          href="#"
-          className="text-[12px] font-semibold text-blue flex items-center gap-0.5"
-        >
-          See all <ChevronRight size={12} />
-        </a>
+        {href && (
+          <Link
+            href={href}
+            className="text-[12px] font-semibold text-blue flex items-center gap-0.5"
+          >
+            {lang === "fa" ? "مشاهده همه" : "See all"}{" "}
+            <ChevronRight size={12} />
+          </Link>
+        )}
       </div>
 
       {withTabs && (
@@ -97,8 +88,7 @@ export default function ClassPanel({
           {(
             [
               ["today", lang === "fa" ? "امروز" : "Today"],
-              ["yesterday", lang === "fa" ? "دیروز" : "Yesterday"],
-              ["week", lang === "fa" ? "این هفته" : "This Week"],
+              ["upcoming", lang === "fa" ? "۷ روز آینده" : "Next 7 days"],
             ] as const
           ).map(([key, label]) => (
             <button
@@ -120,7 +110,7 @@ export default function ClassPanel({
           return (
             <div
               key={item.id}
-              className={`flex items-center gap-3 py-3 ${i !== items.length - 1 ? "border-b border-line" : ""}`}
+              className={`flex items-center gap-3 py-3 ${i !== visibleItems.length - 1 ? "border-b border-line" : ""}`}
             >
               <div
                 className={`w-[38px] h-[38px] rounded-[10px] flex items-center justify-center shrink-0 ${bg} ${text}`}

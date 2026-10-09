@@ -1,9 +1,9 @@
-import MessagesView from "@/components/messages/MessagesView";
+import MessagesHub from "@/components/messages/MessagesHub";
 
 export default function TeacherMessagesPage() {
   return (
     <div>
-      <MessagesView />
+      <MessagesHub />
     </div>
   );
 }

@@ -8,7 +8,6 @@ import {
   getTeacherStudents,
   type TeacherStudent,
 } from "@/lib/api/teacher-dashboard";
-import CallActions from "@/components/calls/CallActions";
 
 export default function TeacherStudentsPage() {
   const { t } = useLanguage();
@@ -69,11 +68,6 @@ export default function TeacherStudentsPage() {
                 {s.studentName}
               </div>
               <div className="text-[12px] text-muted">{s.courseTitle}</div>
-              <CallActions
-                peerId={s.studentId}
-                peerName={s.studentName}
-                compact
-              />
             </div>
             <div className="w-[110px] shrink-0 hidden sm:block">
               <div className="h-[7px] bg-line rounded-full overflow-hidden">

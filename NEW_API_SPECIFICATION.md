@@ -19,6 +19,43 @@ The following API clients have been added to the frontend to handle features tha
 11. **Student Dashboard Data** (`lib/api/student-dashboard.ts`)
 12. **Teacher Dashboard Data** (`lib/api/teacher-dashboard.ts`)
 13. **Teacher Profile** (`lib/api/teacher-profile.ts`)
+14. **Teacher Progression** (`lib/api/teacher-dashboard.ts`)
+
+## Teacher progression and rewards (new)
+
+Teacher tiers affect payout terms, so eligibility and revenue-share rates must be computed by the backend and configured by an authorized admin. Do not use the frontend preview thresholds as payout rules. A promotion applies to future class settlements only; it must not retroactively change already-earned or pending class amounts.
+
+- `GET /api/teacher/dashboard/progression?lang=fa|en` — return the authenticated teacher's current tier, verified metrics, tier requirements, and current/future share percentages.
+- `GET /api/admin/teacher-tiers` — Admin-only tier/rate configuration.
+- `PUT /api/admin/teacher-tiers` — Admin-only update for all three tier thresholds, share rates, and localized benefits. Validate `0 <= teacherSharePercent <= 100`, increasing rates at higher levels, no overlapping/unsatisfiable thresholds, and audit every change.
+
+Response shape:
+
+```typescript
+TeacherProgression: {
+  currentLevel: 1 | 2 | 3; // calculated by server from verified metrics
+  completedClasses: number;
+  averageRating: number;
+  classCompletionRate: number; // 0–100
+  tiers: {
+    level: 1 | 2 | 3;
+    name: string;
+    minCompletedClasses: number;
+    minAverageRating: number;
+    minClassCompletionRate: number;
+    teacherSharePercent: number;
+    benefits: string[]; // localized using lang query
+  }[];
+}
+```
+
+The dashboard has illustrative fallback thresholds of 0/25/100 completed classes, 0/4.6/4.8 rating, and 0/90/95% class completion for UI preview only. The backend/admin must set and return the actual criteria and payout shares before presenting rates as official. Until then, the UI intentionally does not invent or promise a percentage.
+
+## Student registration: age and guardian consent
+
+For student signup, `POST /api/auth/register` may receive `dateOfBirth` (`YYYY-MM-DD`) and `parentalConsent` (boolean). The backend must validate the date, persist it to the authenticated user's profile, calculate age server-side, and reject under-14 student registration unless the required guardian-consent workflow has been completed. The frontend checkbox is only an acknowledgement; **it is not verified parental consent**. The backend must record consent evidence and implement any identity/guardian verification required by the product's applicable jurisdictions before activating a child account. Do not return or expose a student's date of birth in public profile responses.
+
+`GET /api/user/profile` should return the current user's `dateOfBirth` only to that user and authorized guardians/admin workflows. This lets the student dashboard choose age-appropriate copy and presentation without storing birth dates in browser storage. If a student has no valid birth date, keep the standard dashboard experience.
 
 ## 1. Wishlist API
 
@@ -91,11 +128,13 @@ CourseRatingSummary: {
 ### Endpoints
 
 - `GET /api/conversations` - Get user's conversations
+- `GET /api/conversations/contacts` - Get contacts the current user is authorized to message (assigned course teachers, enrolled students for teachers, and support)
 - `GET /api/conversations/search?query={query}` - Search conversations
 - `POST /api/conversations` - Create a new conversation
 - `GET /api/conversations/{conversationId}` - Get a specific conversation
 - `GET /api/conversations/{conversationId}/messages` - Get messages in a conversation
 - `POST /api/conversations/{conversationId}/messages` - Send a message
+- `POST /api/conversations/{conversationId}/messages/{messageId}/upload` - Upload an attachment to a sent message (multipart field `attachment`)
 - `PATCH /api/conversations/{conversationId}/read` - Mark conversation as read
 - `PATCH /api/messages/{messageId}/read` - Mark specific message as read
 - `GET /api/conversations/{conversationId}/typing` - Get typing status
@@ -132,6 +171,8 @@ Conversation: {
 }
 ```
 
+`GET /api/conversations/contacts` must derive the current user from authentication and return only connected/authorized contacts, including optional `courseId` and `courseTitle`. The backend must validate `participantId` when creating a conversation; do not allow arbitrary user-to-user messaging. The upload endpoint must authorize the current participant, enforce a maximum of 5 attachments per message and 20 MB per file, validate file type, store files privately, and return an authorized download URL/reference. Message polling or push updates should make newly sent messages visible within a few seconds.
+
 ---
 
 ## 4. Assignments API
@@ -151,9 +192,15 @@ Conversation: {
 - `GET /api/student/assignments` - Get assignments for student
 - `GET /api/student/assignments/{assignmentId}` - Get assignment details
 - `POST /api/student/assignments/{assignmentId}/submissions` - Submit an assignment
+- `PUT /api/student/assignments/{assignmentId}/submissions/draft` - Create or update the current student's draft (idempotent per assignment/student)
+- `POST /api/student/submissions/{submissionId}/submit` - Submit/resubmit a saved draft or returned work without creating a duplicate
+- `POST /api/student/assignments/{assignmentId}/submissions/upload-grant` - Request a short-lived private Storage upload grant
+- `GET /api/student/attachments/download-url?path={storagePath}` - Get a short-lived download URL after checking ownership/access
 - `GET /api/student/submissions` - Get student's submission history
 - `GET /api/student/submissions/{submissionId}` - Get a specific submission
 - `PATCH /api/student/submissions/{submissionId}` - Update a draft submission
+
+Assignment upload grants must be single-use, limited to the authenticated student and assignment, validate MIME type/extension, and reject files over 20 MB (maximum 5 files per submission). Store private Storage paths in `Submission.attachments`, not public URLs. The download URL endpoint must check that the student owns the submission or is enrolled in the assignment's course. Draft upsert and submit/resubmit operations should preserve one submission per student per assignment; `POST /submissions` creates an initial submission and can also be made idempotent.
 
 ### Data Model
 
@@ -368,6 +415,47 @@ NotificationStats: {
 }
 ```
 
+### Dashboard announcements (new)
+
+Announcements are separate from personal notifications: an admin creates one shared item and targets `students`, `teachers`, or `all`. Every endpoint must require authentication; `/api/admin/announcements` must additionally require the Admin role. For `/api/announcements`, derive the user's role and ID from the authenticated claims—never trust a role or user ID sent by the client.
+
+#### Admin endpoints
+
+- `GET /api/admin/announcements?status=all|draft|scheduled|published` — list and manage announcements.
+- `POST /api/admin/announcements` — create an announcement.
+- `PATCH /api/admin/announcements/{id}` — update fields or publication status.
+- `DELETE /api/admin/announcements/{id}` — delete an announcement.
+
+Request and response fields:
+
+```typescript
+Announcement: {
+  id: string;
+  title: string;                 // max 100 characters
+  message: string;               // max 1200 characters; plain text
+  audience: "students" | "teachers" | "all";
+  kind: "info" | "success" | "warning" | "urgent";
+  status: "draft" | "scheduled" | "published";
+  actionUrl?: string;            // allow https:// or same-origin relative URLs only
+  actionLabel?: string;
+  publishAt?: string;            // ISO 8601; scheduled items become visible at this time
+  expiresAt?: string;            // ISO 8601; items are hidden after this time
+  createdAt: string;
+  isRead?: boolean;              // per-current-user projection on dashboard endpoint
+  isDismissed?: boolean;         // per-current-user projection on dashboard endpoint
+}
+```
+
+POST and PATCH accept the editable fields (`title`, `message`, `audience`, `kind`, `status`, `actionUrl`, `actionLabel`, `publishAt`, `expiresAt`). Validate expiry after publication time, enforce enum values, and accept only safe action URLs. A `published` announcement is visible immediately unless a future `publishAt` is supplied; `scheduled` requires a future `publishAt`. Drafts are never visible to students or teachers.
+
+#### Dashboard endpoints
+
+- `GET /api/announcements?limit=5` — return only currently published, unexpired announcements targeted to the authenticated user's role (or `all`), newest first, with that user's `isRead` and `isDismissed` state.
+- `POST /api/announcements/{id}/read` — mark the current user's announcement as read (idempotent).
+- `POST /api/announcements/{id}/dismiss` — dismiss the item for the current user (idempotent).
+
+Read/dismiss state must be scoped to the authenticated user. Prevent users from reading or dismissing an announcement that is not targeted to them. Creating/publishing may optionally enqueue email or push delivery, but dashboard display must work independently of those channels.
+
 ---
 
 ## 8. Contact / Support API
@@ -537,7 +625,7 @@ SearchResults: {
 ### Endpoints
 
 - `GET /api/student/dashboard/upcoming-classes` - Get upcoming classes
-- `GET /api/student/dashboard/calendar` - Get calendar events
+- `GET /api/student/dashboard/calendar?startDate={YYYY-MM-DD}&endDate={YYYY-MM-DD}` - Get calendar events in the visible month; include scheduled classes, assignment due dates, and exams, sorted by start time
 - `GET /api/student/dashboard/recent-activity` - Get recent activity
 - `GET /api/student/dashboard/statistics` - Get study statistics
 - `GET /api/student/dashboard/overview` - Get complete dashboard overview
@@ -610,7 +698,7 @@ StudyStatistics: {
 ### Endpoints
 
 - `GET /api/teacher/dashboard/classes` - Get teacher's classes
-- `GET /api/teacher/dashboard/schedule` - Get teacher's schedule
+- `GET /api/teacher/dashboard/schedule?startDate={YYYY-MM-DD}&endDate={YYYY-MM-DD}` - Get the authenticated teacher's classes in the requested visible calendar range, including meeting URL and student/course details
 - `GET /api/teacher/dashboard/students` - Get teacher's students
 - `GET /api/teacher/dashboard/earnings` - Get teacher's earnings
 - `POST /api/teacher/dashboard/withdrawals` - Submit and reserve a teacher withdrawal request (`{ amount, iban }`); server rejects amounts exceeding the withdrawable balance
@@ -752,7 +840,7 @@ For messaging and typing status:
 - The API endpoints provided are polling-based fallbacks
 - Real-time implementation can replace polling where beneficial
 
-For native WebRTC calls, implement authenticated `POST /api/calls/realtime-token`. It returns a short-lived Supabase-compatible JWT for the current app user and optional ICE servers. The signed token must scope call access to actual teacher/student relationships; do not trust caller-supplied IDs. The public teacher directory must include the teacher's identity `userId`, and teacher student records must use the student identity ID. See [WEBRTC_CALLING_SETUP.md](WEBRTC_CALLING_SETUP.md) for Supabase RLS, the expiring `call_invites` table, and token claims.
+Online classrooms use the provider-neutral classroom session API. Adobe Connect is the initial external classroom engine; SE One stores only the meeting URL and classroom metadata and must not implement conferencing features already supplied by the provider. See the classroom API section for role-scoped sessions, attendance, recordings and persistent materials.
 
 ---
 

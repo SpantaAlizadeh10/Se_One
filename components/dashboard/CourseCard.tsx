@@ -1,11 +1,32 @@
 import { BookOpen } from "lucide-react";
+import Link from "next/link";
 
-type Course = { id: string; title: string; level: string; progress: number; gradient: string; price?: string };
+type Course = {
+  id: string;
+  title: string;
+  level: string;
+  progress: number;
+  gradient: string;
+  price?: string;
+};
 
-export default function CourseCard({ course }: { course: Course }) {
+export default function CourseCard({
+  course,
+  href,
+  label,
+}: {
+  course: Course;
+  href: string;
+  label: string;
+}) {
   return (
-    <div className="bg-white rounded-lg overflow-hidden border border-line shadow-card hover:shadow-cardHover hover:-translate-y-1 transition-all">
-      <div className={`h-[140px] relative flex items-center justify-center bg-gradient-to-br ${course.gradient}`}>
+    <Link
+      href={href}
+      className="block bg-white rounded-lg overflow-hidden border border-line shadow-card hover:shadow-cardHover hover:-translate-y-1 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue"
+    >
+      <div
+        className={`h-[140px] relative flex items-center justify-center bg-gradient-to-br ${course.gradient}`}
+      >
         <span className="absolute top-3 start-3 bg-white/90 text-sageDeep text-[10.5px] font-bold uppercase tracking-wide px-2.5 py-1 rounded-full">
           In Progress
         </span>
@@ -26,9 +47,14 @@ export default function CourseCard({ course }: { course: Course }) {
               style={{ width: `${course.progress}%` }}
             />
           </div>
-          <div className="text-[12px] font-bold min-w-[32px] text-end">{course.progress}%</div>
+          <div className="text-[12px] font-bold min-w-[32px] text-end">
+            {course.progress}%
+          </div>
         </div>
+        <span className="mt-3 inline-flex text-[12px] font-bold text-blue">
+          {label} →
+        </span>
       </div>
-    </div>
+    </Link>
   );
 }

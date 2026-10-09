@@ -48,23 +48,24 @@ export const dictionary = {
       label: "منوی اصلی داشبورد",
       student: {
         dashboard: "داشبورد",
-        teachers: "معلم‌ها",
-        assignments: "تکالیف",
+        classes: "کلاس‌ها",
+        teachers: "مدرسان",
+        assignments: "وظایف",
         practice: "تمرین",
         messages: "پیام‌ها",
       },
       teacher: {
         dashboard: "داشبورد",
         classes: "کلاس‌ها",
-        students: "دانشجوها",
-        availability: "زمان‌ها",
+        students: "دانشجویان",
+        availability: "دسترسی",
         messages: "پیام‌ها",
       },
       admin: {
         dashboard: "داشبورد",
-        students: "دانش‌آموز",
-        teachers: "معلم‌ها",
-        withdrawals: "برداشت‌ها",
+        students: "دانشجویان",
+        teachers: "مدرسان",
+        withdrawals: "پرداخت‌ها",
         courses: "دوره‌ها",
       },
     },
@@ -645,6 +646,11 @@ export const dictionary = {
         enterCode: "کد ارسال‌شده را وارد کنید",
         email: "ایمیل",
         emailPh: "ایمیل خود را وارد کنید",
+        dateOfBirth: "تاریخ تولد دانش‌آموز",
+        dateOfBirthHint:
+          "برای نمایش مناسب سن و کمک به ایمنی حساب، سن را می‌پرسیم.",
+        guardianConsent:
+          "من والد یا سرپرست قانونی این دانش‌آموز هستم و اجازه‌ی ساخت حساب و استفاده از SE ONE را می‌دهم.",
         password: "رمز عبور",
         passwordPh: "رمز عبور خود را وارد کنید",
         forget: "رمز عبور را فراموش کرده‌اید؟",
@@ -692,6 +698,7 @@ export const dictionary = {
     studentNav: {
       section1: "داشبورد",
       myCourses: "دوره‌های من",
+      classes: "کلاس‌های آنلاین",
       practice: "تمرین",
       assignments: "تکالیف",
       findTeacher: "انتخاب معلم",
@@ -706,6 +713,7 @@ export const dictionary = {
       search: "جستجو کنید...",
       titles: {
         dashboard: "داشبورد",
+        classes: "کلاس‌های آنلاین",
         practice: "تمرین",
         assignments: "تکالیف",
         findTeacher: "انتخاب معلم",
@@ -842,7 +850,6 @@ export const dictionary = {
       myBookings: "جلسات رزرو شده من",
       noBookings: "هنوز جلسه‌ای رزرو نکرده‌اید.",
       noSlots: "این معلم در حال حاضر زمان خالی ندارد.",
-      joinCall: "ورود به کلاس آنلاین",
     },
     teacherAvailabilityPage: {
       heading: "مدیریت زمان‌های خالی",
@@ -892,14 +899,6 @@ export const dictionary = {
         saturday: "شنبه",
         sunday: "یکشنبه",
       },
-      joinCall: "ورود به کلاس آنلاین",
-    },
-    videoCallPage: {
-      classWith: "کلاس با",
-      leave: "ترک کلاس",
-      note: "این یک کلاس آنلاین واقعی است — دوربین و میکروفون خود را وصل کنید و منتظر بمانید تا طرف مقابل هم وارد شود.",
-      backToBookings: "بازگشت به جلسات رزرو شده",
-      backToAvailability: "بازگشت به زمان‌های خالی",
     },
     wishlist: {
       save: "ذخیره در علاقه‌مندی‌ها",
@@ -992,24 +991,24 @@ export const dictionary = {
       disclaimer:
         "این متن یک الگوی استاندارد است و باید پیش از راه‌اندازی رسمی سایت توسط مشاور حقوقی بررسی و بومی‌سازی شود.",
       privacy: {
-        title: "حریم خصوصی",
-        lastUpdated: "آخرین به‌روزرسانی: شهریور ۱۴۰۵",
+        title: "سیاست حریم خصوصی",
+        lastUpdated: "آخرین به‌روزرسانی: شهریور ۱۴۰۳",
         sections: [
           {
             heading: "معرفی",
-            body: "در آکادمی SE ONE، حفظ حریم خصوصی و امنیت اطلاعات دانشجویان و مدرسان اولویت اصلی ماست. این سیاست حریم خصوصی توضیح می‌دهد که چه اطلاعاتی جمع‌آوری می‌کنیم، چگونه از آن استفاده می‌کنیم و چه گزینه‌هایی برای کنترل اطلاعات خود دارید.",
+            body: "در SE ONE، حفاظت از حریم خصوصی و امنیت دانشجویان و مربیان اولویت اصلی ماست. این سیاست حریم خصوصی توضیح می‌دهد که چه اطلاعاتی جمع‌آوری می‌شود، چگونه از آن‌ها استفاده می‌شود و چه گزینه‌هایی برای کنترل اطلاعات خود دارید.",
           },
           {
             heading: "اطلاعاتی که جمع‌آوری می‌کنیم",
-            body: "ما اطلاعاتی مانند نام، نام خانوادگی، ایمیل، شماره تماس، تاریخ تولد و عکس پروفایل را هنگام ثبت‌نام جمع‌آوری می‌کنیم. همچنین اطلاعات مربوط به پرداخت، پیشرفت تحصیلی، شرکت در کلاس‌ها و تعاملات در پلتفرم را ثبت می‌کنیم.",
+            body: "ما اطلاعاتی مانند نام، ایمیل، شماره تلفن، تاریخ تولد و عکس پروفایل هنگام ثبت‌نام جمع‌آوری می‌کنیم. همچنین اطلاعات پرداخت، پیشرفت تحصیلی، مشارکت در کلاس‌ها و تعاملات با پلتفرم را ثبت می‌کنیم.",
           },
           {
             heading: "نحوه استفاده از اطلاعات",
-            body: "اطلاعات شما برای ارائه خدمات آموزشی، مدیریت کلاس‌ها، پردازش پرداخت‌ها، ارسال اطلاعیه‌های مهم، بهبود کیفیت آموزش و تجربه کاربری استفاده می‌شود. ما اطلاعات شما را بدون اجازه صریح شما به شخص ثالث فروخته یا اجاره نمی‌دهیم.",
+            body: "اطلاعات شما برای ارائه خدمات آموزشی، مدیریت کلاس‌ها، پردازش پرداخت‌ها، ارسال اعلان‌های مهم، بهبود کیفیت آموزشی و تجربه کاربری استفاده می‌شود. ما بدون رضایت صریح شما اطلاعات شما را به‌صورت مستقیم به فروش یا اجاره نمی‌گذاریم.",
           },
           {
-            heading: "کوکی‌ها و تکنولوژی‌های مشابه",
-            body: "برای بهبود تجربه کاربری، ذخیره تنظیمات زبان، حفظ وضعیت ورود و تحلیل ترافیک سایت از کوکی‌ها استفاده می‌کنیم. می‌توانید کوکی‌ها را از طریق تنظیمات مرورگر خود غیرفعال کنید، اما این ممکن است عملکرد برخی بخش‌های سایت را محدود کند.",
+            heading: "کوکی‌ها و فناوری‌های مشابه",
+            body: "ما از کوکی‌ها برای بهبود تجربه کاربری، ذخیره زبان انتخابی، حفظ وضعیت ورود و تحلیل ترافیک سایت استفاده می‌کنیم. می‌توانید کوکی‌ها را از تنظیمات مرورگر خود غیرفعال کنید، اما این ممکن است برخی امکانات سایت را محدود کند.",
           },
           {
             heading: "اشتراک‌گذاری اطلاعات",
@@ -1120,6 +1119,7 @@ export const dictionary = {
       teachers: "معلم‌ها",
       withdrawals: "درخواست‌های برداشت",
       courses: "دوره‌ها",
+      classScheduling: "برنامه‌ریزی کلاس‌ها",
       tickets: "تیکت‌های پشتیبانی",
       blog: "وبلاگ",
       section2: "پروفایل",
@@ -1132,6 +1132,7 @@ export const dictionary = {
         teachers: "معلم‌ها",
         withdrawals: "درخواست‌های برداشت",
         courses: "دوره‌ها",
+        classScheduling: "برنامه‌ریزی کلاس‌ها",
         tickets: "تیکت‌های پشتیبانی",
         blog: "وبلاگ",
         settings: "تنظیمات",
@@ -1376,6 +1377,7 @@ export const dictionary = {
       label: "Dashboard primary navigation",
       student: {
         dashboard: "Dashboard",
+        classes: "Classes",
         teachers: "Teachers",
         assignments: "Tasks",
         practice: "Practice",
@@ -1930,6 +1932,11 @@ export const dictionary = {
         lastNamePh: "Enter your last name",
         email: "Email Address",
         emailPh: "Enter your email",
+        dateOfBirth: "Student’s date of birth",
+        dateOfBirthHint:
+          "We use age to show an age-appropriate dashboard and support account safety.",
+        guardianConsent:
+          "I am this student’s parent or legal guardian and I give permission to create and use this SE ONE account.",
         password: "Password",
         passwordPh: "Create a password",
         confirm: "Confirm Password",
@@ -1953,6 +1960,7 @@ export const dictionary = {
     studentNav: {
       section1: "Dashboard",
       myCourses: "My Courses",
+      classes: "Online Classes",
       practice: "Practice",
       assignments: "Assignments",
       findTeacher: "Find a Teacher",
@@ -1967,6 +1975,7 @@ export const dictionary = {
       search: "Search here...",
       titles: {
         dashboard: "Dashboard",
+        classes: "Online Classes",
         practice: "Practice",
         assignments: "Assignments",
         findTeacher: "Find a Teacher",
@@ -2103,7 +2112,6 @@ export const dictionary = {
       myBookings: "My Bookings",
       noBookings: "You haven't booked any sessions yet.",
       noSlots: "This teacher has no open slots right now.",
-      joinCall: "Join Online Class",
     },
     teacherAvailabilityPage: {
       heading: "Manage Your Availability",
@@ -2153,14 +2161,6 @@ export const dictionary = {
         saturday: "Saturday",
         sunday: "Sunday",
       },
-      joinCall: "Join Online Class",
-    },
-    videoCallPage: {
-      classWith: "Class with",
-      leave: "Leave class",
-      note: "This is a real live video call — connect your camera and mic, and wait for the other side to join.",
-      backToBookings: "Back to my bookings",
-      backToAvailability: "Back to availability",
     },
     wishlist: {
       save: "Save to Wishlist",
@@ -2381,6 +2381,7 @@ export const dictionary = {
       teachers: "Teachers",
       withdrawals: "Withdrawals",
       courses: "Courses",
+      classScheduling: "Class scheduling",
       tickets: "Support Tickets",
       blog: "Blog",
       section2: "Profile",
@@ -2393,6 +2394,7 @@ export const dictionary = {
         teachers: "Teachers",
         withdrawals: "Withdrawals",
         courses: "Courses",
+        classScheduling: "Class scheduling",
         tickets: "Support Tickets",
         blog: "Blog",
         settings: "Settings",

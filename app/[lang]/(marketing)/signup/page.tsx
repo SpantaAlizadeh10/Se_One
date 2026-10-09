@@ -20,7 +20,7 @@ import ArchFigure from "@/components/marketing/auth/ArchFigure";
 import Image from "next/image";
 
 export default function SignupPage() {
-  const { t, href } = useLanguage();
+  const { t, href, lang } = useLanguage();
   const s = t("auth.signup");
   const router = useRouter();
   const [role, setRole] = useState<Role>("student");
@@ -28,14 +28,50 @@ export default function SignupPage() {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
+  const [dateOfBirth, setDateOfBirth] = useState("");
+  const [guardianConsent, setGuardianConsent] = useState(false);
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const calculateAge = (value: string) => {
+    if (!value) return null;
+    const [year, month, day] = value.split("-").map(Number);
+    if (!year || !month || !day) return null;
+    const today = new Date();
+    return (
+      today.getFullYear() -
+      year -
+      (today.getMonth() + 1 < month ||
+      (today.getMonth() + 1 === month && today.getDate() < day)
+        ? 1
+        : 0)
+    );
+  };
+  const studentAge = role === "student" ? calculateAge(dateOfBirth) : null;
+  const needsGuardianConsent = studentAge !== null && studentAge < 14;
+  const today = new Date();
+  const maxBirthDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!agreed) return;
+    if (role === "student" && !dateOfBirth) {
+      setError(
+        lang === "fa"
+          ? "لطفاً تاریخ تولد دانش‌آموز را وارد کنید."
+          : "Please enter the student’s date of birth.",
+      );
+      return;
+    }
+    if (needsGuardianConsent && !guardianConsent) {
+      setError(
+        lang === "fa"
+          ? "برای ساخت حساب زیر ۱۴ سال، تأیید والد یا سرپرست لازم است."
+          : "A parent or legal guardian must confirm permission for students under 14.",
+      );
+      return;
+    }
     if (password !== confirmPassword) {
       setError(s.confirm + " — " + s.password);
       return;
@@ -48,6 +84,8 @@ export default function SignupPage() {
         email,
         password,
         role,
+        dateOfBirth: role === "student" ? dateOfBirth : undefined,
+        parentalConsent: role === "student" ? guardianConsent : undefined,
       });
       storeAuth(auth);
       // Redirect teachers to profile completion, students to login
@@ -103,6 +141,45 @@ export default function SignupPage() {
                 onChange={(e) => setLastName(e.target.value)}
               />
             </div>
+            {role === "student" && (
+              <div className="mb-5 rounded-2xl border border-blue/15 bg-[#F7F9FF] p-4">
+                <label
+                  htmlFor="student-date-of-birth"
+                  className="mb-1 block text-[13px] font-bold text-ink"
+                >
+                  {s.dateOfBirth}
+                </label>
+                <input
+                  id="student-date-of-birth"
+                  type="date"
+                  required
+                  max={maxBirthDate}
+                  value={dateOfBirth}
+                  onChange={(event) => {
+                    setDateOfBirth(event.target.value);
+                    setGuardianConsent(false);
+                  }}
+                  className="w-full rounded-xl border border-line bg-white px-4 py-2.5 text-[13px] outline-none focus:border-blue"
+                />
+                <p className="mb-0 mt-1.5 text-[11px] leading-5 text-muted">
+                  {s.dateOfBirthHint}
+                </p>
+                {needsGuardianConsent && (
+                  <label className="mt-3 flex cursor-pointer items-start gap-2.5 rounded-xl border border-gold/30 bg-goldSoft/50 p-3 text-[12px] leading-5 text-ink70">
+                    <input
+                      type="checkbox"
+                      checked={guardianConsent}
+                      onChange={(event) =>
+                        setGuardianConsent(event.target.checked)
+                      }
+                      required
+                      className="mt-1 shrink-0 accent-blue"
+                    />
+                    <span>{s.guardianConsent}</span>
+                  </label>
+                )}
+              </div>
+            )}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-5">
               <FormField
                 label={s.email}
@@ -140,10 +217,11 @@ export default function SignupPage() {
               <button
                 type="button"
                 onClick={() => setRole("student")}
-                className={`flex items-center gap-3 rounded-2xl border-2 px-4 py-3.5 text-start transition-colors ${role === "student"
+                className={`flex items-center gap-3 rounded-2xl border-2 px-4 py-3.5 text-start transition-colors ${
+                  role === "student"
                     ? "border-gold bg-goldSoft"
                     : "border-line bg-white"
-                  }`}
+                }`}
               >
                 <span className="w-[38px] h-[38px] rounded-full bg-[#E4ECFF] text-ink70 flex items-center justify-center shrink-0">
                   <GraduationCap size={18} />
@@ -160,10 +238,11 @@ export default function SignupPage() {
               <button
                 type="button"
                 onClick={() => setRole("teacher")}
-                className={`flex items-center gap-3 rounded-2xl border-2 px-4 py-3.5 text-start transition-colors ${role === "teacher"
+                className={`flex items-center gap-3 rounded-2xl border-2 px-4 py-3.5 text-start transition-colors ${
+                  role === "teacher"
                     ? "border-blue bg-[#E4ECFF]"
                     : "border-line bg-white"
-                  }`}
+                }`}
               >
                 <span className="w-[38px] h-[38px] rounded-full bg-[#E4ECFF] text-ink70 flex items-center justify-center shrink-0">
                   <Briefcase size={18} />

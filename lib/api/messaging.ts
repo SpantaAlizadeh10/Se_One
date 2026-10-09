@@ -55,6 +55,15 @@ export type SendMessageInput = {
   attachments?: string[];
 };
 
+export type MessagingContact = {
+  id: string;
+  name: string;
+  avatar?: string;
+  role: "student" | "teacher" | "admin" | "support";
+  courseId?: string;
+  courseTitle?: string;
+};
+
 type ApiRecord = Record<string, unknown>;
 
 function value(record: ApiRecord, ...keys: string[]) {
@@ -78,7 +87,9 @@ function numberValue(record: ApiRecord, ...keys: string[]): number {
   return Number.isFinite(n) ? n : 0;
 }
 
-function normalizeRole(raw: unknown): "student" | "teacher" | "admin" | "support" {
+function normalizeRole(
+  raw: unknown,
+): "student" | "teacher" | "admin" | "support" {
   const value = String(raw).toLowerCase();
   if (value === "teacher") return "teacher";
   if (value === "admin") return "admin";
@@ -100,19 +111,24 @@ function normalizeMessage(raw: unknown, index: number): Message | null {
     senderAvatar: text(record, "senderAvatar", "SenderAvatar") || undefined,
     senderRole: normalizeRole(value(record, "senderRole", "SenderRole")),
     content: text(record, "content", "Content", "text", "Text"),
-    attachments: (value(record, "attachments", "Attachments") as string[]) || undefined,
+    attachments:
+      (value(record, "attachments", "Attachments") as string[]) || undefined,
     createdAt: text(record, "createdAt", "CreatedAt", "sentAt", "SentAt"),
     isRead: Boolean(value(record, "isRead", "IsRead")),
     readAt: text(record, "readAt", "ReadAt") || undefined,
   };
 }
 
-function normalizeConversation(raw: unknown, index: number): Conversation | null {
+function normalizeConversation(
+  raw: unknown,
+  index: number,
+): Conversation | null {
   const record = (raw ?? {}) as ApiRecord;
   const id = text(record, "id", "Id", "conversationId", "ConversationId");
   if (!id) return null;
 
-  const participants = (value(record, "participants", "Participants") as unknown[]) || [];
+  const participants =
+    (value(record, "participants", "Participants") as unknown[]) || [];
   const normalizedParticipants = participants.map((p: unknown) => {
     const participant = (p ?? {}) as ApiRecord;
     return {
@@ -123,23 +139,31 @@ function normalizeConversation(raw: unknown, index: number): Conversation | null
     };
   });
 
-  const lastMessage = value(record, "lastMessage", "LastMessage") as ApiRecord | undefined;
-  
+  const lastMessage = value(record, "lastMessage", "LastMessage") as
+    | ApiRecord
+    | undefined;
+
   return {
     id,
     participants: normalizedParticipants,
-    lastMessage: lastMessage ? {
-      content: text(lastMessage, "content", "Content", "text", "Text"),
-      createdAt: text(lastMessage, "createdAt", "CreatedAt"),
-      senderName: text(lastMessage, "senderName", "SenderName"),
-    } : undefined,
+    lastMessage: lastMessage
+      ? {
+          content: text(lastMessage, "content", "Content", "text", "Text"),
+          createdAt: text(lastMessage, "createdAt", "CreatedAt"),
+          senderName: text(lastMessage, "senderName", "SenderName"),
+        }
+      : undefined,
     unreadCount: numberValue(record, "unreadCount", "UnreadCount"),
     createdAt: text(record, "createdAt", "CreatedAt"),
     updatedAt: text(record, "updatedAt", "UpdatedAt"),
     subject: text(record, "subject", "Subject") || undefined,
-    type: (value(record, "type", "Type") as Conversation["type"]) || "student_teacher",
-    relatedCourseId: text(record, "relatedCourseId", "RelatedCourseId") || undefined,
-    relatedAssignmentId: text(record, "relatedAssignmentId", "RelatedAssignmentId") || undefined,
+    type:
+      (value(record, "type", "Type") as Conversation["type"]) ||
+      "student_teacher",
+    relatedCourseId:
+      text(record, "relatedCourseId", "RelatedCourseId") || undefined,
+    relatedAssignmentId:
+      text(record, "relatedAssignmentId", "RelatedAssignmentId") || undefined,
   };
 }
 
@@ -167,12 +191,36 @@ export async function getConversations(): Promise<Conversation[]> {
   return unwrapList(data, normalizeConversation);
 }
 
+/** GET /api/conversations/contacts — only contacts this user is allowed to message. */
+export async function getMessagingContacts(): Promise<MessagingContact[]> {
+  const data = await apiFetch<unknown>("/api/conversations/contacts");
+  return unwrapList(data, (raw) => {
+    const record = (raw ?? {}) as ApiRecord;
+    const id = text(record, "id", "Id", "userId", "UserId");
+    const name = text(record, "name", "Name", "fullName", "FullName");
+    if (!id || !name) return null;
+    return {
+      id,
+      name,
+      avatar:
+        text(record, "avatar", "Avatar", "avatarUrl", "AvatarUrl") || undefined,
+      role: normalizeRole(value(record, "role", "Role")),
+      courseId: text(record, "courseId", "CourseId") || undefined,
+      courseTitle: text(record, "courseTitle", "CourseTitle") || undefined,
+    };
+  });
+}
+
 /**
  * GET /api/conversations/search?query={query}
  * Search conversations
  */
-export async function searchConversations(query: string): Promise<Conversation[]> {
-  const data = await apiFetch<unknown>(`/api/conversations/search?query=${encodeURIComponent(query)}`);
+export async function searchConversations(
+  query: string,
+): Promise<Conversation[]> {
+  const data = await apiFetch<unknown>(
+    `/api/conversations/search?query=${encodeURIComponent(query)}`,
+  );
   return unwrapList(data, normalizeConversation);
 }
 
@@ -180,7 +228,9 @@ export async function searchConversations(query: string): Promise<Conversation[]
  * POST /api/conversations
  * Create a new conversation
  */
-export async function createConversation(input: CreateConversationInput): Promise<Conversation> {
+export async function createConversation(
+  input: CreateConversationInput,
+): Promise<Conversation> {
   const data = await apiFetch<unknown>("/api/conversations", {
     method: "POST",
     body: input,
@@ -192,7 +242,9 @@ export async function createConversation(input: CreateConversationInput): Promis
  * GET /api/conversations/{conversationId}
  * Get a specific conversation
  */
-export async function getConversation(conversationId: string): Promise<Conversation> {
+export async function getConversation(
+  conversationId: string,
+): Promise<Conversation> {
   const data = await apiFetch<unknown>(`/api/conversations/${conversationId}`);
   return normalizeConversation(data, 0)!;
 }
@@ -202,7 +254,9 @@ export async function getConversation(conversationId: string): Promise<Conversat
  * Get messages in a conversation
  */
 export async function getMessages(conversationId: string): Promise<Message[]> {
-  const data = await apiFetch<unknown>(`/api/conversations/${conversationId}/messages`);
+  const data = await apiFetch<unknown>(
+    `/api/conversations/${conversationId}/messages`,
+  );
   return unwrapList(data, normalizeMessage);
 }
 
@@ -214,19 +268,40 @@ export async function sendMessage(
   conversationId: string,
   input: SendMessageInput,
 ): Promise<Message> {
-  const data = await apiFetch<unknown>(`/api/conversations/${conversationId}/messages`, {
-    method: "POST",
-    body: input,
-  });
+  const data = await apiFetch<unknown>(
+    `/api/conversations/${conversationId}/messages`,
+    {
+      method: "POST",
+      body: input,
+    },
+  );
   return normalizeMessage(data, 0)!;
+}
+
+/** POST /api/conversations/{id}/messages/{messageId}/upload — attach one file to a sent message. */
+export async function uploadMessageAttachment(
+  conversationId: string,
+  messageId: string,
+  file: File,
+): Promise<{ fileUrl: string }> {
+  const formData = new FormData();
+  formData.append("attachment", file);
+  return apiFetch<{ fileUrl: string }>(
+    `/api/conversations/${encodeURIComponent(conversationId)}/messages/${encodeURIComponent(messageId)}/upload`,
+    { method: "POST", body: formData as any, headers: undefined },
+  );
 }
 
 /**
  * PATCH /api/conversations/{conversationId}/read
  * Mark conversation as read
  */
-export async function markConversationAsRead(conversationId: string): Promise<void> {
-  await apiFetch(`/api/conversations/${conversationId}/read`, { method: "PATCH" });
+export async function markConversationAsRead(
+  conversationId: string,
+): Promise<void> {
+  await apiFetch(`/api/conversations/${conversationId}/read`, {
+    method: "PATCH",
+  });
 }
 
 /**
@@ -241,11 +316,15 @@ export async function markMessageAsRead(messageId: string): Promise<void> {
  * GET /api/conversations/{conversationId}/typing
  * Get typing status (for real-time indicators)
  */
-export async function getTypingStatus(conversationId: string): Promise<{
-  userId: string;
-  isTyping: boolean;
-}[]> {
-  const data = await apiFetch<unknown>(`/api/conversations/${conversationId}/typing`);
+export async function getTypingStatus(conversationId: string): Promise<
+  {
+    userId: string;
+    isTyping: boolean;
+  }[]
+> {
+  const data = await apiFetch<unknown>(
+    `/api/conversations/${conversationId}/typing`,
+  );
   if (Array.isArray(data)) {
     return data.map((item: unknown) => {
       const record = (item ?? {}) as ApiRecord;
@@ -262,7 +341,10 @@ export async function getTypingStatus(conversationId: string): Promise<{
  * POST /api/conversations/{conversationId}/typing
  * Set typing status
  */
-export async function setTypingStatus(conversationId: string, isTyping: boolean): Promise<void> {
+export async function setTypingStatus(
+  conversationId: string,
+  isTyping: boolean,
+): Promise<void> {
   await apiFetch(`/api/conversations/${conversationId}/typing`, {
     method: "POST",
     body: { isTyping },

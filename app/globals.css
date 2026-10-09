@@ -4,12 +4,39 @@
 
 html,
 body {
-  background-color: #FAF8F3;
-  color: #1C2B44;
+  background-color: #faf8f3;
+  color: #1c2b44;
 }
 
 * {
   box-sizing: border-box;
+}
+
+/* A calm, child-friendly palette is enabled only for authenticated students under 14. */
+.student-child-mode {
+  background-color: #fffaf0;
+}
+
+.student-child-mode main {
+  background-image: radial-gradient(
+    circle at 95% 2%,
+    rgba(255, 220, 145, 0.16),
+    transparent 24rem
+  );
+}
+
+.student-child-mode .shadow-card {
+  box-shadow: 0 8px 24px rgba(92, 78, 47, 0.07);
+}
+
+.student-child-mode main h2,
+.student-child-mode main h3 {
+  letter-spacing: 0;
+}
+
+.student-child-mode main button,
+.student-child-mode main a {
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* thin, quiet scrollbars for scrollable panels */
@@ -18,7 +45,7 @@ body {
 }
 
 .thin-scroll::-webkit-scrollbar-thumb {
-  background: #EDE8DE;
+  background: #ede8de;
   border-radius: 20px;
 }
 

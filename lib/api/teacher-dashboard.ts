@@ -87,6 +87,24 @@ export type TeacherAnalytics = {
   }[];
 };
 
+export type TeacherTier = {
+  level: 1 | 2 | 3;
+  name: string;
+  minCompletedClasses: number;
+  minAverageRating: number;
+  minClassCompletionRate: number;
+  teacherSharePercent: number | null;
+  benefits: string[];
+};
+
+export type TeacherProgression = {
+  currentLevel: 1 | 2 | 3;
+  completedClasses: number;
+  averageRating: number;
+  classCompletionRate: number;
+  tiers: TeacherTier[];
+};
+
 type ApiRecord = Record<string, unknown>;
 
 function value(record: ApiRecord, ...keys: string[]) {
@@ -108,6 +126,85 @@ function text(record: ApiRecord, ...keys: string[]): string {
 function numberValue(record: ApiRecord, ...keys: string[]): number {
   const n = Number(value(record, ...keys) ?? 0);
   return Number.isFinite(n) ? n : 0;
+}
+
+function normalizeTeacherProgression(raw: unknown): TeacherProgression {
+  const record = (raw ?? {}) as ApiRecord;
+  const tiersRaw = (value(record, "tiers", "Tiers") as unknown[]) || [];
+  const tiers = tiersRaw
+    .map((item): TeacherTier | null => {
+      const tier = (item ?? {}) as ApiRecord;
+      const level = numberValue(tier, "level", "Level");
+      if (level < 1 || level > 3) return null;
+      const shareValue = value(
+        tier,
+        "teacherSharePercent",
+        "TeacherSharePercent",
+      );
+      const parsedShare = shareValue == null ? null : Number(shareValue);
+      const benefitsValue = value(tier, "benefits", "Benefits");
+      return {
+        level: level as TeacherTier["level"],
+        name: text(tier, "name", "Name"),
+        minCompletedClasses: numberValue(
+          tier,
+          "minCompletedClasses",
+          "MinCompletedClasses",
+        ),
+        minAverageRating: numberValue(
+          tier,
+          "minAverageRating",
+          "MinAverageRating",
+        ),
+        minClassCompletionRate: numberValue(
+          tier,
+          "minClassCompletionRate",
+          "MinClassCompletionRate",
+        ),
+        teacherSharePercent:
+          parsedShare != null && Number.isFinite(parsedShare)
+            ? parsedShare
+            : null,
+        benefits: Array.isArray(benefitsValue)
+          ? benefitsValue.filter(
+              (benefit): benefit is string => typeof benefit === "string",
+            )
+          : [],
+      };
+    })
+    .filter((tier): tier is TeacherTier => tier !== null)
+    .sort((a, b) => a.level - b.level);
+  const current = numberValue(record, "currentLevel", "CurrentLevel");
+
+  return {
+    currentLevel:
+      current >= 1 && current <= 3
+        ? (current as TeacherProgression["currentLevel"])
+        : 1,
+    completedClasses: numberValue(
+      record,
+      "completedClasses",
+      "CompletedClasses",
+    ),
+    averageRating: numberValue(record, "averageRating", "AverageRating"),
+    classCompletionRate: numberValue(
+      record,
+      "classCompletionRate",
+      "ClassCompletionRate",
+    ),
+    tiers,
+  };
+}
+
+/** GET /api/teacher/dashboard/progression — authoritative teacher tier and payout share. */
+export async function getTeacherProgression(
+  lang?: "fa" | "en",
+): Promise<TeacherProgression> {
+  const query = lang ? `?lang=${lang}` : "";
+  const data = await apiFetch<unknown>(
+    `/api/teacher/dashboard/progression${query}`,
+  );
+  return normalizeTeacherProgression(data);
 }
 
 function normalizeTeacherClass(

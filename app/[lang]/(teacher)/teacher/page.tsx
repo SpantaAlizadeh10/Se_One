@@ -10,8 +10,13 @@ import {
   ArrowRight,
   WalletCards,
   ArrowDownToLine,
+  Video,
+  MessageSquare,
 } from "lucide-react";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
+import AnnouncementsFeed from "@/components/dashboard/AnnouncementsFeed";
+import TeacherGrowthTrack from "@/components/teacher-dashboard/TeacherGrowthTrack";
+import LiveDashboardCalendar from "@/components/dashboard/LiveDashboardCalendar";
 import { getName } from "@/lib/auth-client";
 import {
   getTeacherDashboardOverview,
@@ -66,6 +71,28 @@ export default function TeacherOverviewPage() {
   const formatNumber = (value: number) =>
     new Intl.NumberFormat(lang === "fa" ? "fa-IR" : "en-US").format(value);
   const currency = earnings?.currency || "IRR";
+  const upcomingClasses = classes
+    .filter((item) => item.status === "scheduled" || item.status === "ongoing")
+    .map((item) => {
+      const parsedDate = new Date(item.scheduledDate);
+      if (
+        item.scheduledDate &&
+        !Number.isNaN(parsedDate.getTime()) &&
+        item.startTime &&
+        /^\d{1,2}:\d{2}/.test(item.startTime)
+      ) {
+        const [hours, minutes] = item.startTime.split(":").map(Number);
+        parsedDate.setHours(hours, minutes, 0, 0);
+      }
+      return { item, startsAt: parsedDate };
+    })
+    .filter(
+      ({ startsAt }) =>
+        !Number.isNaN(startsAt.getTime()) &&
+        startsAt.getTime() > Date.now() - 60 * 60 * 1000,
+    )
+    .sort((a, b) => a.startsAt.getTime() - b.startsAt.getTime())
+    .slice(0, 3);
 
   const submitWithdrawal = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -138,6 +165,8 @@ export default function TeacherOverviewPage() {
         <p className="text-muted text-[14px] m-0">{d.sub}</p>
       </div>
 
+      <AnnouncementsFeed lang={lang} />
+
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-7">
         {stats.map((s) => (
           <div
@@ -158,6 +187,8 @@ export default function TeacherOverviewPage() {
           </div>
         ))}
       </div>
+
+      <TeacherGrowthTrack analytics={analytics} />
 
       <section className="grid lg:grid-cols-[0.85fr_1.15fr] gap-4 mb-8">
         <div className="rounded-xl bg-ink text-white p-5 sm:p-6 shadow-card flex flex-col justify-between">
@@ -281,7 +312,9 @@ export default function TeacherOverviewPage() {
       </section>
 
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-[18px] font-semibold m-0">{d.todayClasses}</h3>
+        <h3 className="text-[18px] font-semibold m-0">
+          {lang === "fa" ? "کلاس‌های پیش رو" : "Upcoming classes"}
+        </h3>
         <Link
           href={href("/teacher/schedule")}
           className="text-[13px] font-semibold text-blue flex items-center gap-1"
@@ -291,8 +324,8 @@ export default function TeacherOverviewPage() {
       </div>
 
       <div className="bg-white border border-line rounded-lg shadow-card divide-y divide-line">
-        {classes.slice(0, 3).map((c) => (
-          <div key={c.id} className="flex items-center gap-4 p-4">
+        {upcomingClasses.map(({ item: c, startsAt }) => (
+          <div key={c.id} className="flex flex-wrap items-center gap-4 p-4">
             <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#CFE7E4] to-[#9FCFC9] flex items-center justify-center shrink-0 text-white">
               <CalendarDays size={18} />
             </div>
@@ -308,12 +341,59 @@ export default function TeacherOverviewPage() {
               <div className="text-[13px] font-bold">{c.startTime}</div>
               <div className="text-[11px] text-muted">
                 {c.scheduledDate
-                  ? new Date(c.scheduledDate).toLocaleDateString()
+                  ? startsAt.toLocaleDateString(
+                      lang === "fa" ? "fa-IR" : "en-US",
+                    )
                   : ""}
               </div>
             </div>
+            <div className="flex w-full gap-2 sm:w-auto">
+              {c.meetingUrl && /^https:\/\//i.test(c.meetingUrl) ? (
+                <a
+                  href={c.meetingUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-blue px-3 py-2 text-[11px] font-semibold text-white hover:bg-blueDeep sm:flex-none"
+                >
+                  <Video size={14} />
+                  {lang === "fa" ? "ورود به کلاس" : "Join class"}
+                </a>
+              ) : null}
+              <Link
+                href={href("/teacher/messages")}
+                className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-line px-3 py-2 text-[11px] font-semibold text-ink70 hover:bg-cream sm:flex-none"
+              >
+                <MessageSquare size={14} />
+                {lang === "fa" ? "پیام‌ها" : "Messages"}
+              </Link>
+            </div>
           </div>
         ))}
+        {upcomingClasses.length === 0 && (
+          <div className="p-6 text-center">
+            <CalendarDays size={22} className="mx-auto mb-2 text-muted" />
+            <p className="m-0 text-[12px] font-semibold">
+              {lang === "fa"
+                ? "کلاس برنامه‌ریزی‌شده‌ای نداری."
+                : "No upcoming classes yet."}
+            </p>
+            <p className="mb-3 mt-1 text-[11px] text-muted">
+              {lang === "fa"
+                ? "زمان‌بندی‌ات را تنظیم کن تا زبان‌آموزها بتوانند کلاس رزرو کنند."
+                : "Set your availability so students can book a class."}
+            </p>
+            <Link
+              href={href("/teacher/availability")}
+              className="inline-flex items-center rounded-lg bg-blue px-3 py-2 text-[11px] font-semibold text-white"
+            >
+              {lang === "fa" ? "تنظیم زمان‌های آزاد" : "Set availability"}
+            </Link>
+          </div>
+        )}
+      </div>
+
+      <div className="mt-6">
+        <LiveDashboardCalendar audience="teacher" />
       </div>
     </div>
   );

@@ -11,6 +11,7 @@ import {
   Calendar,
   FileText,
 } from "lucide-react";
+import BlogRichTextEditor from "@/components/admin/BlogRichTextEditor";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 import { isApiConfigured } from "@/lib/is-api-configured";
 import {
@@ -23,6 +24,7 @@ import {
 
 type BlogPost = {
   id: string;
+  slug: string;
   title: string;
   excerpt: string;
   content: string;
@@ -34,6 +36,17 @@ type BlogPost = {
   image: string;
   views: number;
 };
+
+function slugFromTitle(value: string) {
+  return value
+    .normalize("NFC")
+    .trim()
+    .toLocaleLowerCase()
+    .replace(/[\s_]+/g, "-")
+    .replace(/[^\p{L}\p{N}-]+/gu, "")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+}
 
 export default function AdminBlogPage() {
   const { t, lang } = useLanguage();
@@ -60,6 +73,7 @@ export default function AdminBlogPage() {
         setPosts(
           result.items.map((post) => ({
             id: post.id,
+            slug: post.slug || slugFromTitle(post.title),
             title: post.title,
             excerpt: post.excerpt,
             content: post.content,
@@ -128,6 +142,7 @@ export default function AdminBlogPage() {
   const addPost = async (post: Omit<BlogPost, "id" | "views">) => {
     try {
       const created = await createAdminBlogPost({
+        slug: post.slug,
         title: post.title,
         excerpt: post.excerpt,
         content: post.content,
@@ -409,9 +424,11 @@ function BlogPostForm({
   onSubmit: (post: Omit<BlogPost, "id" | "views">) => void;
   onCancel: () => void;
 }) {
+  const [slugEdited, setSlugEdited] = useState(Boolean(post?.slug));
   const [formData, setFormData] = useState(
     post
       ? {
+          slug: post.slug || slugFromTitle(post.title),
           title: post.title,
           excerpt: post.excerpt,
           content: post.content,
@@ -422,6 +439,7 @@ function BlogPostForm({
           image: post.image,
         }
       : {
+          slug: "",
           title: "",
           excerpt: "",
           content: "",
@@ -435,8 +453,17 @@ function BlogPostForm({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const plainContent = formData.content
+      .replace(/<[^>]*>/g, " ")
+      .replace(/&nbsp;/g, " ")
+      .trim();
+    if (!plainContent) {
+      window.alert("Please write the article content before saving.");
+      return;
+    }
     onSubmit({
       ...formData,
+      slug: slugFromTitle(formData.slug),
       publishedAt: post?.publishedAt || new Date().toISOString().split("T")[0],
     });
   };
@@ -452,11 +479,42 @@ function BlogPostForm({
             type="text"
             value={formData.title}
             onChange={(e) =>
-              setFormData({ ...formData, title: e.target.value })
+              setFormData({
+                ...formData,
+                title: e.target.value,
+                ...(!slugEdited ? { slug: slugFromTitle(e.target.value) } : {}),
+              })
             }
             className="w-full px-4 py-2.5 border border-line rounded-xl bg-cream outline-none focus:border-blue"
             required
           />
+        </div>
+        <div>
+          <label className="block text-[13px] font-bold text-ink mb-2">
+            URL / Slug
+          </label>
+          <div className="flex items-center overflow-hidden rounded-xl border border-line bg-cream focus-within:border-blue">
+            <span className="whitespace-nowrap border-e border-line px-3 py-2.5 text-[12px] text-muted">
+              /blog/
+            </span>
+            <input
+              type="text"
+              value={formData.slug}
+              onChange={(e) => {
+                setSlugEdited(true);
+                setFormData({
+                  ...formData,
+                  slug: slugFromTitle(e.target.value),
+                });
+              }}
+              className="min-w-0 flex-1 bg-transparent px-3 py-2.5 outline-none"
+              placeholder="article-title"
+              required
+            />
+          </div>
+          <p className="mt-1.5 text-[11px] text-muted">
+            Spaces become hyphens automatically. Persian letters are supported.
+          </p>
         </div>
         <div>
           <label className="block text-[13px] font-bold text-ink mb-2">
@@ -475,14 +533,9 @@ function BlogPostForm({
           <label className="block text-[13px] font-bold text-ink mb-2">
             Article content
           </label>
-          <textarea
+          <BlogRichTextEditor
             value={formData.content}
-            onChange={(e) =>
-              setFormData({ ...formData, content: e.target.value })
-            }
-            className="w-full px-4 py-2.5 border border-line rounded-xl bg-cream outline-none focus:border-blue min-h-[220px] resize-y"
-            placeholder="Write the complete article content here..."
-            required
+            onChange={(content) => setFormData({ ...formData, content })}
           />
         </div>
         <div className="grid grid-cols-2 gap-4">
