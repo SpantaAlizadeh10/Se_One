@@ -32,8 +32,8 @@ export const navItems: NavItem[] = [
   },
   {
     href: "/dashboard/teachers",
-    labelKey: "studentNav.findTeacher",
-    titleKey: "studentNav.titles.findTeacher",
+    labelKey: "studentNav.findClass",
+    titleKey: "studentNav.titles.findClass",
     group: "dashboard",
   },
   {

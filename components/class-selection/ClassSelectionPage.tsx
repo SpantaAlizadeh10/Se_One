@@ -13,6 +13,8 @@ import {
   Copy,
   X,
   LoaderCircle,
+  Upload,
+  Smartphone,
 } from "lucide-react";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 import {
@@ -66,8 +68,11 @@ export default function ClassSelectionPage() {
   // Modal state
   const [selectedClass, setSelectedClass] = useState<CourseClass | null>(null);
   const [showEnrollModal, setShowEnrollModal] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [inviteCode, setInviteCode] = useState("");
   const [copied, setCopied] = useState(false);
+  const [receiptFile, setReceiptFile] = useState<File | null>(null);
+  const [cardNumber] = useState("6037-9974-1234-5678"); // Example card number
 
   useEffect(() => {
     loadClasses();
@@ -129,18 +134,36 @@ export default function ClassSelectionPage() {
     setShowEnrollModal(true);
   };
 
-  const confirmEnrollment = async () => {
-    if (!selectedClass) return;
+  const proceedToPayment = () => {
+    setShowEnrollModal(false);
+    setShowPaymentModal(true);
+  };
+
+  const handleReceiptUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setReceiptFile(file);
+    }
+  };
+
+  const confirmPayment = async () => {
+    if (!selectedClass || !receiptFile) {
+      setError(fa ? "لطفاً فیش پرداخت را آپلود کنید" : "Please upload the payment receipt");
+      return;
+    }
 
     setEnrollingId(selectedClass.id);
     setError("");
     setSuccess("");
 
     try {
+      // TODO: Upload receipt to backend and send to WhatsApp
+      // For now, just complete enrollment
       await enrollInClass(selectedClass.id, {});
       setSuccess(fa ? "ثبت‌نام با موفقیت انجام شد" : "Enrollment successful");
-      setShowEnrollModal(false);
+      setShowPaymentModal(false);
       setSelectedClass(null);
+      setReceiptFile(null);
       await loadClasses();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Enrollment failed");
@@ -330,11 +353,10 @@ export default function ClassSelectionPage() {
                     </div>
                     <h3 className="text-[14px] font-semibold truncate">{classItem.title}</h3>
                     <span
-                      className={`inline-block mt-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${
-                        classItem.type === "private"
-                          ? "bg-purple/10 text-purple"
-                          : "bg-blue/10 text-blue"
-                      }`}
+                      className={`inline-block mt-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${classItem.type === "private"
+                        ? "bg-purple/10 text-purple"
+                        : "bg-blue/10 text-blue"
+                        }`}
                     >
                       {classItem.type === "private"
                         ? fa
@@ -389,11 +411,10 @@ export default function ClassSelectionPage() {
                   type="button"
                   disabled={isFull || enrollingId === classItem.id}
                   onClick={() => handleEnroll(classItem)}
-                  className={`w-full rounded-xl px-3.5 py-2.5 text-[13px] font-semibold transition-colors ${
-                    isFull
-                      ? "bg-line text-muted cursor-not-allowed"
-                      : "bg-blue text-white hover:bg-blueDeep"
-                  } disabled:opacity-50`}
+                  className={`w-full rounded-xl px-3.5 py-2.5 text-[13px] font-semibold transition-colors ${isFull
+                    ? "bg-line text-muted cursor-not-allowed"
+                    : "bg-blue text-white hover:bg-blueDeep"
+                    } disabled:opacity-50`}
                 >
                   {enrollingId === classItem.id
                     ? fa
@@ -486,17 +507,11 @@ export default function ClassSelectionPage() {
             <div className="space-y-2">
               <button
                 type="button"
-                onClick={confirmEnrollment}
+                onClick={proceedToPayment}
                 disabled={enrollingId === selectedClass.id}
                 className="w-full rounded-xl bg-blue px-4 py-2.5 text-[13px] font-semibold text-white hover:bg-blueDeep disabled:opacity-50 transition-colors"
               >
-                {enrollingId === selectedClass.id
-                  ? fa
-                    ? "در حال ثبت‌نام..."
-                    : "Enrolling..."
-                  : fa
-                    ? "تایید ثبت‌نام"
-                    : "Confirm Enrollment"}
+                {fa ? "ادامه به پرداخت" : "Proceed to Payment"}
               </button>
 
               {selectedClass.type === "private" && !inviteCode && (
@@ -535,6 +550,140 @@ export default function ClassSelectionPage() {
                 </div>
               )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Payment Modal */}
+      {showPaymentModal && selectedClass && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-ink/50 p-4"
+          onClick={() => setShowPaymentModal(false)}
+        >
+          <div
+            className="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-[16px] font-semibold">
+                {fa ? "پرداخت" : "Payment"}
+              </h3>
+              <button
+                type="button"
+                onClick={() => setShowPaymentModal(false)}
+                className="p-1 rounded-full hover:bg-cream"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="space-y-4 mb-6">
+              {/* Class Summary */}
+              <div className="bg-cream rounded-xl p-4">
+                <div className="flex items-center gap-3 mb-3">
+                  <Image
+                    src={selectedClass.teacher.avatar}
+                    alt={selectedClass.teacher.name}
+                    width={40}
+                    height={40}
+                    className="rounded-full object-cover"
+                  />
+                  <div>
+                    <div className="text-[13px] font-semibold">{selectedClass.title}</div>
+                    <div className="text-[11px] text-muted">{selectedClass.teacher.name}</div>
+                  </div>
+                </div>
+                <div className="border-t border-line pt-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-[12px] text-muted">{fa ? "قیمت نهایی" : "Final Price"}</span>
+                    <span className="text-[16px] font-bold text-blue">
+                      {formatPrice(selectedClass.finalPrice)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Card Number */}
+              <div>
+                <label className="block text-[12px] font-semibold text-muted mb-2">
+                  {fa ? "شماره کارت" : "Card Number"}
+                </label>
+                <div className="bg-cream border border-line rounded-xl px-4 py-3 flex items-center gap-3">
+                  <Smartphone size={18} className="text-muted" />
+                  <code className="text-[14px] font-mono text-ink">{cardNumber}</code>
+                </div>
+                <p className="text-[10px] text-muted mt-1">
+                  {fa ? "مبلغ را به این شماره کارت واریز کنید" : "Transfer the amount to this card number"}
+                </p>
+              </div>
+
+              {/* Receipt Upload */}
+              <div>
+                <label className="block text-[12px] font-semibold text-muted mb-2">
+                  {fa ? "آپلود فیش پرداخت" : "Upload Payment Receipt"}
+                </label>
+                <div className="border-2 border-dashed border-line rounded-xl p-4 text-center hover:border-blue transition-colors">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleReceiptUpload}
+                    className="hidden"
+                    id="receipt-upload"
+                  />
+                  <label
+                    htmlFor="receipt-upload"
+                    className="cursor-pointer flex flex-col items-center gap-2"
+                  >
+                    {receiptFile ? (
+                      <>
+                        <Check size={24} className="text-sageDeep" />
+                        <span className="text-[12px] font-semibold text-sageDeep">
+                          {receiptFile.name}
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <Upload size={24} className="text-muted" />
+                        <span className="text-[12px] text-muted">
+                          {fa ? "کلیک کنید یا فایل را بکشید" : "Click or drag file here"}
+                        </span>
+                      </>
+                    )}
+                  </label>
+                </div>
+              </div>
+
+              {/* WhatsApp Info */}
+              <div className="bg-green-50 border border-green-200 rounded-xl p-3">
+                <div className="flex items-start gap-2">
+                  <Smartphone size={16} className="text-green-600 shrink-0 mt-0.5" />
+                  <div className="text-[11px] text-green-800">
+                    {fa
+                      ? "فیش پرداخت به واتساپ ارسال می‌شود و پس از تایید، ثبت‌نام شما نهایی می‌شود."
+                      : "Payment receipt will be sent to WhatsApp. After verification, your enrollment will be confirmed."}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={confirmPayment}
+              disabled={!receiptFile || enrollingId === selectedClass.id}
+              className="w-full rounded-xl bg-green-600 px-4 py-2.5 text-[13px] font-semibold text-white hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+            >
+              {enrollingId === selectedClass.id ? (
+                <>
+                  <LoaderCircle size={16} className="animate-spin" />
+                  {fa ? "در حال ارسال..." : "Sending..."}
+                </>
+              ) : (
+                <>
+                  <Smartphone size={16} />
+                  {fa ? "ارسال فیش به واتساپ" : "Send Receipt to WhatsApp"}
+                </>
+              )}
+            </button>
           </div>
         </div>
       )}

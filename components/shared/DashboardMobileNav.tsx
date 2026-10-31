@@ -9,6 +9,7 @@ import {
   GraduationCap,
   LayoutDashboard,
   MessageSquare,
+  Search,
   Users,
   Wallet,
 } from "lucide-react";
@@ -32,8 +33,8 @@ const navigation: Record<DashboardRole, MobileNavItem[]> = {
     },
     {
       href: "/dashboard/teachers",
-      labelKey: "dashboardMobileNav.student.teachers",
-      Icon: GraduationCap,
+      labelKey: "dashboardMobileNav.student.findClass",
+      Icon: Search,
     },
     {
       href: "/dashboard/classes",
@@ -119,7 +120,7 @@ export default function DashboardMobileNav({ role }: { role: DashboardRole }) {
   const { isChildMode } = useStudentExperience();
   const childLabels: Record<string, { fa: string; en: string }> = {
     "/dashboard": { fa: "یادگیری", en: "Learn" },
-    "/dashboard/teachers": { fa: "معلم", en: "Teachers" },
+    "/dashboard/teachers": { fa: "پیدا کردن کلاس", en: "Find Class" },
     "/dashboard/classes": { fa: "کلاس‌ها", en: "Classes" },
     "/dashboard/assignments": { fa: "کارها", en: "My work" },
     "/dashboard/practice": { fa: "تمرین", en: "Practice" },
