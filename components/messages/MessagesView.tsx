@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
-import { Search, Send, ArrowLeft } from "lucide-react";
-import { getConversation, getConversations, getMessages, markConversationAsRead, sendMessage as sendMessageApi, type Conversation as ApiConversation, type Message as ApiMessage } from "@/lib/api/messaging";
+import { Search, Send, ArrowLeft, Paperclip, Download } from "lucide-react";
+import { getConversation, getConversations, getMessages, markConversationAsRead, sendMessage as sendMessageApi, type Conversation as ApiConversation, type Message as ApiMessage, type AttachmentDetail } from "@/lib/api/messaging";
 import { getRole } from "@/lib/auth-client";
 
 type ConversationView = {
@@ -15,7 +15,7 @@ type ConversationView = {
   time: string;
   unread: boolean;
   online: boolean;
-  messages: { id: string; fromMe: boolean; text: string; time: string }[];
+  messages: { id: string; fromMe: boolean; text: string; time: string; attachmentDetails?: AttachmentDetail[] }[];
 };
 
 function toView(conversation: ApiConversation, messages: ApiMessage[] = []): ConversationView {
@@ -36,6 +36,7 @@ function toView(conversation: ApiConversation, messages: ApiMessage[] = []): Con
       fromMe: message.senderRole === myRole,
       text: message.content,
       time: message.createdAt ? new Date(message.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "",
+      attachmentDetails: message.attachmentDetails,
     })),
   };
 }
@@ -174,6 +175,26 @@ export default function MessagesView() {
                     }`}
                 >
                   {m.text}
+                  {m.attachmentDetails && m.attachmentDetails.length > 0 && (
+                    <div className="mt-2 space-y-2">
+                      {m.attachmentDetails.map((attachment, idx) => (
+                        <a
+                          key={idx}
+                          href={attachment.downloadUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={`flex items-center gap-2 px-3 py-2 rounded-lg ${m.fromMe
+                            ? "bg-white/20 hover:bg-white/30"
+                            : "bg-white border border-line hover:bg-cream"
+                            } transition-colors`}
+                        >
+                          <Paperclip size={14} className="shrink-0" />
+                          <span className="truncate text-xs">{attachment.displayName}</span>
+                          <Download size={12} className="shrink-0" />
+                        </a>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 <div className={`text-[10px] text-muted mt-1 ${m.fromMe ? "text-end" : ""}`}>{m.time}</div>
               </div>

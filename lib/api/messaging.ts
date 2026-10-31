@@ -5,6 +5,13 @@ import { apiFetch } from "./client";
  * Handle conversations and messages between students, teachers, and support
  */
 
+export type AttachmentDetail = {
+  displayName: string;
+  downloadUrl: string;
+  fileType?: string;
+  fileSize?: number;
+};
+
 export type Message = {
   id: string;
   conversationId: string;
@@ -14,6 +21,7 @@ export type Message = {
   senderRole: "student" | "teacher" | "admin" | "support";
   content: string;
   attachments?: string[];
+  attachmentDetails?: AttachmentDetail[];
   createdAt: string;
   isRead: boolean;
   readAt?: string;
@@ -103,6 +111,23 @@ function normalizeMessage(raw: unknown, index: number): Message | null {
   const conversationId = text(record, "conversationId", "ConversationId");
   if (!conversationId) return null;
 
+  const attachmentDetailsRaw = value(
+    record,
+    "attachmentDetails",
+    "AttachmentDetails",
+  ) as unknown[];
+  const attachmentDetails = Array.isArray(attachmentDetailsRaw)
+    ? attachmentDetailsRaw.map((detail: unknown) => {
+      const d = (detail ?? {}) as ApiRecord;
+      return {
+        displayName: text(d, "displayName", "DisplayName"),
+        downloadUrl: text(d, "downloadUrl", "DownloadUrl"),
+        fileType: text(d, "fileType", "FileType") || undefined,
+        fileSize: numberValue(d, "fileSize", "FileSize") || undefined,
+      };
+    })
+    : undefined;
+
   return {
     id: id || `message-${index}`,
     conversationId,
@@ -113,6 +138,7 @@ function normalizeMessage(raw: unknown, index: number): Message | null {
     content: text(record, "content", "Content", "text", "Text"),
     attachments:
       (value(record, "attachments", "Attachments") as string[]) || undefined,
+    attachmentDetails,
     createdAt: text(record, "createdAt", "CreatedAt", "sentAt", "SentAt"),
     isRead: Boolean(value(record, "isRead", "IsRead")),
     readAt: text(record, "readAt", "ReadAt") || undefined,
@@ -148,10 +174,10 @@ function normalizeConversation(
     participants: normalizedParticipants,
     lastMessage: lastMessage
       ? {
-          content: text(lastMessage, "content", "Content", "text", "Text"),
-          createdAt: text(lastMessage, "createdAt", "CreatedAt"),
-          senderName: text(lastMessage, "senderName", "SenderName"),
-        }
+        content: text(lastMessage, "content", "Content", "text", "Text"),
+        createdAt: text(lastMessage, "createdAt", "CreatedAt"),
+        senderName: text(lastMessage, "senderName", "SenderName"),
+      }
       : undefined,
     unreadCount: numberValue(record, "unreadCount", "UnreadCount"),
     createdAt: text(record, "createdAt", "CreatedAt"),

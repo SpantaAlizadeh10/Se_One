@@ -11,6 +11,7 @@ import {
   Search,
   Send,
   X,
+  Download,
 } from "lucide-react";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 import { getRole } from "@/lib/auth-client";
@@ -26,6 +27,7 @@ import {
   type Conversation,
   type Message,
   type MessagingContact,
+  type AttachmentDetail,
 } from "@/lib/api/messaging";
 
 const MAX_CHAT_FILES = 5;
@@ -415,7 +417,7 @@ export default function MessagesHub() {
                         <time className="shrink-0 text-[9px] text-muted">
                           {formatTime(
                             conversation.lastMessage?.createdAt ||
-                              conversation.updatedAt,
+                            conversation.updatedAt,
                             locale,
                           )}
                         </time>
@@ -520,7 +522,26 @@ export default function MessagesHub() {
                             {message.content}
                           </p>
                         )}
-                        {message.attachments?.map((attachment) => (
+                        {message.attachmentDetails && message.attachmentDetails.length > 0 ? (
+                          <div className="mt-2 space-y-1.5">
+                            {message.attachmentDetails.map((attachment, idx) => (
+                              <a
+                                key={idx}
+                                href={attachment.downloadUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className={`flex items-center gap-2 px-3 py-2 rounded-lg ${mine
+                                  ? "bg-white/20 hover:bg-white/30"
+                                  : "bg-white border border-line hover:bg-cream"
+                                  } transition-colors`}
+                              >
+                                <Paperclip size={13} className="shrink-0" />
+                                <span className="truncate text-[11px]">{attachment.displayName}</span>
+                                <Download size={11} className="shrink-0" />
+                              </a>
+                            ))}
+                          </div>
+                        ) : message.attachments?.map((attachment) => (
                           <a
                             key={attachment}
                             href={attachment}
