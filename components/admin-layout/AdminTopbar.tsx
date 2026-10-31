@@ -2,15 +2,18 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Bell, LayoutGrid, ChevronDown, Menu, X } from "lucide-react";
 import { adminNavItems } from "@/lib/admin-nav";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 import { stripLocale } from "@/lib/i18n/paths";
 import { getName } from "@/lib/auth-client";
 import {
+  getNotifications,
   getNotificationStats,
   markAllNotificationsAsRead,
+  markNotificationAsRead,
+  type Notification,
 } from "@/lib/api/notifications";
 import { isApiConfigured } from "@/lib/is-api-configured";
 
@@ -22,12 +25,14 @@ export default function AdminTopbar({
   isMenuOpen?: boolean;
 }) {
   const pathname = usePathname();
-  const { t } = useLanguage();
+  const router = useRouter();
+  const { t, lang } = useLanguage();
   const current = adminNavItems.find(
     (i) => i.href === stripLocale(pathname || "/"),
   );
   const [name, setName] = useState("Admin");
   const [unreadCount, setUnreadCount] = useState(0);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);
 
   useEffect(() => {
@@ -40,8 +45,12 @@ export default function AdminTopbar({
 
     const loadNotifications = async () => {
       try {
-        const stats = await getNotificationStats();
+        const [stats, items] = await Promise.all([
+          getNotificationStats(),
+          getNotifications({ limit: 6 }),
+        ]);
         setUnreadCount(stats.unread);
+        setNotifications(items);
       } catch (error) {
         console.error("Failed to load notifications:", error);
       }
@@ -56,8 +65,35 @@ export default function AdminTopbar({
     try {
       await markAllNotificationsAsRead();
       setUnreadCount(0);
+      setNotifications((items) =>
+        items.map((item) => ({ ...item, isRead: true })),
+      );
     } catch (error) {
       console.error("Failed to mark all as read:", error);
+    }
+  };
+
+  const handleNotificationClick = async (notification: Notification) => {
+    if (!notification.isRead) {
+      try {
+        await markNotificationAsRead(notification.id);
+        setNotifications((items) =>
+          items.map((item) =>
+            item.id === notification.id ? { ...item, isRead: true } : item,
+          ),
+        );
+        setUnreadCount((count) => Math.max(0, count - 1));
+      } catch (error) {
+        console.error("Failed to mark notification as read:", error);
+      }
+    }
+
+    setShowNotifications(false);
+    if (
+      notification.actionUrl?.startsWith("/") &&
+      !notification.actionUrl.startsWith("//")
+    ) {
+      router.push(notification.actionUrl);
     }
   };
 
@@ -105,11 +141,38 @@ export default function AdminTopbar({
                   </button>
                 )}
               </div>
-              <div className="p-4 text-center text-muted text-[13px]">
-                {unreadCount === 0
-                  ? "No new notifications"
-                  : `${unreadCount} unread notification${unreadCount > 1 ? "s" : ""}`}
-              </div>
+              {notifications.length === 0 ? (
+                <div className="p-5 text-center text-muted text-[13px]">
+                  {lang === "fa"
+                    ? "اعلان جدیدی ندارید"
+                    : "No new notifications"}
+                </div>
+              ) : (
+                <div className="max-h-80 overflow-y-auto divide-y divide-line">
+                  {notifications.map((notification) => (
+                    <button
+                      key={notification.id}
+                      type="button"
+                      onClick={() => void handleNotificationClick(notification)}
+                      className={`w-full px-4 py-3 text-start transition-colors hover:bg-cream ${notification.isRead ? "bg-white" : "bg-blue/5"}`}
+                    >
+                      <span className="flex items-start gap-2">
+                        <span
+                          className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${notification.isRead ? "bg-transparent" : "bg-blue"}`}
+                        />
+                        <span className="min-w-0">
+                          <span className="block text-[12.5px] font-semibold text-ink">
+                            {notification.title}
+                          </span>
+                          <span className="mt-0.5 block text-[11.5px] leading-relaxed text-muted">
+                            {notification.message}
+                          </span>
+                        </span>
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
               <button
                 onClick={() => setShowNotifications(false)}
                 className="absolute top-2 right-2 w-6 h-6 rounded-full flex items-center justify-center text-muted hover:text-ink hover:bg-cream"
