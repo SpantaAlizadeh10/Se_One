@@ -1,8 +1,8 @@
-import StudentClassBrowser from "@/components/class-scheduling/StudentClassBrowser";
+import ClassSelectionPage from "@/components/class-selection/ClassSelectionPage";
 
 export const dynamic = "force-dynamic";
 export const fetchCache = "force-no-store";
 
 export default function StudentClassesPage() {
-  return <StudentClassBrowser />;
+  return <ClassSelectionPage />;
 }
