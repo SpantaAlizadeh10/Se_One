@@ -120,7 +120,7 @@ export default function DashboardMobileNav({ role }: { role: DashboardRole }) {
   const { isChildMode } = useStudentExperience();
   const childLabels: Record<string, { fa: string; en: string }> = {
     "/dashboard": { fa: "یادگیری", en: "Learn" },
-    "/dashboard/bookClass": { fa: "پیدا کردن کلاس", en: "Find Class" },
+    "/dashboard/bookClass": { fa: "رزرو کلاس", en: "Book a Class" },
     "/dashboard/classes": { fa: "کلاس‌ها", en: "Classes" },
     "/dashboard/assignments": { fa: "کارها", en: "My work" },
     "/dashboard/practice": { fa: "تمرین", en: "Practice" },

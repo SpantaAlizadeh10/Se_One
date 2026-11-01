@@ -46,6 +46,147 @@ function formatPrice(price: number, currency: string = "IRR") {
   }).format(price);
 }
 
+function createMockClasses(): CourseClass[] {
+  const makeStart = (daysFromNow: number, hour: number) => {
+    const date = new Date();
+    date.setDate(date.getDate() + daysFromNow);
+    date.setHours(hour, 0, 0, 0);
+    return date;
+  };
+
+  const mockClass = (
+    id: string,
+    title: string,
+    subject: string,
+    level: string,
+    type: CourseClass["type"],
+    maxCapacity: number,
+    currentEnrollment: number,
+    daysFromNow: number,
+    hour: number,
+    basePrice: number,
+    teacher: CourseClass["teacher"],
+    course: CourseClass["course"],
+  ): CourseClass => {
+    const start = makeStart(daysFromNow, hour);
+    const end = new Date(start.getTime() + 60 * 60 * 1000);
+    const finalPrice =
+      type === "private" && currentEnrollment > 0
+        ? Math.round(basePrice * 0.7)
+        : basePrice;
+    return {
+      id,
+      title,
+      description: `${subject} · ${level}`,
+      level,
+      subject,
+      type,
+      maxCapacity,
+      currentEnrollment,
+      remainingCapacity: Math.max(0, maxCapacity - currentEnrollment),
+      basePrice,
+      finalPrice,
+      scheduledDate: start.toISOString(),
+      startTime: start.toLocaleTimeString("en-GB", {
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
+      endTime: end.toLocaleTimeString("en-GB", {
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
+      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      status: "scheduled",
+      teacher,
+      course,
+    };
+  };
+
+  const sara = {
+    id: "mock-teacher-sara",
+    name: "Sara Williams",
+    avatar: "/images/Teacher.jpeg",
+    rating: 4.9,
+  };
+  const daniel = {
+    id: "mock-teacher-daniel",
+    name: "Daniel Meyer",
+    avatar: "/images/Teacher.jpeg",
+    rating: 4.8,
+  };
+
+  return [
+    mockClass(
+      "mock-class-conversation",
+      "Everyday Conversation Club",
+      "Speaking & Conversation",
+      "B1",
+      "public",
+      10,
+      4,
+      2,
+      18,
+      500000,
+      sara,
+      { id: "mock-course-conversation", title: "Practical English", imageUrl: "/images/course-placeholder.jpg" },
+    ),
+    mockClass(
+      "mock-class-beginners",
+      "English for Beginners",
+      "English Fundamentals",
+      "A1",
+      "public",
+      10,
+      6,
+      3,
+      16,
+      420000,
+      daniel,
+      { id: "mock-course-beginners", title: "English Foundations", imageUrl: "/images/course-placeholder.jpg" },
+    ),
+    mockClass(
+      "mock-class-ielts",
+      "IELTS Writing Workshop",
+      "Writing & IELTS",
+      "B2",
+      "private",
+      2,
+      1,
+      4,
+      17,
+      700000,
+      sara,
+      { id: "mock-course-ielts", title: "IELTS Preparation", imageUrl: "/images/course-placeholder.jpg" },
+    ),
+    mockClass(
+      "mock-class-german",
+      "German for Travel",
+      "German Conversation",
+      "A2",
+      "private",
+      2,
+      0,
+      5,
+      15,
+      650000,
+      daniel,
+      { id: "mock-course-german", title: "Travel German", imageUrl: "/images/course-placeholder.jpg" },
+    ),
+  ];
+}
+
+function getMockTeacherOptions() {
+  return Array.from(
+    new Map(
+      createMockClasses().map((item) => [
+        item.teacher.id,
+        item.teacher.name,
+      ] as const),
+    ),
+    ([id, name]) => ({ id, name }),
+  );
+}
+
 export default function ClassSelectionPage() {
   const { lang } = useLanguage();
   const fa = lang === "fa";
@@ -54,6 +195,8 @@ export default function ClassSelectionPage() {
   const [classes, setClasses] = useState<CourseClass[]>([]);
   const [teachers, setTeachers] = useState<{ id: string; name: string }[]>([]);
   const [loading, setLoading] = useState(true);
+  const [usingMockClasses, setUsingMockClasses] = useState(false);
+  const [mockEnrolledIds, setMockEnrolledIds] = useState<string[]>([]);
   const [enrollingId, setEnrollingId] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -75,11 +218,12 @@ export default function ClassSelectionPage() {
   const [cardNumber] = useState("6037-9974-1234-5678"); // Example card number
 
   useEffect(() => {
-    loadClasses();
     loadTeachers();
   }, []);
 
   const loadClasses = async () => {
+    setLoading(true);
+    setError("");
     try {
       const filters: ClassFilters = {
         teacherId: teacherFilter || undefined,
@@ -89,9 +233,20 @@ export default function ClassSelectionPage() {
         subject: subjectFilter || undefined,
       };
       const result = await getClasses(filters);
-      setClasses(result.items);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not load classes");
+      if (result.items.length > 0) {
+        setClasses(result.items);
+        setUsingMockClasses(false);
+      } else {
+        const samples = createMockClasses();
+        setClasses(samples);
+        setTeachers(getMockTeacherOptions());
+        setUsingMockClasses(true);
+      }
+    } catch {
+      const samples = createMockClasses();
+      setClasses(samples);
+      setTeachers(getMockTeacherOptions());
+      setUsingMockClasses(true);
     } finally {
       setLoading(false);
     }
@@ -100,7 +255,8 @@ export default function ClassSelectionPage() {
   const loadTeachers = async () => {
     try {
       const teacherList = await getTeachers();
-      setTeachers(teacherList.map((t) => ({ id: t.id, name: t.name })));
+      const options = teacherList.map((t) => ({ id: t.id, name: t.name }));
+      setTeachers(options.length > 0 ? options : getMockTeacherOptions());
     } catch (err) {
       console.error("Could not load teachers", err);
     }
@@ -111,8 +267,22 @@ export default function ClassSelectionPage() {
   }, [teacherFilter, typeFilter, availableOnly, levelFilter, subjectFilter]);
 
   const visibleClasses = useMemo(() => {
-    return classes;
-  }, [classes]);
+    return classes.filter(
+      (item) =>
+        (!teacherFilter || item.teacher.id === teacherFilter) &&
+        (typeFilter === "all" || item.type === typeFilter) &&
+        (!availableOnly || item.remainingCapacity > 0) &&
+        (!levelFilter || item.level === levelFilter) &&
+        (!subjectFilter || item.subject === subjectFilter),
+    );
+  }, [
+    classes,
+    teacherFilter,
+    typeFilter,
+    availableOnly,
+    levelFilter,
+    subjectFilter,
+  ]);
 
   const levels = useMemo(() => {
     const unique = new Set(classes.map((c) => c.level));
@@ -147,7 +317,8 @@ export default function ClassSelectionPage() {
   };
 
   const confirmPayment = async () => {
-    if (!selectedClass || !receiptFile) {
+    const isMockClass = selectedClass?.id.startsWith("mock-") ?? false;
+    if (!selectedClass || (!isMockClass && !receiptFile)) {
       setError(fa ? "لطفاً فیش پرداخت را آپلود کنید" : "Please upload the payment receipt");
       return;
     }
@@ -157,14 +328,39 @@ export default function ClassSelectionPage() {
     setSuccess("");
 
     try {
-      // TODO: Upload receipt to backend and send to WhatsApp
-      // For now, just complete enrollment
-      await enrollInClass(selectedClass.id, {});
-      setSuccess(fa ? "ثبت‌نام با موفقیت انجام شد" : "Enrollment successful");
+      if (isMockClass) {
+        setMockEnrolledIds((current) =>
+          current.includes(selectedClass.id)
+            ? current
+            : [...current, selectedClass.id],
+        );
+        setClasses((current) =>
+          current.map((item) =>
+            item.id === selectedClass.id
+              ? {
+                  ...item,
+                  currentEnrollment: Math.min(
+                    item.currentEnrollment + 1,
+                    item.maxCapacity,
+                  ),
+                  remainingCapacity: Math.max(item.remainingCapacity - 1, 0),
+                }
+              : item,
+          ),
+        );
+        setSuccess(
+          fa
+            ? "رزرو آزمایشی انجام شد؛ پرداخت واقعی انجام نشده است."
+            : "Demo booking confirmed. No real payment was processed.",
+        );
+      } else {
+        await enrollInClass(selectedClass.id, {});
+        setSuccess(fa ? "ثبت‌نام با موفقیت انجام شد" : "Enrollment successful");
+      }
       setShowPaymentModal(false);
       setSelectedClass(null);
       setReceiptFile(null);
-      await loadClasses();
+      if (!isMockClass) await loadClasses();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Enrollment failed");
     } finally {
@@ -176,6 +372,16 @@ export default function ClassSelectionPage() {
     if (!selectedClass) return;
 
     try {
+      if (selectedClass.id.startsWith("mock-")) {
+        const code = `DEMO${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
+        setInviteCode(code);
+        setSuccess(
+          fa
+            ? "کد دعوت آزمایشی ساخته شد."
+            : "Demo invite code created.",
+        );
+        return;
+      }
       const result = await createInviteCode(selectedClass.id);
       setInviteCode(result.inviteCode);
       setSuccess(fa ? "کد دعوت ایجاد شد" : "Invite code created");
@@ -197,7 +403,7 @@ export default function ClassSelectionPage() {
       {/* Header */}
       <div>
         <h2 className="font-serif text-[24px] font-semibold mb-2">
-          {fa ? "انتخاب کلاس" : "Choose a Class"}
+          {fa ? "رزرو کلاس" : "Book a Class"}
         </h2>
         <p className="text-muted text-[13px] max-w-2xl">
           {fa
@@ -309,6 +515,14 @@ export default function ClassSelectionPage() {
         </div>
       )}
 
+      {usingMockClasses && (
+        <div className="rounded-xl border border-blue/20 bg-blue/5 p-3 text-[12.5px] text-blue">
+          {fa
+            ? "کلاس‌های نمونه برای نمایش و رزرو آزمایشی هستند؛ پرداخت یا ثبت‌نام واقعی انجام نمی‌شود."
+            : "Sample classes are shown for preview and demo booking only. No real payment or enrollment is made."}
+        </div>
+      )}
+
       {/* Classes Grid */}
       {loading ? (
         <div className="bg-white border border-line rounded-2xl p-8 text-center text-[13px] text-muted">
@@ -322,6 +536,7 @@ export default function ClassSelectionPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {visibleClasses.map((classItem) => {
             const isFull = classItem.remainingCapacity <= 0;
+            const isMockEnrolled = mockEnrolledIds.includes(classItem.id);
             const hasDiscount = classItem.finalPrice < classItem.basePrice;
             const discountPercent = classItem.basePrice > 0
               ? Math.round(((classItem.basePrice - classItem.finalPrice) / classItem.basePrice) * 100)
@@ -409,7 +624,7 @@ export default function ClassSelectionPage() {
                 {/* Enroll Button */}
                 <button
                   type="button"
-                  disabled={isFull || enrollingId === classItem.id}
+                  disabled={isFull || isMockEnrolled || enrollingId === classItem.id}
                   onClick={() => handleEnroll(classItem)}
                   className={`w-full rounded-xl px-3.5 py-2.5 text-[13px] font-semibold transition-colors ${isFull
                     ? "bg-line text-muted cursor-not-allowed"
@@ -424,13 +639,17 @@ export default function ClassSelectionPage() {
                       ? fa
                         ? "ظرفیت تکمیل"
                         : "Full"
+                      : isMockEnrolled
+                        ? fa
+                          ? "رزرو شد (آزمایشی)"
+                          : "Booked (demo)"
                       : classItem.type === "private"
                         ? fa
-                          ? "ثبت‌نام یا دعوت دوست"
-                          : "Enroll or Invite Friend"
+                          ? "رزرو یا دعوت دوست"
+                          : "Book or Invite Friend"
                         : fa
-                          ? "ثبت‌نام در کلاس"
-                          : "Enroll in Class"}
+                          ? "رزرو کلاس"
+                          : "Book this class"}
                 </button>
               </article>
             );
@@ -578,6 +797,13 @@ export default function ClassSelectionPage() {
             </div>
 
             <div className="space-y-4 mb-6">
+              {selectedClass.id.startsWith("mock-") && (
+                <div className="rounded-xl border border-blue/20 bg-blue/5 p-3 text-[12px] text-blue">
+                  {fa
+                    ? "این رزرو آزمایشی است و نیازی به پرداخت یا بارگذاری فیش ندارد."
+                    : "This is a demo booking. No payment or receipt upload is needed."}
+                </div>
+              )}
               {/* Class Summary */}
               <div className="bg-cream rounded-xl p-4">
                 <div className="flex items-center gap-3 mb-3">
@@ -603,73 +829,80 @@ export default function ClassSelectionPage() {
                 </div>
               </div>
 
-              {/* Card Number */}
-              <div>
-                <label className="block text-[12px] font-semibold text-muted mb-2">
-                  {fa ? "شماره کارت" : "Card Number"}
-                </label>
-                <div className="bg-cream border border-line rounded-xl px-4 py-3 flex items-center gap-3">
-                  <Smartphone size={18} className="text-muted" />
-                  <code className="text-[14px] font-mono text-ink">{cardNumber}</code>
-                </div>
-                <p className="text-[10px] text-muted mt-1">
-                  {fa ? "مبلغ را به این شماره کارت واریز کنید" : "Transfer the amount to this card number"}
-                </p>
-              </div>
-
-              {/* Receipt Upload */}
-              <div>
-                <label className="block text-[12px] font-semibold text-muted mb-2">
-                  {fa ? "آپلود فیش پرداخت" : "Upload Payment Receipt"}
-                </label>
-                <div className="border-2 border-dashed border-line rounded-xl p-4 text-center hover:border-blue transition-colors">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleReceiptUpload}
-                    className="hidden"
-                    id="receipt-upload"
-                  />
-                  <label
-                    htmlFor="receipt-upload"
-                    className="cursor-pointer flex flex-col items-center gap-2"
-                  >
-                    {receiptFile ? (
-                      <>
-                        <Check size={24} className="text-sageDeep" />
-                        <span className="text-[12px] font-semibold text-sageDeep">
-                          {receiptFile.name}
-                        </span>
-                      </>
-                    ) : (
-                      <>
-                        <Upload size={24} className="text-muted" />
-                        <span className="text-[12px] text-muted">
-                          {fa ? "کلیک کنید یا فایل را بکشید" : "Click or drag file here"}
-                        </span>
-                      </>
-                    )}
-                  </label>
-                </div>
-              </div>
-
-              {/* WhatsApp Info */}
-              <div className="bg-green-50 border border-green-200 rounded-xl p-3">
-                <div className="flex items-start gap-2">
-                  <Smartphone size={16} className="text-green-600 shrink-0 mt-0.5" />
-                  <div className="text-[11px] text-green-800">
-                    {fa
-                      ? "فیش پرداخت به واتساپ ارسال می‌شود و پس از تایید، ثبت‌نام شما نهایی می‌شود."
-                      : "Payment receipt will be sent to WhatsApp. After verification, your enrollment will be confirmed."}
+              {!selectedClass.id.startsWith("mock-") && (
+                <>
+                  {/* Card Number */}
+                  <div>
+                    <label className="block text-[12px] font-semibold text-muted mb-2">
+                      {fa ? "شماره کارت" : "Card Number"}
+                    </label>
+                    <div className="bg-cream border border-line rounded-xl px-4 py-3 flex items-center gap-3">
+                      <Smartphone size={18} className="text-muted" />
+                      <code className="text-[14px] font-mono text-ink">{cardNumber}</code>
+                    </div>
+                    <p className="text-[10px] text-muted mt-1">
+                      {fa ? "مبلغ را به این شماره کارت واریز کنید" : "Transfer the amount to this card number"}
+                    </p>
                   </div>
-                </div>
-              </div>
+
+                  {/* Receipt Upload */}
+                  <div>
+                    <label className="block text-[12px] font-semibold text-muted mb-2">
+                      {fa ? "آپلود فیش پرداخت" : "Upload Payment Receipt"}
+                    </label>
+                    <div className="border-2 border-dashed border-line rounded-xl p-4 text-center hover:border-blue transition-colors">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleReceiptUpload}
+                        className="hidden"
+                        id="receipt-upload"
+                      />
+                      <label
+                        htmlFor="receipt-upload"
+                        className="cursor-pointer flex flex-col items-center gap-2"
+                      >
+                        {receiptFile ? (
+                          <>
+                            <Check size={24} className="text-sageDeep" />
+                            <span className="text-[12px] font-semibold text-sageDeep">
+                              {receiptFile.name}
+                            </span>
+                          </>
+                        ) : (
+                          <>
+                            <Upload size={24} className="text-muted" />
+                            <span className="text-[12px] text-muted">
+                              {fa ? "کلیک کنید یا فایل را بکشید" : "Click or drag file here"}
+                            </span>
+                          </>
+                        )}
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* WhatsApp Info */}
+                  <div className="bg-green-50 border border-green-200 rounded-xl p-3">
+                    <div className="flex items-start gap-2">
+                      <Smartphone size={16} className="text-green-600 shrink-0 mt-0.5" />
+                      <div className="text-[11px] text-green-800">
+                        {fa
+                          ? "فیش پرداخت به واتساپ ارسال می‌شود و پس از تایید، ثبت‌نام شما نهایی می‌شود."
+                          : "Payment receipt will be sent to WhatsApp. After verification, your enrollment will be confirmed."}
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
 
             <button
               type="button"
               onClick={confirmPayment}
-              disabled={!receiptFile || enrollingId === selectedClass.id}
+              disabled={
+                (!selectedClass.id.startsWith("mock-") && !receiptFile) ||
+                enrollingId === selectedClass.id
+              }
               className="w-full rounded-xl bg-green-600 px-4 py-2.5 text-[13px] font-semibold text-white hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
             >
               {enrollingId === selectedClass.id ? (
@@ -680,7 +913,13 @@ export default function ClassSelectionPage() {
               ) : (
                 <>
                   <Smartphone size={16} />
-                  {fa ? "ارسال فیش به واتساپ" : "Send Receipt to WhatsApp"}
+                  {selectedClass.id.startsWith("mock-")
+                    ? fa
+                      ? "تأیید رزرو آزمایشی"
+                      : "Confirm demo booking"
+                    : fa
+                      ? "ارسال فیش به واتساپ"
+                      : "Send Receipt to WhatsApp"}
                 </>
               )}
             </button>

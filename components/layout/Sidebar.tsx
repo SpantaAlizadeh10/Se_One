@@ -61,7 +61,7 @@ export default function Sidebar({
     "/dashboard/classes": { fa: "کلاس‌های من", en: "My classes" },
     "/dashboard/practice": { fa: "تمرین‌های کوتاه", en: "Quick practice" },
     "/dashboard/assignments": { fa: "کارهای من", en: "My assignments" },
-    "/dashboard/bookClass": { fa: "رزرو کردن کلاس", en: "Book a class" },
+    "/dashboard/bookClass": { fa: "رزرو کلاس", en: "Book a Class" },
     "/dashboard/wishlist": { fa: "علاقه‌مندی‌ها", en: "Favorites" },
     "/dashboard/messages": { fa: "پیام به معلم", en: "Ask my teacher" },
     "/dashboard/tickets": { fa: "کمک و پشتیبانی", en: "Get help" },
