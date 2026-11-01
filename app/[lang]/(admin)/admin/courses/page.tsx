@@ -12,6 +12,9 @@ import {
   Star,
   Upload,
 } from "lucide-react";
+import DatePicker from "react-multi-date-picker";
+import persian from "react-date-object/calendars/persian";
+import persian_fa from "react-date-object/locales/persian_fa";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 import { getDiscountedPrice, formatPrice } from "@/lib/courses-pricing";
 import { isApiConfigured } from "@/lib/is-api-configured";
@@ -60,6 +63,22 @@ const emptyCourseDraft: CourseDraft = {
   capacity: 10,
   teacherRole: "english",
 };
+
+function setLocalDate(date: Date, time: string) {
+  const [hours, minutes] = time.split(":").map(Number);
+  date.setHours(hours || 0, minutes || 0, 0, 0);
+  const pad = (value: number) => String(value).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
+function changeLocalDate(current: string, selected: Date | null) {
+  if (!selected) return "";
+  return setLocalDate(selected, current.split("T")[1]?.slice(0, 5) || "09:00");
+}
+
+function changeLocalTime(current: string, time: string) {
+  return setLocalDate(current ? new Date(current) : new Date(), time);
+}
 
 export default function AdminCoursesPage() {
   const { t, lang } = useLanguage();
@@ -524,35 +543,119 @@ export default function AdminCoursesPage() {
                     <span>
                       {lang === "fa" ? "زمان شروع" : "Start date & time"} *
                     </span>
-                    <input
-                      type="datetime-local"
-                      value={newCourse.startsAt}
-                      onChange={(e) =>
-                        setNewCourse((current) => ({
-                          ...current,
-                          startsAt: e.target.value,
-                        }))
-                      }
-                      required
-                      className="w-full rounded-lg border border-line bg-white px-3.5 py-2.5 text-[13px] outline-none focus:border-blue"
-                    />
+                    <div className="grid grid-cols-[minmax(0,1fr)_112px] gap-2">
+                      <DatePicker
+                        key={
+                          lang === "fa"
+                            ? "persian-course-start"
+                            : "gregorian-course-start"
+                        }
+                        value={
+                          newCourse.startsAt ? new Date(newCourse.startsAt) : ""
+                        }
+                        calendar={lang === "fa" ? persian : undefined}
+                        locale={lang === "fa" ? persian_fa : undefined}
+                        placeholder={
+                          lang === "fa"
+                            ? "تاریخ شمسی را انتخاب کنید"
+                            : "Select a date"
+                        }
+                        format={lang === "fa" ? "YYYY/MM/DD" : "MMM DD, YYYY"}
+                        calendarPosition={
+                          lang === "fa" ? "bottom-right" : "bottom-left"
+                        }
+                        inputClass="w-full rounded-lg border border-line bg-white px-3.5 py-2.5 text-[13px] outline-none focus:border-blue"
+                        onChange={(value) =>
+                          setNewCourse((current) => ({
+                            ...current,
+                            startsAt: changeLocalDate(
+                              current.startsAt,
+                              value && !Array.isArray(value)
+                                ? value.toDate()
+                                : null,
+                            ),
+                          }))
+                        }
+                      />
+                      <input
+                        type="time"
+                        lang={lang === "fa" ? "fa-IR" : "en-US"}
+                        aria-label={lang === "fa" ? "ساعت شروع" : "Start time"}
+                        value={
+                          newCourse.startsAt.split("T")[1]?.slice(0, 5) ?? ""
+                        }
+                        onChange={(event) =>
+                          setNewCourse((current) => ({
+                            ...current,
+                            startsAt: changeLocalTime(
+                              current.startsAt,
+                              event.target.value,
+                            ),
+                          }))
+                        }
+                        required
+                        className="w-full rounded-lg border border-line bg-white px-2 py-2.5 text-[13px] outline-none focus:border-blue"
+                      />
+                    </div>
                   </label>
                   <label className="space-y-2 text-[12.5px] font-semibold text-ink70">
                     <span>
                       {lang === "fa" ? "زمان پایان" : "End date & time"} *
                     </span>
-                    <input
-                      type="datetime-local"
-                      value={newCourse.endsAt}
-                      onChange={(e) =>
-                        setNewCourse((current) => ({
-                          ...current,
-                          endsAt: e.target.value,
-                        }))
-                      }
-                      required
-                      className="w-full rounded-lg border border-line bg-white px-3.5 py-2.5 text-[13px] outline-none focus:border-blue"
-                    />
+                    <div className="grid grid-cols-[minmax(0,1fr)_112px] gap-2">
+                      <DatePicker
+                        key={
+                          lang === "fa"
+                            ? "persian-course-end"
+                            : "gregorian-course-end"
+                        }
+                        value={
+                          newCourse.endsAt ? new Date(newCourse.endsAt) : ""
+                        }
+                        calendar={lang === "fa" ? persian : undefined}
+                        locale={lang === "fa" ? persian_fa : undefined}
+                        placeholder={
+                          lang === "fa"
+                            ? "تاریخ شمسی را انتخاب کنید"
+                            : "Select a date"
+                        }
+                        format={lang === "fa" ? "YYYY/MM/DD" : "MMM DD, YYYY"}
+                        calendarPosition={
+                          lang === "fa" ? "bottom-right" : "bottom-left"
+                        }
+                        inputClass="w-full rounded-lg border border-line bg-white px-3.5 py-2.5 text-[13px] outline-none focus:border-blue"
+                        onChange={(value) =>
+                          setNewCourse((current) => ({
+                            ...current,
+                            endsAt: changeLocalDate(
+                              current.endsAt,
+                              value && !Array.isArray(value)
+                                ? value.toDate()
+                                : null,
+                            ),
+                          }))
+                        }
+                      />
+                      <input
+                        type="time"
+                        lang={lang === "fa" ? "fa-IR" : "en-US"}
+                        aria-label={lang === "fa" ? "ساعت پایان" : "End time"}
+                        value={
+                          newCourse.endsAt.split("T")[1]?.slice(0, 5) ?? ""
+                        }
+                        onChange={(event) =>
+                          setNewCourse((current) => ({
+                            ...current,
+                            endsAt: changeLocalTime(
+                              current.endsAt,
+                              event.target.value,
+                            ),
+                          }))
+                        }
+                        required
+                        className="w-full rounded-lg border border-line bg-white px-2 py-2.5 text-[13px] outline-none focus:border-blue"
+                      />
+                    </div>
                   </label>
                   <label className="space-y-2 text-[12.5px] font-semibold text-ink70 sm:col-span-2">
                     <span>{lang === "fa" ? "ظرفیت" : "Capacity"}</span>

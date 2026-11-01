@@ -24,6 +24,98 @@ const defaultSlot = {
   endsAt: "",
 };
 
+type DisplayClassSlot = AdminClassSlot & {
+  courseTitle?: string;
+  isDemo?: boolean;
+};
+
+function createDemoClassSlots(): DisplayClassSlot[] {
+  const startAt = (daysFromNow: number, hour: number) => {
+    const date = new Date();
+    date.setDate(date.getDate() + daysFromNow);
+    date.setHours(hour, 0, 0, 0);
+    return date;
+  };
+  const makeSlot = (
+    id: string,
+    courseId: string,
+    courseTitle: string,
+    title: string,
+    classType: "public" | "private",
+    daysFromNow: number,
+    hour: number,
+    capacity: number,
+    enrolledCount: number,
+  ): DisplayClassSlot => {
+    const start = startAt(daysFromNow, hour);
+    const end = new Date(start.getTime() + 60 * 60 * 1000);
+    return {
+      id,
+      courseId,
+      courseTitle,
+      title,
+      description: courseTitle,
+      classType,
+      teacherRole: courseId.includes("german") ? "german" : "english",
+      capacity,
+      startsAt: start.toISOString(),
+      endsAt: end.toISOString(),
+      status: "active",
+      createdBy: "demo",
+      enrolledCount,
+      remainingSeats: capacity - enrolledCount,
+      isDemo: true,
+    };
+  };
+
+  return [
+    makeSlot(
+      "mock-class-conversation",
+      "mock-course-conversation",
+      "Practical English",
+      "Everyday Conversation Club",
+      "public",
+      2,
+      18,
+      10,
+      4,
+    ),
+    makeSlot(
+      "mock-class-beginners",
+      "mock-course-beginners",
+      "English Foundations",
+      "English for Beginners",
+      "public",
+      3,
+      16,
+      10,
+      6,
+    ),
+    makeSlot(
+      "mock-class-ielts",
+      "mock-course-ielts",
+      "IELTS Preparation",
+      "IELTS Writing Workshop",
+      "private",
+      4,
+      17,
+      2,
+      1,
+    ),
+    makeSlot(
+      "mock-class-german",
+      "mock-course-german",
+      "Travel German",
+      "German for Travel",
+      "private",
+      5,
+      15,
+      2,
+      0,
+    ),
+  ];
+}
+
 function localDateTime(date: Date, time: string) {
   const [hours, minutes] = time.split(":").map(Number);
   date.setHours(hours || 0, minutes || 0, 0, 0);
@@ -49,28 +141,30 @@ export default function ClassScheduler() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
-  const [slots, setSlots] = useState<AdminClassSlot[]>([]);
+  const [slots, setSlots] = useState<DisplayClassSlot[]>([]);
   const [loading, setLoading] = useState(true);
 
   const refresh = async () => {
-    setSlots(await listAdminClassSlots());
+    const loadedSlots = await listAdminClassSlots();
+    setSlots([...loadedSlots, ...createDemoClassSlots()]);
   };
 
   useEffect(() => {
     if (!isApiConfigured()) {
-      setError(
-        fa ? "آدرس API تنظیم نشده است." : "Backend API is not configured.",
-      );
+      setSlots(createDemoClassSlots());
       setLoading(false);
       return;
     }
     listAdminClassSlots()
-      .then(setSlots)
-      .catch((reason) =>
+      .then((loadedSlots) =>
+        setSlots([...loadedSlots, ...createDemoClassSlots()]),
+      )
+      .catch((reason) => {
+        setSlots(createDemoClassSlots());
         setError(
           reason instanceof Error ? reason.message : "Could not load classes.",
-        ),
-      )
+        );
+      })
       .finally(() => setLoading(false));
   }, [fa]);
 
@@ -112,8 +206,13 @@ export default function ClassScheduler() {
         startsAt: new Date(slot.startsAt).toISOString(),
         endsAt: new Date(slot.endsAt).toISOString(),
       };
-      await createAdminClassSlot(input);
+      const created = await createAdminClassSlot(input);
       await refresh();
+      setSlots((current) =>
+        current.some((item) => item.id === created.id)
+          ? current
+          : [created, ...current],
+      );
       setSlot(defaultSlot);
       setMessage(
         fa
@@ -199,9 +298,11 @@ export default function ClassScheduler() {
             <span>{fa ? "تاریخ و ساعت شروع" : "Start date & time"}</span>
             <div className="grid grid-cols-[minmax(0,1fr)_112px] gap-2">
               <DatePicker
+                key={fa ? "persian-start" : "gregorian-start"}
                 value={slot.startsAt ? new Date(slot.startsAt) : ""}
                 calendar={fa ? persian : undefined}
                 locale={fa ? persian_fa : undefined}
+                placeholder={fa ? "تاریخ شمسی را انتخاب کنید" : "Select a date"}
                 format={fa ? "YYYY/MM/DD" : "MMM DD, YYYY"}
                 calendarPosition={fa ? "bottom-right" : "bottom-left"}
                 inputClass="w-full rounded-xl border border-line bg-cream px-3.5 py-3 outline-none focus:border-blue"
@@ -235,9 +336,11 @@ export default function ClassScheduler() {
             <span>{fa ? "تاریخ و ساعت پایان" : "End date & time"}</span>
             <div className="grid grid-cols-[minmax(0,1fr)_112px] gap-2">
               <DatePicker
+                key={fa ? "persian-end" : "gregorian-end"}
                 value={slot.endsAt ? new Date(slot.endsAt) : ""}
                 calendar={fa ? persian : undefined}
                 locale={fa ? persian_fa : undefined}
+                placeholder={fa ? "تاریخ شمسی را انتخاب کنید" : "Select a date"}
                 format={fa ? "YYYY/MM/DD" : "MMM DD, YYYY"}
                 calendarPosition={fa ? "bottom-right" : "bottom-left"}
                 inputClass="w-full rounded-xl border border-line bg-cream px-3.5 py-3 outline-none focus:border-blue"
@@ -358,22 +461,34 @@ export default function ClassScheduler() {
                 <div className="mb-2 flex items-start justify-between gap-3">
                   <div>
                     <h4 className="font-semibold text-ink">{slotItem.title}</h4>
+                    {slotItem.courseTitle && (
+                      <p className="mt-1 text-[11px] font-medium text-blue">
+                        {fa ? "دوره:" : "Course:"} {slotItem.courseTitle}
+                      </p>
+                    )}
                     <p className="text-[12px] text-muted">
                       {fa
                         ? `${slotItem.classType === "private" ? "خصوصی" : "عمومی"} · ظرفیت ${slotItem.capacity} نفر`
                         : `${slotItem.classType === "private" ? "Private" : "Public"} · Capacity ${slotItem.capacity}`}
                     </p>
                   </div>
-                  <span className="inline-flex items-center gap-1 rounded-full bg-success/10 px-2 py-1 text-[11px] font-medium text-success">
-                    <CheckCircle2 size={12} />
-                    {slotItem.remainingSeats > 0
-                      ? fa
-                        ? "ظرفیت دارد"
-                        : "Open"
-                      : fa
-                        ? "تکمیل"
-                        : "Full"}
-                  </span>
+                  <div className="flex flex-col items-end gap-1.5">
+                    {slotItem.isDemo && (
+                      <span className="rounded-full bg-blue/10 px-2 py-0.5 text-[10px] font-semibold text-blue">
+                        {fa ? "نمونه" : "Demo"}
+                      </span>
+                    )}
+                    <span className="inline-flex items-center gap-1 rounded-full bg-success/10 px-2 py-1 text-[11px] font-medium text-success">
+                      <CheckCircle2 size={12} />
+                      {slotItem.remainingSeats > 0
+                        ? fa
+                          ? "ظرفیت دارد"
+                          : "Open"
+                        : fa
+                          ? "تکمیل"
+                          : "Full"}
+                    </span>
+                  </div>
                 </div>
 
                 <p className="mb-3 text-[12.5px] text-muted">

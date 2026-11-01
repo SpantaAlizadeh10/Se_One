@@ -58,15 +58,34 @@ function unwrapList<T>(
   response: unknown,
   normalize: (raw: unknown, index: number) => T | null,
 ): T[] {
-  if (Array.isArray(response)) {
-    return response.map(normalize).filter((x): x is T => x != null);
-  }
-  const record = (response ?? {}) as ApiRecord;
-  const nested = value(record, "items", "Items", "data", "Data");
-  if (Array.isArray(nested)) {
-    return nested.map(normalize).filter((x): x is T => x != null);
-  }
-  return [];
+  const findArray = (candidate: unknown, depth = 0): unknown[] | null => {
+    if (Array.isArray(candidate)) return candidate;
+    if (!candidate || typeof candidate !== "object" || depth >= 4) return null;
+
+    const record = candidate as ApiRecord;
+    for (const key of [
+      "items",
+      "Items",
+      "data",
+      "Data",
+      "teachers",
+      "Teachers",
+      "results",
+      "Results",
+      "records",
+      "Records",
+    ]) {
+      const nested = record[key];
+      if (Array.isArray(nested)) return nested;
+      const nestedArray = findArray(nested, depth + 1);
+      if (nestedArray) return nestedArray;
+    }
+    return null;
+  };
+
+  return (findArray(response) ?? [])
+    .map(normalize)
+    .filter((item): item is T => item != null);
 }
 
 function unwrapPaged<T>(
@@ -334,26 +353,41 @@ function normalizeTeacherLanguage(raw: unknown): "english" | "german" {
 
 function normalizeTeacher(raw: unknown, index: number): AdminTeacher | null {
   const r = (raw ?? {}) as ApiRecord;
-  const id = text(r, "id", "Id", "teacherId", "TeacherId");
-  const fullName = text(r, "fullName", "FullName", "name", "Name");
+  const id = text(r, "id", "Id", "teacherId", "TeacherId", "teacher_id");
+  const fullName =
+    text(r, "fullName", "FullName", "full_name", "name", "Name") ||
+    [
+      text(r, "firstName", "FirstName", "first_name"),
+      text(r, "lastName", "LastName", "last_name", "family_name"),
+    ]
+      .filter(Boolean)
+      .join(" ");
   if (!id && !fullName) return null;
-  const statusRaw = text(r, "status", "Status").toLowerCase();
+  const statusRaw = text(r, "status", "Status", "teacher_status").toLowerCase();
   const status: TeacherWorkflowStatus =
     statusRaw === "pending" || statusRaw === "suspended" ? statusRaw : "active";
   return {
     id: id || `teacher-${index}`,
-    userId: text(r, "userId", "UserId"),
+    userId: text(r, "userId", "UserId", "user_id"),
     fullName,
-    email: text(r, "email", "Email"),
-    avatarUrl: text(r, "avatarUrl", "AvatarUrl", "avatar", "Avatar"),
-    teachingLanguage: normalizeTeacherLanguage(
-      value(r, "teachingLanguage", "TeachingLanguage"),
+    email: text(r, "email", "Email", "email_address"),
+    avatarUrl: text(
+      r,
+      "avatarUrl",
+      "AvatarUrl",
+      "avatar_url",
+      "profile_image_url",
+      "avatar",
+      "Avatar",
     ),
-    subject: text(r, "subject", "Subject"),
-    level: text(r, "level", "Level"),
-    rating: numberValue(r, "rating", "Rating"),
-    bio: text(r, "bio", "Bio"),
-    videoUrl: text(r, "videoUrl", "VideoUrl") || undefined,
+    teachingLanguage: normalizeTeacherLanguage(
+      value(r, "teachingLanguage", "TeachingLanguage", "teaching_language"),
+    ),
+    subject: text(r, "subject", "Subject", "specialty"),
+    level: text(r, "level", "Level", "teaching_level"),
+    rating: numberValue(r, "rating", "Rating", "average_rating"),
+    bio: text(r, "bio", "Bio", "description"),
+    videoUrl: text(r, "videoUrl", "VideoUrl", "video_url") || undefined,
     status,
   };
 }
