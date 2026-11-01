@@ -21,6 +21,7 @@ import {
   getStudentSubmissions,
   getStudentAttachmentDownloadUrl,
   finalizeStudentSubmission,
+  markStudentAssignmentComplete,
   saveStudentAssignmentDraft,
   submitAssignment,
   uploadStudentAssignmentFile,
@@ -34,7 +35,13 @@ const ACCEPTED_EXTENSIONS =
   /\.(pdf|png|jpe?g|webp|gif|docx?|xlsx?|pptx?|txt|mp3|m4a|wav|mp4|zip)$/i;
 
 type AssignmentItem = { assignment: Assignment; submission?: Submission };
-type StatusFilter = "all" | "pending" | "submitted" | "returned" | "graded";
+type StatusFilter =
+  | "all"
+  | "pending"
+  | "submitted"
+  | "returned"
+  | "graded"
+  | "completed";
 
 export default function AssignmentsCenter() {
   const { lang } = useLanguage();
@@ -49,6 +56,7 @@ export default function AssignmentsCenter() {
   const [attachmentPaths, setAttachmentPaths] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [completingId, setCompletingId] = useState("");
   const [uploadProgress, setUploadProgress] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -212,6 +220,40 @@ export default function AssignmentsCenter() {
     }
   };
 
+  const markDone = async (item: AssignmentItem) => {
+    setCompletingId(item.assignment.id);
+    setError("");
+    setSuccess("");
+    try {
+      const completed = await markStudentAssignmentComplete(item.assignment.id);
+      setItems((current) =>
+        current.map((entry) =>
+          entry.assignment.id === item.assignment.id
+            ? { ...entry, submission: completed }
+            : entry,
+        ),
+      );
+      setSelected((current) =>
+        current?.assignment.id === item.assignment.id
+          ? { ...current, submission: completed }
+          : current,
+      );
+      setSuccess(
+        fa ? "تمرین به‌عنوان انجام‌شده ثبت شد." : "Exercise marked as done.",
+      );
+    } catch (reason) {
+      setError(
+        reason instanceof Error
+          ? reason.message
+          : fa
+            ? "ثبت انجام تمرین ناموفق بود."
+            : "Could not mark this exercise as done.",
+      );
+    } finally {
+      setCompletingId("");
+    }
+  };
+
   const addFiles = (selectedFiles: FileList | null) => {
     if (!selectedFiles) return;
     const incoming = Array.from(selectedFiles);
@@ -272,6 +314,9 @@ export default function AssignmentsCenter() {
     ).length,
     graded: items.filter(({ submission }) => submission?.status === "graded")
       .length,
+    completed: items.filter(
+      ({ submission }) => submission?.status === "completed",
+    ).length,
   };
   const filterLabels: Record<StatusFilter, string> = {
     all: fa ? "همه" : "All",
@@ -279,6 +324,7 @@ export default function AssignmentsCenter() {
     submitted: fa ? "ارسال‌شده" : "Submitted",
     returned: fa ? "نیازمند اصلاح" : "Needs revision",
     graded: fa ? "نمره‌گرفته" : "Graded",
+    completed: fa ? "انجام‌شده" : "Completed",
   };
   const statusStyle: Record<StatusFilter, string> = {
     all: "bg-blue/10 text-blue",
@@ -286,15 +332,18 @@ export default function AssignmentsCenter() {
     submitted: "bg-blue/10 text-blue",
     returned: "bg-danger/10 text-danger",
     graded: "bg-sage text-sageDeep",
+    completed: "bg-sage text-sageDeep",
   };
   const actionLabel = (status: StatusFilter, hasDraft: boolean) => {
     if (!isChildMode) {
+      if (status === "completed") return fa ? "انجام‌شده" : "Completed";
       if (status === "graded") return fa ? "دیدن بازخورد" : "View feedback";
       if (status === "submitted") return fa ? "دیدن ارسال" : "View submission";
       if (status === "returned") return fa ? "اصلاح و ارسال" : "Revise";
       if (hasDraft) return fa ? "ادامه پیش‌نویس" : "Continue draft";
       return fa ? "شروع تمرین" : "Start";
     }
+    if (status === "completed") return fa ? "انجام شد" : "Done";
     if (status === "graded") return fa ? "پیام معلم" : "Teacher’s note";
     if (status === "submitted") return fa ? "دیدن کارم" : "See my work";
     if (status === "returned") return fa ? "دوباره امتحان می‌کنم" : "Try again";
@@ -304,13 +353,14 @@ export default function AssignmentsCenter() {
 
   return (
     <>
-      <div className="mb-5 grid grid-cols-2 gap-3 xl:grid-cols-4">
+      <div className="mb-5 grid grid-cols-2 gap-3 xl:grid-cols-5">
         {(
           [
             ["pending", Clock, counts.pending],
             ["submitted", Send, counts.submitted],
             ["returned", FileText, counts.returned],
             ["graded", Award, counts.graded],
+            ["completed", CheckCircle2, counts.completed],
           ] as const
         ).map(([key, Icon, count]) => (
           <div
@@ -332,18 +382,25 @@ export default function AssignmentsCenter() {
         ))}
       </div>
       <div className="mb-4 flex gap-2 overflow-x-auto pb-1">
-        {(["all", "pending", "submitted", "returned", "graded"] as const).map(
-          (key) => (
-            <button
-              key={key}
-              type="button"
-              onClick={() => setFilter(key)}
-              className={`shrink-0 rounded-full border px-3.5 py-2 text-[12px] font-semibold ${filter === key ? "border-ink bg-ink text-white" : "border-line bg-white text-ink70"}`}
-            >
-              {filterLabels[key]}
-            </button>
-          ),
-        )}
+        {(
+          [
+            "all",
+            "pending",
+            "submitted",
+            "returned",
+            "graded",
+            "completed",
+          ] as const
+        ).map((key) => (
+          <button
+            key={key}
+            type="button"
+            onClick={() => setFilter(key)}
+            className={`shrink-0 rounded-full border px-3.5 py-2 text-[12px] font-semibold ${filter === key ? "border-ink bg-ink text-white" : "border-line bg-white text-ink70"}`}
+          >
+            {filterLabels[key]}
+          </button>
+        ))}
       </div>
 
       {error && !selected && (
@@ -352,6 +409,14 @@ export default function AssignmentsCenter() {
           className="mb-3 rounded-xl bg-danger/10 p-3 text-[12px] text-danger"
         >
           {error}
+        </p>
+      )}
+      {success && !selected && (
+        <p
+          role="status"
+          className="mb-3 rounded-xl bg-sage/40 p-3 text-[12px] text-sageDeep"
+        >
+          {success}
         </p>
       )}
       <div className="overflow-x-auto rounded-xl border border-line bg-white shadow-card">
@@ -448,13 +513,34 @@ export default function AssignmentsCenter() {
                       {gradePercent == null ? "—" : `${gradePercent}%`}
                     </td>
                     <td className="px-4 py-4">
-                      <button
-                        type="button"
-                        onClick={() => openAssignment(item)}
-                        className="rounded-lg bg-blue px-3 py-2 text-[11px] font-semibold text-white hover:bg-blueDeep"
-                      >
-                        {actionLabel(status, Boolean(item.submission))}
-                      </button>
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          onClick={() => openAssignment(item)}
+                          className="rounded-lg bg-blue px-3 py-2 text-[11px] font-semibold text-white hover:bg-blueDeep"
+                        >
+                          {actionLabel(status, Boolean(item.submission))}
+                        </button>
+                        {status === "pending" &&
+                          item.assignment.completionType === "check" && (
+                            <button
+                              type="button"
+                              disabled={completingId === item.assignment.id}
+                              onClick={() => void markDone(item)}
+                              className="inline-flex items-center gap-1 rounded-lg bg-sage px-3 py-2 text-[11px] font-semibold text-sageDeep disabled:opacity-60"
+                            >
+                              {completingId === item.assignment.id ? (
+                                <LoaderCircle
+                                  size={13}
+                                  className="animate-spin"
+                                />
+                              ) : (
+                                <CheckCircle2 size={13} />
+                              )}
+                              {fa ? "انجام دادم" : "Mark done"}
+                            </button>
+                          )}
+                      </div>
                     </td>
                   </tr>
                 );
@@ -602,9 +688,41 @@ export default function AssignmentsCenter() {
                   </div>
                 </section>
               ) : null}
-              {!selected.submission ||
-              selected.submission.status === "draft" ||
-              selected.submission.status === "returned" ? (
+              {selected.assignment.completionType === "check" ? (
+                <section className="space-y-3 rounded-xl border border-sage/50 bg-sage/10 p-4">
+                  <p className="m-0 text-[12px] text-ink70">
+                    {selected.submission?.status === "completed"
+                      ? fa
+                        ? "این تمرین را به‌عنوان انجام‌شده علامت زده‌ای."
+                        : "You marked this exercise as done."
+                      : fa
+                        ? "پس از انجام تمرین، دکمه زیر را بزنید تا معلمتان مطلع شود."
+                        : "When you finish, mark it done so your teacher knows."}
+                  </p>
+                  {selected.submission?.status !== "completed" && (
+                    <button
+                      type="button"
+                      disabled={completingId === selected.assignment.id}
+                      onClick={() => void markDone(selected)}
+                      className="inline-flex items-center gap-2 rounded-xl bg-sage px-4 py-2.5 text-[12px] font-semibold text-sageDeep disabled:opacity-60"
+                    >
+                      {completingId === selected.assignment.id ? (
+                        <LoaderCircle size={14} className="animate-spin" />
+                      ) : (
+                        <CheckCircle2 size={14} />
+                      )}
+                      {fa ? "انجام دادم" : "I’ve done it"}
+                    </button>
+                  )}
+                  {error && (
+                    <p role="alert" className="m-0 text-[11px] text-danger">
+                      {error}
+                    </p>
+                  )}
+                </section>
+              ) : !selected.submission ||
+                selected.submission.status === "draft" ||
+                selected.submission.status === "returned" ? (
                 <>
                   <label className="block text-[12px] font-semibold">
                     {fa ? "پاسخ تو" : "Your response"}
@@ -780,13 +898,17 @@ export default function AssignmentsCenter() {
                 </>
               ) : (
                 <div className="rounded-xl border border-line bg-cream/60 p-3 text-[12px] text-ink70">
-                  {selected.submission.status === "graded"
+                  {selected.submission.status === "completed"
                     ? fa
-                      ? "این تمرین بررسی شده است."
-                      : "This assignment has been graded."
-                    : fa
-                      ? "تمرین ارسال شده و منتظر بررسی معلم است."
-                      : "Submitted and waiting for your teacher’s review."}
+                      ? "این تمرین را به‌عنوان انجام‌شده علامت زده‌ای."
+                      : "You marked this exercise as done."
+                    : selected.submission.status === "graded"
+                      ? fa
+                        ? "این تمرین بررسی شده است."
+                        : "This assignment has been graded."
+                      : fa
+                        ? "تمرین ارسال شده و منتظر بررسی معلم است."
+                        : "Submitted and waiting for your teacher’s review."}
                 </div>
               )}
             </div>

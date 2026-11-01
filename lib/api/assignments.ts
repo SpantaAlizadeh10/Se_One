@@ -13,6 +13,8 @@ export type Assignment = {
   moduleTitle?: string;
   teacherId: string;
   teacherName: string;
+  targetStudentId?: string;
+  completionType: "submission" | "check";
   title: string;
   description: string;
   instructions?: string;
@@ -38,11 +40,13 @@ export type Submission = {
   gradedAt?: string;
   gradedBy?: string;
   gradedByName?: string;
-  status: "draft" | "submitted" | "graded" | "returned";
+  status: "draft" | "submitted" | "graded" | "returned" | "completed";
 };
 
 export type CreateAssignmentInput = {
   courseId: string;
+  targetStudentId: string;
+  completionType?: "submission" | "check";
   moduleId?: string;
   title: string;
   description: string;
@@ -113,6 +117,18 @@ function normalizeAssignment(raw: unknown, index: number): Assignment | null {
     moduleTitle: text(record, "moduleTitle", "ModuleTitle") || undefined,
     teacherId: text(record, "teacherId", "TeacherId"),
     teacherName: text(record, "teacherName", "TeacherName"),
+    targetStudentId:
+      text(
+        record,
+        "targetStudentId",
+        "TargetStudentId",
+        "studentId",
+        "StudentId",
+      ) || undefined,
+    completionType:
+      text(record, "completionType", "CompletionType") === "check"
+        ? "check"
+        : "submission",
     title: text(record, "title", "Title"),
     description: text(record, "description", "Description"),
     instructions: text(record, "instructions", "Instructions") || undefined,
@@ -137,7 +153,8 @@ function normalizeSubmission(raw: unknown, index: number): Submission | null {
     statusRaw === "draft" ||
     statusRaw === "submitted" ||
     statusRaw === "graded" ||
-    statusRaw === "returned"
+    statusRaw === "returned" ||
+    statusRaw === "completed"
       ? statusRaw
       : "draft";
 
@@ -410,6 +427,17 @@ export async function finalizeStudentSubmission(
   const data = await apiFetch<unknown>(
     `/api/student/submissions/${encodeURIComponent(submissionId)}/submit`,
     { method: "POST", body: input },
+  );
+  return normalizeSubmission(data, 0)!;
+}
+
+/** POST /api/student/assignments/{assignmentId}/complete — mark a teacher exercise complete. */
+export async function markStudentAssignmentComplete(
+  assignmentId: string,
+): Promise<Submission> {
+  const data = await apiFetch<unknown>(
+    `/api/student/assignments/${encodeURIComponent(assignmentId)}/complete`,
+    { method: "POST" },
   );
   return normalizeSubmission(data, 0)!;
 }

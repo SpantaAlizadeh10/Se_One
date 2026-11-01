@@ -10,9 +10,16 @@ import { isApiConfigured } from "@/lib/is-api-configured";
 import {
   createAdminClassSlot,
   listAdminClassSlots,
+  reviewAdminTeacherClassAssignment,
   type AdminClassSlot,
   type CreateClassSlotInput,
+  type TeacherClassAssignment,
 } from "@/lib/api/class-scheduling";
+import {
+  getDemoAdminClassSlots,
+  onDemoClassSchedulingChange,
+  reviewDemoTeacherClass,
+} from "@/lib/demo-class-scheduling";
 
 const defaultSlot = {
   title: "",
@@ -27,94 +34,8 @@ const defaultSlot = {
 type DisplayClassSlot = AdminClassSlot & {
   courseTitle?: string;
   isDemo?: boolean;
+  teacherAssignments?: (TeacherClassAssignment & { isDemo?: boolean })[];
 };
-
-function createDemoClassSlots(): DisplayClassSlot[] {
-  const startAt = (daysFromNow: number, hour: number) => {
-    const date = new Date();
-    date.setDate(date.getDate() + daysFromNow);
-    date.setHours(hour, 0, 0, 0);
-    return date;
-  };
-  const makeSlot = (
-    id: string,
-    courseId: string,
-    courseTitle: string,
-    title: string,
-    classType: "public" | "private",
-    daysFromNow: number,
-    hour: number,
-    capacity: number,
-    enrolledCount: number,
-  ): DisplayClassSlot => {
-    const start = startAt(daysFromNow, hour);
-    const end = new Date(start.getTime() + 60 * 60 * 1000);
-    return {
-      id,
-      courseId,
-      courseTitle,
-      title,
-      description: courseTitle,
-      classType,
-      teacherRole: courseId.includes("german") ? "german" : "english",
-      capacity,
-      startsAt: start.toISOString(),
-      endsAt: end.toISOString(),
-      status: "active",
-      createdBy: "demo",
-      enrolledCount,
-      remainingSeats: capacity - enrolledCount,
-      isDemo: true,
-    };
-  };
-
-  return [
-    makeSlot(
-      "mock-class-conversation",
-      "mock-course-conversation",
-      "Practical English",
-      "Everyday Conversation Club",
-      "public",
-      2,
-      18,
-      10,
-      4,
-    ),
-    makeSlot(
-      "mock-class-beginners",
-      "mock-course-beginners",
-      "English Foundations",
-      "English for Beginners",
-      "public",
-      3,
-      16,
-      10,
-      6,
-    ),
-    makeSlot(
-      "mock-class-ielts",
-      "mock-course-ielts",
-      "IELTS Preparation",
-      "IELTS Writing Workshop",
-      "private",
-      4,
-      17,
-      2,
-      1,
-    ),
-    makeSlot(
-      "mock-class-german",
-      "mock-course-german",
-      "Travel German",
-      "German for Travel",
-      "private",
-      5,
-      15,
-      2,
-      0,
-    ),
-  ];
-}
 
 function localDateTime(date: Date, time: string) {
   const [hours, minutes] = time.split(":").map(Number);
@@ -139,34 +60,86 @@ export default function ClassScheduler() {
   const fa = lang === "fa";
   const [slot, setSlot] = useState(defaultSlot);
   const [saving, setSaving] = useState(false);
+  const [reviewingAssignmentId, setReviewingAssignmentId] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [slots, setSlots] = useState<DisplayClassSlot[]>([]);
   const [loading, setLoading] = useState(true);
 
   const refresh = async () => {
-    const loadedSlots = await listAdminClassSlots();
-    setSlots([...loadedSlots, ...createDemoClassSlots()]);
+    const loadedSlots = isApiConfigured() ? await listAdminClassSlots() : [];
+    const demoSlots = getDemoAdminClassSlots().map((slot) => ({
+      ...slot,
+      isDemo: true as const,
+      teacherAssignments: slot.teacherAssignments.map((assignment) => ({
+        ...assignment,
+        isDemo: true,
+      })),
+    }));
+    setSlots([...loadedSlots, ...demoSlots]);
   };
 
   useEffect(() => {
-    if (!isApiConfigured()) {
-      setSlots(createDemoClassSlots());
-      setLoading(false);
-      return;
-    }
-    listAdminClassSlots()
-      .then((loadedSlots) =>
-        setSlots([...loadedSlots, ...createDemoClassSlots()]),
-      )
-      .catch((reason) => {
-        setSlots(createDemoClassSlots());
-        setError(
-          reason instanceof Error ? reason.message : "Could not load classes.",
-        );
-      })
-      .finally(() => setLoading(false));
+    let active = true;
+    const load = async () => {
+      try {
+        await refresh();
+      } catch (reason) {
+        if (active) {
+          setError(
+            reason instanceof Error
+              ? reason.message
+              : "Could not load classes.",
+          );
+        }
+      } finally {
+        if (active) setLoading(false);
+      }
+    };
+    void load();
+    const unsubscribe = onDemoClassSchedulingChange(() => void load());
+    return () => {
+      active = false;
+      unsubscribe();
+    };
   }, [fa]);
+
+  const reviewTeacherRequest = async (
+    slotItem: DisplayClassSlot,
+    assignment: TeacherClassAssignment & { isDemo?: boolean },
+    status: "confirmed" | "cancelled",
+  ) => {
+    setReviewingAssignmentId(assignment.id);
+    setError("");
+    setMessage("");
+    try {
+      if (assignment.isDemo || slotItem.isDemo) {
+        reviewDemoTeacherClass(assignment.id, status);
+      } else {
+        await reviewAdminTeacherClassAssignment(assignment.id, status);
+      }
+      await refresh();
+      setMessage(
+        fa
+          ? status === "confirmed"
+            ? "درخواست معلم تأیید شد؛ کلاس برای رزرو دانش‌آموزان فعال است."
+            : "درخواست معلم رد شد."
+          : status === "confirmed"
+            ? "Teacher request approved. The class is now available to students."
+            : "Teacher request rejected.",
+      );
+    } catch (reason) {
+      setError(
+        reason instanceof Error
+          ? reason.message
+          : fa
+            ? "بررسی درخواست انجام نشد."
+            : "Could not review the teacher request.",
+      );
+    } finally {
+      setReviewingAssignmentId("");
+    }
+  };
 
   const handleChange = (
     field: keyof typeof defaultSlot,
@@ -494,6 +467,82 @@ export default function ClassScheduler() {
                 <p className="mb-3 text-[12.5px] text-muted">
                   {slotItem.description}
                 </p>
+
+                <div className="mb-3 space-y-2">
+                  {(slotItem.teacherAssignments ?? []).length === 0 ? (
+                    <p className="text-[11px] text-muted">
+                      {fa
+                        ? "هنوز معلمی برای برگزاری این کلاس درخواست نداده است."
+                        : "No teacher has requested this class yet."}
+                    </p>
+                  ) : (
+                    slotItem.teacherAssignments?.map((assignment) => (
+                      <div
+                        key={assignment.id}
+                        className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-line bg-white px-3 py-2"
+                      >
+                        <div className="text-[12px]">
+                          <span className="font-semibold">
+                            {assignment.teacherName || assignment.teacherId}
+                          </span>
+                          <span
+                            className={`ms-2 rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                              assignment.status === "confirmed"
+                                ? "bg-success/10 text-success"
+                                : assignment.status === "pending"
+                                  ? "bg-gold/15 text-goldDeep"
+                                  : "bg-danger/10 text-danger"
+                            }`}
+                          >
+                            {fa
+                              ? assignment.status === "confirmed"
+                                ? "تأییدشده"
+                                : assignment.status === "pending"
+                                  ? "در انتظار تأیید"
+                                  : "ردشده"
+                              : assignment.status === "confirmed"
+                                ? "Approved"
+                                : assignment.status === "pending"
+                                  ? "Pending"
+                                  : "Rejected"}
+                          </span>
+                        </div>
+                        {assignment.status === "pending" && (
+                          <div className="flex gap-2">
+                            <button
+                              type="button"
+                              disabled={reviewingAssignmentId === assignment.id}
+                              onClick={() =>
+                                void reviewTeacherRequest(
+                                  slotItem,
+                                  assignment,
+                                  "confirmed",
+                                )
+                              }
+                              className="rounded-full bg-success px-3 py-1.5 text-[11px] font-semibold text-white disabled:opacity-60"
+                            >
+                              {fa ? "تأیید" : "Approve"}
+                            </button>
+                            <button
+                              type="button"
+                              disabled={reviewingAssignmentId === assignment.id}
+                              onClick={() =>
+                                void reviewTeacherRequest(
+                                  slotItem,
+                                  assignment,
+                                  "cancelled",
+                                )
+                              }
+                              className="rounded-full bg-danger/10 px-3 py-1.5 text-[11px] font-semibold text-danger disabled:opacity-60"
+                            >
+                              {fa ? "رد درخواست" : "Reject"}
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    ))
+                  )}
+                </div>
 
                 <div className="space-y-2 text-[12.5px] text-muted">
                   <div className="flex items-center gap-2">

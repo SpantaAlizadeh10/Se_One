@@ -3,6 +3,7 @@
 ## نیازمندی‌ها
 
 ### جریان پرداخت
+
 1. دانش‌آموز کلاس را انتخاب می‌کند
 2. سیستم شماره کارت را نمایش می‌دهد
 3. دانش‌آموز مبلغ را به شماره کارت واریز می‌کند
@@ -48,7 +49,8 @@ public enum PaymentStatus
 public class PaymentSettings
 {
     public string Id { get; set; }
-    public string CardNumber { get; set; }            // شماره کارت (با فرمت)
+    public string CardNumber { get; set; }            // شماره کارت مقصد برای واریز کارت‌به‌کارت
+    public string? AccountNumber { get; set; }         // شماره حساب مقصد (اختیاری)
     public string CardHolderName { get; set; }        // نام دارنده کارت
     public string BankName { get; set; }              // نام بانک
     public string? WhatsAppNumber { get; set; }      // شماره واتساپ برای ارسال فیش
@@ -81,20 +83,14 @@ public async Task<ActionResult<PaymentSettingsDto>> GetPaymentSettings()
 
     return Ok(new PaymentSettingsDto
     {
-        CardNumber = MaskCardNumber(settings.CardNumber), // فقط 4 رقم آخر
+        // These are the receiving account's published payment instructions.
+        // Never return a student's/source card or any authentication data here.
+        CardNumber = settings.CardNumber,
+        AccountNumber = settings.AccountNumber,
         CardHolderName = settings.CardHolderName,
         BankName = settings.BankName,
         WhatsAppNumber = settings.WhatsappNumber
     });
-}
-
-private string MaskCardNumber(string cardNumber)
-{
-    // ماسک کردن شماره کارت: 6037-****-****-5678
-    if (string.IsNullOrEmpty(cardNumber) || cardNumber.Length < 16)
-        return cardNumber;
-
-    return $"{cardNumber.Substring(0, 4)}-****-****-{cardNumber.Substring(cardNumber.Length - 4)}";
 }
 ```
 
@@ -118,13 +114,16 @@ public async Task<ActionResult<PaymentDto>> CreatePayment(
         return NotFound("Enrollment not found");
     }
 
-    // بررسی آیا قبلاً پرداختی برای این ثبت‌نام وجود دارد
+    // همان درخواست pending برای refresh قابل‌بازیابی است؛
+    // روش‌های مختلف پرداخت برای همان رزرو درخواست جدا دارند.
     var existingPayment = await _context.Payments
-        .FirstOrDefaultAsync(p => p.EnrollmentId == request.EnrollmentId && p.Status != PaymentStatus.Rejected);
+        .FirstOrDefaultAsync(p => p.EnrollmentId == request.EnrollmentId
+            && p.PaymentMethod == request.PaymentMethod
+            && p.Status == PaymentStatus.Pending);
 
     if (existingPayment != null)
     {
-        return BadRequest("Payment already exists for this enrollment");
+        return Ok(ToPaymentDto(existingPayment));
     }
 
     // ایجاد پرداخت
@@ -135,6 +134,7 @@ public async Task<ActionResult<PaymentDto>> CreatePayment(
         StudentId = studentId,
         Amount = enrollment.FinalPrice,
         Currency = "IRR",
+        PaymentMethod = request.PaymentMethod,
         Status = PaymentStatus.Pending,
         CreatedAt = DateTime.UtcNow
     };
@@ -142,21 +142,38 @@ public async Task<ActionResult<PaymentDto>> CreatePayment(
     _context.Payments.Add(payment);
     await _context.SaveChangesAsync();
 
+    string? paymentUrl = null;
+    if (request.PaymentMethod == "payment-link")
+    {
+        // Future integration point: create a gateway session with the provider,
+        // persist its reference, and return only the provider's HTTPS redirect URL.
+        paymentUrl = await _gatewayService.CreateCheckoutUrlAsync(payment);
+        payment.PaymentUrl = paymentUrl;
+        await _context.SaveChangesAsync();
+    }
+
     return Ok(new PaymentDto
     {
         Id = payment.Id,
         Amount = payment.Amount,
         Currency = payment.Currency,
         Status = payment.Status,
-        CreatedAt = payment.CreatedAt
+        CreatedAt = payment.CreatedAt,
+        PaymentMethod = payment.PaymentMethod,
+        PaymentUrl = payment.PaymentUrl
     });
 }
 
 public class CreatePaymentRequest
 {
     public string EnrollmentId { get; set; }
+    public string PaymentMethod { get; set; } // "card-transfer" | "payment-link"
 }
+
+// Request example: { "enrollmentId": "enrollment-id", "paymentMethod": "card-transfer" }
 ```
+
+برای `paymentMethod = "card-transfer"` پاسخ پرداخت شامل مبلغ و وضعیت pending است و دانش‌آموز بعداً رسید را آپلود می‌کند. برای `paymentMethod = "payment-link"` در صورت فعال بودن درگاه، پاسخ باید علاوه بر اطلاعات پرداخت یک `paymentUrl` امن با HTTPS داشته باشد؛ کلاینت به آن لینک منتقل می‌شود و نتیجه نهایی باید از callback/webhook تأییدشده درگاه دریافت شود، نه از redirect مرورگر. ایجاد مجدد درخواست برای همان enrollment و روش پرداخت باید همان پرداخت pending را برگرداند تا refresh باعث پرداخت تکراری نشود.
 
 ### 3. POST /api/payments/{paymentId}/receipt - آپلود فیش پرداخت
 
@@ -481,24 +498,28 @@ public class WhatsAppService : IWhatsAppService
 ## Flow کامل
 
 ### 1. دانش‌آموز انتخاب کلاس
+
 ```
 Frontend → POST /api/classes/{classId}/enroll
 Backend → ایجاد Enrollment با status = "pending"
 ```
 
 ### 2. دریافت شماره کارت
+
 ```
 Frontend → GET /api/payment/settings
 Backend → شماره کارت ماسک شده را برمی‌گرداند
 ```
 
 ### 3. آپلود فیش
+
 ```
 Frontend → POST /api/payments/{paymentId}/receipt
 Backend → آپلود فیش → ارسال به واتساپ → status = "pending"
 ```
 
 ### 4. تایید توسط Admin
+
 ```
 Admin → PATCH /api/payments/{paymentId}/verify
 Backend → status = "verified" → Enrollment status = "confirmed"

@@ -3,11 +3,21 @@ import { apiFetch } from "./client";
 export type ClassSlotStatus = "active" | "draft" | "cancelled" | "completed";
 export type ClassType = "public" | "private";
 export type TeacherAssignmentStatus = "pending" | "confirmed" | "cancelled";
-export type StudentEnrollmentStatus = "active" | "cancelled";
+export type StudentEnrollmentStatus =
+  | "pending"
+  | "active"
+  | "confirmed"
+  | "cancelled"
+  | "completed";
 
 export type AdminClassSlot = {
   id: string;
   courseId?: string;
+  courseTitle?: string;
+  level?: string;
+  basePrice?: number;
+  finalPrice?: number;
+  currency?: string;
   title: string;
   description: string;
   classType: ClassType;
@@ -19,6 +29,7 @@ export type AdminClassSlot = {
   createdBy: string;
   remainingSeats: number;
   enrolledCount: number;
+  teacherAssignments?: TeacherClassAssignment[];
 };
 
 export type TeacherClassAssignment = {
@@ -27,6 +38,7 @@ export type TeacherClassAssignment = {
   teacherId: string;
   status: TeacherAssignmentStatus;
   selectedAt: string;
+  teacherName?: string;
 };
 
 export type StudentClassEnrollment = {
@@ -35,6 +47,8 @@ export type StudentClassEnrollment = {
   studentId: string;
   enrolledAt: string;
   status: StudentEnrollmentStatus;
+  finalPrice?: number;
+  currency?: string;
 };
 
 export type TeacherClassSlot = AdminClassSlot & {
@@ -109,9 +123,58 @@ function normalizeClassSlot(raw: unknown): AdminClassSlot {
     "activeEnrollmentCount",
     "ActiveEnrollmentCount",
   );
+  const assignmentsRaw = value(
+    record,
+    "teacherAssignments",
+    "TeacherAssignments",
+    "assignments",
+    "Assignments",
+  );
+  const teacherAssignments = Array.isArray(assignmentsRaw)
+    ? assignmentsRaw
+        .map((item): TeacherClassAssignment | null => {
+          const assignment = (item ?? {}) as ApiRecord;
+          const id = text(
+            assignment,
+            "id",
+            "Id",
+            "assignmentId",
+            "AssignmentId",
+          );
+          const teacherId = text(assignment, "teacherId", "TeacherId");
+          if (!id || !teacherId) return null;
+          const statusRaw = text(assignment, "status", "Status").toLowerCase();
+          const status: TeacherAssignmentStatus =
+            statusRaw === "confirmed" || statusRaw === "cancelled"
+              ? statusRaw
+              : "pending";
+          return {
+            id,
+            slotId:
+              text(assignment, "slotId", "SlotId") || text(record, "id", "Id"),
+            teacherId,
+            teacherName:
+              text(assignment, "teacherName", "TeacherName") || undefined,
+            status,
+            selectedAt: text(
+              assignment,
+              "selectedAt",
+              "SelectedAt",
+              "createdAt",
+              "CreatedAt",
+            ),
+          };
+        })
+        .filter((item): item is TeacherClassAssignment => item !== null)
+    : undefined;
   return {
     id: text(record, "id", "Id", "slotId", "SlotId"),
     courseId: text(record, "courseId", "CourseId") || undefined,
+    courseTitle: text(record, "courseTitle", "CourseTitle") || undefined,
+    level: text(record, "level", "Level") || undefined,
+    basePrice: numberValue(record, "basePrice", "BasePrice"),
+    finalPrice: numberValue(record, "finalPrice", "FinalPrice"),
+    currency: text(record, "currency", "Currency") || undefined,
     title: text(record, "title", "Title", "name", "Name"),
     description: text(record, "description", "Description"),
     classType,
@@ -128,6 +191,7 @@ function normalizeClassSlot(raw: unknown): AdminClassSlot {
       numberValue(record, "remainingSeats", "RemainingSeats") ||
         capacity - enrolledCount,
     ),
+    teacherAssignments,
   };
 }
 
@@ -205,12 +269,26 @@ export async function listTeacherClassSlots(): Promise<TeacherClassSlot[]> {
   ).map(normalizeTeacherClass);
 }
 
-/** The API must reject an overlapping teacher assignment atomically (HTTP 409). */
-export async function acceptTeacherClassSlot(slotId: string): Promise<void> {
+/** Creates a pending teacher request; admin approval is required before students can book. */
+export async function requestTeacherClassSlot(slotId: string): Promise<void> {
   await apiFetch(
-    `/api/teacher/class-slots/${encodeURIComponent(slotId)}/accept`,
+    `/api/teacher/class-slots/${encodeURIComponent(slotId)}/request`,
     {
       method: "POST",
+    },
+  );
+}
+
+/** Admin approval/rejection of a teacher's class request. */
+export async function reviewAdminTeacherClassAssignment(
+  assignmentId: string,
+  status: Extract<TeacherAssignmentStatus, "confirmed" | "cancelled">,
+): Promise<void> {
+  await apiFetch(
+    `/api/admin/class-slot-assignments/${encodeURIComponent(assignmentId)}`,
+    {
+      method: "PATCH",
+      body: { status },
     },
   );
 }
@@ -230,13 +308,24 @@ export async function listStudentClassSlots(
 /** The API must enforce capacity and prevent duplicate/overlapping enrollments. */
 export async function enrollStudentInClass(
   assignmentId: string,
-): Promise<void> {
-  await apiFetch(
+): Promise<StudentClassEnrollment> {
+  const data = await apiFetch<unknown>(
     `/api/student/class-slots/${encodeURIComponent(assignmentId)}/enroll`,
     {
       method: "POST",
     },
   );
+  const record = (data ?? {}) as ApiRecord;
+  return {
+    id: text(record, "id", "Id", "enrollmentId", "EnrollmentId"),
+    assignmentId: text(record, "assignmentId", "AssignmentId") || assignmentId,
+    studentId: text(record, "studentId", "StudentId"),
+    enrolledAt: text(record, "enrolledAt", "EnrolledAt"),
+    status: (text(record, "status", "Status") ||
+      "active") as StudentEnrollmentStatus,
+    finalPrice: numberValue(record, "finalPrice", "FinalPrice"),
+    currency: text(record, "currency", "Currency") || undefined,
+  };
 }
 
 export function formatDateTime(dateIso: string): string {

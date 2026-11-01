@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   CalendarDays,
   Clock3,
@@ -16,6 +17,12 @@ import {
   overlaps,
   type StudentAvailableClass,
 } from "@/lib/api/class-scheduling";
+import {
+  getDemoStudentClasses,
+  onDemoClassSchedulingChange,
+} from "@/lib/demo-class-scheduling";
+
+type DisplayStudentClass = StudentAvailableClass & { isDemo?: boolean };
 
 function formatDate(value: string, locale: string) {
   const date = new Date(value);
@@ -35,10 +42,11 @@ function formatTime(value: string, locale: string) {
 }
 
 export default function StudentClassBrowser() {
-  const { lang } = useLanguage();
+  const { lang, href } = useLanguage();
+  const router = useRouter();
   const fa = lang === "fa";
   const locale = fa ? "fa-IR" : "en-US";
-  const [classes, setClasses] = useState<StudentAvailableClass[]>([]);
+  const [classes, setClasses] = useState<DisplayStudentClass[]>([]);
   const [teacherFilter, setTeacherFilter] = useState("");
   const [classTypeFilter, setClassTypeFilter] = useState<
     "all" | "public" | "private"
@@ -46,26 +54,40 @@ export default function StudentClassBrowser() {
   const [loading, setLoading] = useState(true);
   const [enrollingId, setEnrollingId] = useState("");
   const [error, setError] = useState("");
-  const [notice, setNotice] = useState("");
-
-  const refresh = async () => setClasses(await listStudentClassSlots());
 
   useEffect(() => {
-    if (!isApiConfigured()) {
-      setError(
-        fa ? "آدرس API تنظیم نشده است." : "Backend API is not configured.",
-      );
-      setLoading(false);
-      return;
-    }
-    listStudentClassSlots()
-      .then(setClasses)
-      .catch((reason) =>
-        setError(
-          reason instanceof Error ? reason.message : "Could not load classes.",
-        ),
-      )
-      .finally(() => setLoading(false));
+    let active = true;
+    const load = async () => {
+      try {
+        const remoteClasses = isApiConfigured()
+          ? await listStudentClassSlots()
+          : [];
+        const demoClasses = getDemoStudentClasses().map((item) => ({
+          ...item,
+          isDemo: true,
+        }));
+        if (active) setClasses([...remoteClasses, ...demoClasses]);
+      } catch (reason) {
+        if (active) {
+          setClasses(
+            getDemoStudentClasses().map((item) => ({ ...item, isDemo: true })),
+          );
+          setError(
+            reason instanceof Error
+              ? reason.message
+              : "Could not load classes.",
+          );
+        }
+      } finally {
+        if (active) setLoading(false);
+      }
+    };
+    void load();
+    const unsubscribe = onDemoClassSchedulingChange(() => void load());
+    return () => {
+      active = false;
+      unsubscribe();
+    };
   }, [fa]);
 
   const teachers = useMemo(() => {
@@ -97,7 +119,7 @@ export default function StudentClassBrowser() {
         ),
     );
 
-  const enroll = async (item: StudentAvailableClass) => {
+  const enroll = async (item: DisplayStudentClass) => {
     if (
       item.enrolled ||
       item.remainingSeats <= 0 ||
@@ -106,15 +128,19 @@ export default function StudentClassBrowser() {
       return;
     setEnrollingId(item.assignmentId);
     setError("");
-    setNotice("");
     try {
-      await enrollStudentInClass(item.assignmentId);
-      await refresh();
-      setNotice(
-        fa
-          ? "ثبت‌نام شما در کلاس انجام شد."
-          : "You are enrolled in this class.",
-      );
+      const params = new URLSearchParams({
+        title: item.title,
+        teacher: item.teacherName,
+      });
+      if (item.isDemo) {
+        params.set("demoAssignmentId", item.assignmentId);
+      } else {
+        const enrollment = await enrollStudentInClass(item.assignmentId);
+        if (!enrollment.id) throw new Error("Enrollment ID was not returned.");
+        params.set("enrollmentId", enrollment.id);
+      }
+      router.push(`${href("/dashboard/classes/payment")}?${params.toString()}`);
     } catch (reason) {
       setError(
         reason instanceof Error
@@ -190,12 +216,11 @@ export default function StudentClassBrowser() {
           {error}
         </p>
       )}
-      {notice && (
-        <p
-          role="status"
-          className="rounded-xl bg-sage/40 p-3 text-[13px] text-sageDeep"
-        >
-          {notice}
+      {classes.some((item) => item.isDemo) && (
+        <p className="rounded-xl border border-blue/20 bg-blue/5 p-3 text-[12px] text-blue">
+          {fa
+            ? "کلاس‌های نمونه فقط پس از تأیید معلم توسط ادمین نمایش داده می‌شوند؛ ثبت‌نام در آن‌ها آزمایشی است."
+            : "Demo classes appear only after admin approval of a teacher request; demo bookings are not real."}
         </p>
       )}
 
@@ -251,6 +276,11 @@ export default function StudentClassBrowser() {
                       {item.teacherName}
                     </div>
                     <h3 className="font-semibold text-ink">{item.title}</h3>
+                    {item.isDemo && (
+                      <span className="mt-1 inline-block rounded-full bg-blue/10 px-2 py-0.5 text-[10px] font-semibold text-blue">
+                        {fa ? "نمونه" : "Demo"}
+                      </span>
+                    )}
                     <span className="mt-1 inline-block rounded-full bg-blue/5 px-2 py-0.5 text-[10px] font-semibold text-blue">
                       {item.classType === "private"
                         ? fa

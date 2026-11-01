@@ -8,6 +8,7 @@ import {
   type TeacherClass,
 } from "@/lib/api/teacher-dashboard";
 import { formatApiWeekday } from "@/lib/date-utils";
+import TeacherAssignmentForm from "@/components/teacher-dashboard/TeacherAssignmentForm";
 
 export default function TeacherSchedulePage() {
   const { t, lang } = useLanguage();
@@ -69,6 +70,8 @@ export default function TeacherSchedulePage() {
           </div>
         ))}
       </div>
+
+      <TeacherAssignmentForm />
     </div>
   );
 }

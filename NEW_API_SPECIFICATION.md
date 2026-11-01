@@ -187,10 +187,13 @@ Conversation: {
 - `GET /api/teacher/assignments/{assignmentId}/submissions` - Get all submissions
 - `PATCH /api/teacher/submissions/{submissionId}/grade` - Grade a submission
 
+For a personal exercise sent from the teacher's weekly schedule, `POST /api/teacher/assignments` must accept `targetStudentId`. The backend must verify that the authenticated teacher has an active class relationship with that student and return the exercise only to that student.
+
 ### Endpoints (Student)
 
 - `GET /api/student/assignments` - Get assignments for student
 - `GET /api/student/assignments/{assignmentId}` - Get assignment details
+- `POST /api/student/assignments/{assignmentId}/complete` - Mark a simple exercise as completed (idempotent)
 - `POST /api/student/assignments/{assignmentId}/submissions` - Submit an assignment
 - `PUT /api/student/assignments/{assignmentId}/submissions/draft` - Create or update the current student's draft (idempotent per assignment/student)
 - `POST /api/student/submissions/{submissionId}/submit` - Submit/resubmit a saved draft or returned work without creating a duplicate
@@ -213,6 +216,8 @@ Assignment: {
   moduleTitle?: string;
   teacherId: string;
   teacherName: string;
+  targetStudentId?: string;
+  completionType: "submission" | "check";
   title: string;
   description: string;
   instructions?: string;
@@ -238,7 +243,7 @@ Submission: {
   gradedAt?: string;
   gradedBy?: string;
   gradedByName?: string;
-  status: "draft" | "submitted" | "graded" | "returned";
+  status: "draft" | "submitted" | "graded" | "returned" | "completed";
 }
 ```
 

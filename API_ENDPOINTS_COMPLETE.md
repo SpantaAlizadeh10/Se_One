@@ -90,20 +90,30 @@
 
 کلاس زمان‌دار می‌تواند عمومی یا خصوصی باشد. ادمین کلاس را با تاریخ شروع/پایان تعریف می‌کند؛ ظرفیت عمومی دقیقاً ۱۰ نفر و ظرفیت خصوصی ۱ یا ۲ نفر است. معلم کلاس بدون تداخل زمانی را می‌پذیرد؛ دانش‌آموز می‌تواند همه کلاس‌های پذیرفته‌شده‌ای را که ظرفیت دارند ببیند و با فیلتر عمومی/خصوصی و معلم جست‌وجو کند.
 
-| روش  | مسیر                                             | دسترسی / توضیح                                                                                                        |
-| ---- | ------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------- |
-| GET  | `/api/admin/class-slots`                         | ادمین؛ فهرست کلاس‌ها همراه `capacity`, `enrolledCount`, `remainingSeats`, وضعیت و معلم‌های پذیرفته‌شده                |
-| POST | `/api/admin/class-slots`                         | ادمین؛ ساخت کلاس با `classType: public\|private`; ظرفیت عمومی ۱۰ و ظرفیت خصوصی فقط ۱ یا ۲، اعتبارسنجی سمت سرور الزامی |
-| GET  | `/api/teacher/class-slots`                       | معلم واردشده؛ کلاس‌های قابل‌پذیرش و وضعیت پذیرش او                                                                    |
-| POST | `/api/teacher/class-slots/{slotId}/accept`       | پذیرش کلاس توسط معلم؛ رد با 409 اگر برنامه همان معلم بازه زمانی هم‌پوشان داشته باشد                                   |
-| GET  | `/api/student/class-slots?teacherId={id}`        | دانش‌آموز واردشده؛ کلاس‌های فعال و پذیرفته‌شده توسط معلم، با صندلی خالی و وضعیت ثبت‌نام دانش‌آموز فعلی                |
-| POST | `/api/student/class-slots/{assignmentId}/enroll` | ثبت‌نام اتمیک در کلاس؛ رد با 409 برای ظرفیت پر، تکرار ثبت‌نام یا تداخل برنامه دانش‌آموز                               |
+| روش   | مسیر                                               | دسترسی / توضیح                                                                                                                                        |
+| ----- | -------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
+| GET   | `/api/admin/class-slots`                           | ادمین؛ فهرست کلاس‌ها همراه ظرفیت/صندلی‌ها و همه درخواست‌های معلم با وضعیت pending/confirmed/cancelled                                                 |
+| POST  | `/api/admin/class-slots`                           | ادمین؛ ساخت کلاس با `classType: public\|private`; ظرفیت عمومی ۱۰ و ظرفیت خصوصی فقط ۱ یا ۲، اعتبارسنجی سمت سرور الزامی                                 |
+| GET   | `/api/teacher/class-slots`                         | کلاس‌های فعال ادمین برای انتخاب و وضعیت درخواست همین معلم (`available`, `pending`, `confirmed`, `cancelled`)                                          |
+| POST  | `/api/teacher/class-slots/{slotId}/request`        | ارسال درخواست برگزاری کلاس توسط معلم؛ درخواست باید `pending` شود و هنوز برای دانش‌آموز قابل رزرو نباشد                                                |
+| PATCH | `/api/admin/class-slot-assignments/{assignmentId}` | تأیید/رد درخواست معلم با `{ status: "confirmed"                                                                                                       | "cancelled" }`؛ فقط ادمین                                       |
+| GET   | `/api/student/class-slots?teacherId={id}`          | فقط کلاس‌های فعال با assignment تأییدشده؛ فیلتر اختیاری معلم، ظرفیت و قیمت دوره/کلاس و وضعیت رزرو دانش‌آموز                                           |
+| POST  | `/api/student/class-slots/{assignmentId}/enroll`   | ایجاد رزرو موقت در وضعیت pending و پاسخ `{ id, assignmentId, finalPrice, currency, status }` برای ورود به پرداخت؛ رد با 409 در صورت ظرفیت پر یا تداخل |
+| GET   | `/api/payment/settings`                            | شماره کارت/حساب مقصد و نام صاحب حساب برای کارت‌به‌کارت؛ فقط تنظیمات عمومی دریافت وجه، نه اطلاعات کارت دانش‌آموز                                       |
+| POST  | `/api/payments`                                    | ایجاد/بازیابی پرداخت با `{ enrollmentId, paymentMethod: "card-transfer"                                                                               | "payment-link" }`؛ مبلغ سرورمحور و لینک امن درگاه در صورت اتصال |
+| POST  | `/api/payments/{paymentId}/receipt`                | ارسال فیش پرداخت؛ ثبت رزرو فقط پس از تأیید ادمین نهایی شود                                                                                            |
 
 **مدل کلاس پیشنهادی:** `{ id, courseId?, title, description, classType: "public" | "private", teacherRole, capacity, startsAt, endsAt, status, enrolledCount, remainingSeats }`. `courseId` اختیاری است و هنگام ساخت کلاس از فرم ایجاد دوره برای اتصال کلاس به دوره ارسال می‌شود؛ اگر ارسال شد، سرور باید وجود دوره را اعتبارسنجی و شناسه را در پاسخ/فهرست کلاس‌ها برگرداند. برای public ظرفیت باید ۱۰ و برای private ظرفیت باید ۱ یا ۲ باشد. تاریخ‌ها ISO-8601 باشند. هر پذیرش معلم یک `assignmentId` دارد و پاسخ کلاس دانش‌آموز باید شامل `assignmentId`, `teacherId`, `teacherName`, `enrolled` باشد.
 
 **الزامات اجباری سمت سرور:**
 
 - احراز نقش و شناسه معلم/دانش‌آموز از token/cookie؛ هرگز از بدنه درخواست اعتماد نشود.
+- در `/api/teacher/dashboard/students` شناسه معلم فقط از کاربر احراز‌شده گرفته شود و فهرست با join بین کلاس‌های پذیرفته‌شده همان معلم و ثبت‌نام‌های دانش‌آموزان ساخته شود؛ دانش‌آموزانی که با معلم کلاس نداشته‌اند برگردانده نشوند. فیلتر `courseId` هم فقط داخل همین محدوده اعمال شود.
+- در `/api/teacher/class-slots` کلاس‌های فعال ادمین برای انتخاب نشان داده شوند و وضعیت‌های `available`، `pending`، `confirmed` و `cancelled` بر اساس assignment معلم احراز‌شده برگردند. درخواست معلم ابتدا `pending` است؛ فقط ادمین می‌تواند آن را `confirmed` کند.
+- در `/api/admin/class-slots` هر کلاس باید درخواست‌های معلم‌ها را با `assignmentId`, `teacherId`, `teacherName`, `status`, `selectedAt` برگرداند تا ادمین بتواند درخواست‌های `pending` را بررسی کند. تأیید باید تداخل زمانی را دوباره سمت سرور بررسی کند.
+- دانش‌آموز فقط assignmentهایی را در `/api/student/class-slots` و `/api/classes` ببیند که ادمین وضعیتشان را `confirmed` کرده است؛ درخواست معلم (`pending`) یا ردشده هرگز قابل مشاهده/رزرو نیست. پاسخ کلاس باید شناسه assignment، شناسه کلاس، شناسه/نام معلم و `basePrice`/`currency` را داشته باشد تا رزرو و فیلتر معلم درست انجام شود.
+- پاسخ کلاس دانش‌آموز باید `courseTitle`, `basePrice`, `finalPrice`, `currency` را نیز برای نمایش خلاصه قیمت داشته باشد. مبلغ نهایی در زمان رزرو و پرداخت باید از سرور محاسبه شود، نه از query string یا state مرورگر.
+- رزرو دانش‌آموز باید پیش از پرداخت در یک تراکنش ظرفیت را موقتاً نگه دارد و پاسخ آن شامل شناسه enrollment باشد. ایجاد مجدد رزرو/پرداخت برای همان دانش‌آموز و assignment باید idempotent باشد تا refresh صفحه پرداخت، رزرو یا پرداخت تکراری نسازد. `POST /api/payments` مبلغ را از enrollment محاسبه کند؛ دریافت فیش وضعیت را pending نگه دارد و فقط تأیید ادمین enrollment را نهایی کند. رزروهای پرداخت‌نشده پس از مهلت مشخص آزاد شوند.
 - زمان شروع قبل از پایان باشد؛ فقط کلاس‌های فعال و آینده برای پذیرش/ثبت‌نام ارائه شوند.
 - پذیرش معلم و ثبت‌نام دانش‌آموز در تراکنش اتمیک انجام شود. برای جلوگیری از overselling، تعداد ثبت‌نام فعال هنگام درج دوباره بررسی/قفل شود.
 - تداخل زمانی با شرط `startA < endB && endA > startB` بررسی شود؛ بازه‌های صرفاً مماس (یکی دقیقاً در پایان دیگری) تداخل نیستند.
@@ -113,16 +123,16 @@
 
 ### داشبورد معلم
 
-| روش  | مسیر                                                                             | توضیح                                                         |
-| ---- | -------------------------------------------------------------------------------- | ------------------------------------------------------------- |
-| GET  | `/api/teacher/dashboard/classes?status={status}&startDate={date}&endDate={date}` | کلاس‌های معلم                                                 |
-| GET  | `/api/teacher/dashboard/schedule?startDate={date}&endDate={date}`                | برنامه معلم                                                   |
-| GET  | `/api/teacher/dashboard/students?courseId={id}&activeOnly={bool}`                | دانش‌آموزان معلم                                              |
-| GET  | `/api/teacher/dashboard/earnings?period={period}`                                | درآمد و `availableBalance`                                    |
-| GET  | `/api/teacher/dashboard/analytics`                                               | آمار معلم                                                     |
-| GET  | `/api/teacher/dashboard/overview`                                                | داده تجمیعی صفحه اصلی داشبورد معلم                            |
-| GET  | `/api/teacher/dashboard/progression?lang=fa\|en`                                 | سطح رشد و سهم درآمد محاسبه‌شده سمت سرور                       |
-| POST | `/api/teacher/dashboard/withdrawals`                                             | درخواست برداشت؛ `{ amount, iban }`؛ بررسی اتمیک موجودی الزامی |
+| روش  | مسیر                                                                             | توضیح                                                                     |
+| ---- | -------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| GET  | `/api/teacher/dashboard/classes?status={status}&startDate={date}&endDate={date}` | کلاس‌های معلم                                                             |
+| GET  | `/api/teacher/dashboard/schedule?startDate={date}&endDate={date}`                | برنامه معلم                                                               |
+| GET  | `/api/teacher/dashboard/students?courseId={id}&activeOnly={bool}`                | فقط دانش‌آموزان مرتبط با کلاس‌های معلم جاری؛ نه فهرست کل دانش‌آموزان سایت |
+| GET  | `/api/teacher/dashboard/earnings?period={period}`                                | درآمد و `availableBalance`                                                |
+| GET  | `/api/teacher/dashboard/analytics`                                               | آمار معلم                                                                 |
+| GET  | `/api/teacher/dashboard/overview`                                                | داده تجمیعی صفحه اصلی داشبورد معلم                                        |
+| GET  | `/api/teacher/dashboard/progression?lang=fa\|en`                                 | سطح رشد و سهم درآمد محاسبه‌شده سمت سرور                                   |
+| POST | `/api/teacher/dashboard/withdrawals`                                             | درخواست برداشت؛ `{ amount, iban }`؛ بررسی اتمیک موجودی الزامی             |
 
 ### کلاس‌های آنلاین و فایل‌های کلاس
 
@@ -191,30 +201,33 @@
 
 ### تکالیف معلم
 
-| روش    | مسیر                                                  | توضیح                      |
-| ------ | ----------------------------------------------------- | -------------------------- |
-| GET    | `/api/teacher/assignments`                            | تکالیف ساخته‌شده توسط معلم |
-| POST   | `/api/teacher/assignments`                            | ساخت تکلیف                 |
-| GET    | `/api/teacher/assignments/{assignmentId}`             | جزئیات تکلیف               |
-| PATCH  | `/api/teacher/assignments/{assignmentId}`             | ویرایش تکلیف               |
-| DELETE | `/api/teacher/assignments/{assignmentId}`             | حذف تکلیف                  |
-| GET    | `/api/teacher/assignments/{assignmentId}/submissions` | پاسخ‌های دانش‌آموزان       |
-| PATCH  | `/api/teacher/submissions/{submissionId}/grade`       | نمره‌دهی و بازخورد         |
+| روش    | مسیر                                                  | توضیح                                                                                                                                   |
+| ------ | ----------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| GET    | `/api/teacher/assignments`                            | تکالیف ساخته‌شده توسط معلم                                                                                                              |
+| POST   | `/api/teacher/assignments`                            | ساخت تمرین برای دوره/دانش‌آموز مشخص؛ `{ courseId, targetStudentId, title, description, instructions, dueDate, maxPoints, isPublished }` |
+| GET    | `/api/teacher/assignments/{assignmentId}`             | جزئیات تکلیف                                                                                                                            |
+| PATCH  | `/api/teacher/assignments/{assignmentId}`             | ویرایش تکلیف                                                                                                                            |
+| DELETE | `/api/teacher/assignments/{assignmentId}`             | حذف تکلیف                                                                                                                               |
+| GET    | `/api/teacher/assignments/{assignmentId}/submissions` | پاسخ‌های دانش‌آموزان                                                                                                                    |
+| PATCH  | `/api/teacher/submissions/{submissionId}/grade`       | نمره‌دهی و بازخورد                                                                                                                      |
 
 ### تکالیف دانش‌آموز
 
-| روش   | مسیر                                                               | توضیح                                                               |
-| ----- | ------------------------------------------------------------------ | ------------------------------------------------------------------- |
-| GET   | `/api/student/assignments`                                         | تکالیف دانش‌آموز                                                    |
-| GET   | `/api/student/assignments/{assignmentId}`                          | جزئیات تکلیف                                                        |
-| POST  | `/api/student/assignments/{assignmentId}/submissions`              | ایجاد/ارسال پاسخ اولیه                                              |
-| PUT   | `/api/student/assignments/{assignmentId}/submissions/draft`        | ساخت یا به‌روزرسانی پیش‌نویس؛ idempotent برای دانش‌آموز/تکلیف       |
-| POST  | `/api/student/submissions/{submissionId}/submit`                   | ارسال یا ارسال مجدد پیش‌نویس                                        |
-| PATCH | `/api/student/submissions/{submissionId}`                          | ویرایش پاسخ پیش‌نویس                                                |
-| GET   | `/api/student/submissions`                                         | تاریخچه پاسخ‌ها                                                     |
-| GET   | `/api/student/submissions/{submissionId}`                          | جزئیات پاسخ                                                         |
-| POST  | `/api/student/assignments/{assignmentId}/submissions/upload-grant` | مجوز کوتاه‌عمر آپلود خصوصی؛ حداکثر ۵ فایل و ۲۰ مگابایت برای هر فایل |
-| GET   | `/api/student/attachments/download-url?path={storagePath}`         | لینک دانلود کوتاه‌عمر پس از کنترل دسترسی                            |
+| روش   | مسیر                                                               | توضیح                                                                |
+| ----- | ------------------------------------------------------------------ | -------------------------------------------------------------------- |
+| GET   | `/api/student/assignments`                                         | تکالیف دانش‌آموز                                                     |
+| GET   | `/api/student/assignments/{assignmentId}`                          | جزئیات تکلیف                                                         |
+| POST  | `/api/student/assignments/{assignmentId}/submissions`              | ایجاد/ارسال پاسخ اولیه                                               |
+| POST  | `/api/student/assignments/{assignmentId}/complete`                 | علامت‌زدن تمرین ساده به‌عنوان انجام‌شده؛ پاسخ با `status: completed` |
+| PUT   | `/api/student/assignments/{assignmentId}/submissions/draft`        | ساخت یا به‌روزرسانی پیش‌نویس؛ idempotent برای دانش‌آموز/تکلیف        |
+| POST  | `/api/student/submissions/{submissionId}/submit`                   | ارسال یا ارسال مجدد پیش‌نویس                                         |
+| PATCH | `/api/student/submissions/{submissionId}`                          | ویرایش پاسخ پیش‌نویس                                                 |
+| GET   | `/api/student/submissions`                                         | تاریخچه پاسخ‌ها                                                      |
+| GET   | `/api/student/submissions/{submissionId}`                          | جزئیات پاسخ                                                          |
+| POST  | `/api/student/assignments/{assignmentId}/submissions/upload-grant` | مجوز کوتاه‌عمر آپلود خصوصی؛ حداکثر ۵ فایل و ۲۰ مگابایت برای هر فایل  |
+| GET   | `/api/student/attachments/download-url?path={storagePath}`         | لینک دانلود کوتاه‌عمر پس از کنترل دسترسی                             |
+
+برای تمرین شخصی، `targetStudentId` الزامی است. سرور باید بررسی کند معلم جاری با دانش‌آموز انتخاب‌شده کلاس/ارتباط فعال دارد و شناسه معلم را از session/token بگیرد، نه از body. فقط همان دانش‌آموز باید تمرین را در `GET /api/student/assignments` دریافت کند. `completionType` برابر `check` برای تمرین‌های ساده‌ای است که دانش‌آموز فقط تیک انجام را می‌زند؛ `/complete` فقط برای همین نوع باید به‌صورت اتمیک submission با `status: completed` بسازد و تکمیل تکراری را idempotent کند. تمرین‌های `submission` همچنان از ارسال پاسخ/فایل استفاده می‌کنند.
 
 ### تمرین و آزمون
 

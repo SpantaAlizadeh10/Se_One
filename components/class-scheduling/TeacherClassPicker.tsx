@@ -5,11 +5,31 @@ import { CalendarDays, Clock3, Sparkles, Users } from "lucide-react";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 import { isApiConfigured } from "@/lib/is-api-configured";
 import {
-  acceptTeacherClassSlot,
+  requestTeacherClassSlot,
   listTeacherClassSlots,
   overlaps,
   type TeacherClassSlot,
 } from "@/lib/api/class-scheduling";
+import {
+  getCurrentDemoTeacherIdentity,
+  getDemoTeacherClassSlots,
+  onDemoClassSchedulingChange,
+  requestDemoTeacherClass,
+} from "@/lib/demo-class-scheduling";
+
+type DisplayTeacherClassSlot = TeacherClassSlot & {
+  courseTitle?: string;
+  isDemo?: boolean;
+};
+
+function demoTeacherSlots(): DisplayTeacherClassSlot[] {
+  const identity = getCurrentDemoTeacherIdentity();
+  return getDemoTeacherClassSlots(identity.teacherId).map((slot) => ({
+    ...slot,
+    courseTitle: slot.courseId?.replace("mock-course-", "") ?? "",
+    isDemo: true,
+  }));
+}
 
 function dateLabel(value: string, locale: string) {
   const date = new Date(value);
@@ -32,34 +52,52 @@ export default function TeacherClassPicker() {
   const { lang } = useLanguage();
   const fa = lang === "fa";
   const locale = fa ? "fa-IR" : "en-US";
-  const [slots, setSlots] = useState<TeacherClassSlot[]>([]);
+  const [slots, setSlots] = useState<DisplayTeacherClassSlot[]>([]);
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState("");
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
 
-  const refresh = async () => setSlots(await listTeacherClassSlots());
+  const refresh = async () => {
+    const remoteSlots = isApiConfigured() ? await listTeacherClassSlots() : [];
+    setSlots([...remoteSlots, ...demoTeacherSlots()]);
+  };
 
   useEffect(() => {
-    if (!isApiConfigured()) {
-      setError(
-        fa ? "آدرس API تنظیم نشده است." : "Backend API is not configured.",
-      );
-      setLoading(false);
-      return;
-    }
-    listTeacherClassSlots()
-      .then(setSlots)
-      .catch((reason) =>
-        setError(
-          reason instanceof Error ? reason.message : "Could not load classes.",
-        ),
-      )
-      .finally(() => setLoading(false));
+    let active = true;
+    const load = async () => {
+      try {
+        const remoteSlots = isApiConfigured()
+          ? await listTeacherClassSlots()
+          : [];
+        if (active) setSlots([...remoteSlots, ...demoTeacherSlots()]);
+      } catch (reason) {
+        if (active) {
+          setSlots(demoTeacherSlots());
+          setError(
+            reason instanceof Error
+              ? reason.message
+              : "Could not load classes.",
+          );
+        }
+      } finally {
+        if (active) setLoading(false);
+      }
+    };
+    void load();
+    const unsubscribe = onDemoClassSchedulingChange(() => void load());
+    return () => {
+      active = false;
+      unsubscribe();
+    };
   }, [fa]);
 
   const acceptedSlots = useMemo(
     () => slots.filter((item) => item.assignmentStatus === "confirmed"),
+    [slots],
+  );
+  const pendingSlots = useMemo(
+    () => slots.filter((item) => item.assignmentStatus === "pending"),
     [slots],
   );
 
@@ -75,27 +113,48 @@ export default function TeacherClassPicker() {
         ),
     );
 
-  const accept = async (item: TeacherClassSlot) => {
+  const requestClass = async (item: DisplayTeacherClassSlot) => {
     if (item.assignmentStatus !== "available" || conflictsWithSchedule(item))
       return;
     setSavingId(item.id);
     setError("");
     setNotice("");
     try {
-      await acceptTeacherClassSlot(item.id);
+      if (item.isDemo) {
+        const identity = getCurrentDemoTeacherIdentity();
+        requestDemoTeacherClass(
+          item.id,
+          identity.teacherId,
+          identity.teacherName,
+        );
+        setSlots((current) =>
+          current.map((slot) =>
+            slot.id === item.id
+              ? { ...slot, assignmentStatus: "pending" }
+              : slot,
+          ),
+        );
+        setNotice(
+          fa
+            ? "درخواست کلاس نمونه برای تأیید ادمین ارسال شد."
+            : "Demo class request sent for admin approval.",
+        );
+        return;
+      }
+      await requestTeacherClassSlot(item.id);
       await refresh();
       setNotice(
         fa
-          ? "این کلاس به برنامه تدریس شما اضافه شد."
-          : "Class added to your teaching schedule.",
+          ? "درخواست تدریس ارسال شد و پس از تأیید ادمین در فهرست دانش‌آموزان قرار می‌گیرد."
+          : "Teaching request sent. The class becomes bookable after admin approval.",
       );
     } catch (reason) {
       setError(
         reason instanceof Error
           ? reason.message
           : fa
-            ? "پذیرفتن کلاس انجام نشد؛ برنامه زمانی را بررسی کنید."
-            : "Could not accept this class. Check for schedule conflicts.",
+            ? "درخواست کلاس انجام نشد؛ برنامه زمانی را بررسی کنید."
+            : "Could not request this class. Check your schedule.",
       );
     } finally {
       setSavingId("");
@@ -115,6 +174,12 @@ export default function TeacherClassPicker() {
         </p>
       </div>
 
+      <div className="rounded-xl border border-blue/20 bg-blue/5 px-3 py-2 text-[12px] text-blue">
+        {fa
+          ? "کلاس‌های نمونه فقط برای پیش‌نمایش هستند. کلاس‌های واقعی با انتخاب، در برنامه معلم ذخیره می‌شوند."
+          : "Demo classes are for preview only. Accepting a real class saves it to your teaching schedule."}
+      </div>
+
       {error && (
         <p
           role="alert"
@@ -130,6 +195,28 @@ export default function TeacherClassPicker() {
         >
           {notice}
         </p>
+      )}
+
+      {pendingSlots.length > 0 && (
+        <section className="rounded-2xl border border-gold/40 bg-gold/10 p-4">
+          <h3 className="mb-3 text-[14px] font-semibold">
+            {fa ? "در انتظار تأیید ادمین" : "Pending admin approval"}
+          </h3>
+          <div className="space-y-2">
+            {pendingSlots.map((item) => (
+              <div
+                key={item.assignmentId ?? item.id}
+                className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-white px-3 py-2 text-[12px]"
+              >
+                <span className="font-semibold">{item.title}</span>
+                <span className="text-muted">
+                  {dateLabel(item.startsAt, locale)} ·{" "}
+                  {timeLabel(item.startsAt, locale)}
+                </span>
+              </div>
+            ))}
+          </div>
+        </section>
       )}
 
       {acceptedSlots.length > 0 && (
@@ -169,8 +256,12 @@ export default function TeacherClassPicker() {
         <div className="grid gap-4 lg:grid-cols-2">
           {slots.map((item) => {
             const accepted = item.assignmentStatus === "confirmed";
-            const conflict = !accepted && conflictsWithSchedule(item);
-            const canAccept =
+            const pending = item.assignmentStatus === "pending";
+            const rejected = item.assignmentStatus === "cancelled";
+            const conflict =
+              item.assignmentStatus === "available" &&
+              conflictsWithSchedule(item);
+            const canRequest =
               item.assignmentStatus === "available" && !conflict;
             return (
               <article
@@ -183,6 +274,11 @@ export default function TeacherClassPicker() {
                       <Sparkles size={12} /> {item.teacherRole}
                     </div>
                     <h3 className="font-semibold text-ink">{item.title}</h3>
+                    {item.courseTitle && (
+                      <p className="mt-1 text-[11px] font-medium text-blue">
+                        {fa ? "دوره:" : "Course:"} {item.courseTitle}
+                      </p>
+                    )}
                     <span className="mt-1 inline-block rounded-full bg-blue/5 px-2 py-0.5 text-[10px] font-semibold text-blue">
                       {item.classType === "private"
                         ? fa
@@ -193,11 +289,18 @@ export default function TeacherClassPicker() {
                           : "Public · 10 seats"}
                     </span>
                   </div>
-                  <span className="rounded-full bg-blue/10 px-2.5 py-1 text-[11px] font-medium text-blue">
-                    {fa
-                      ? `${item.remainingSeats} صندلی خالی`
-                      : `${item.remainingSeats} seats left`}
-                  </span>
+                  <div className="flex flex-col items-end gap-1.5">
+                    {item.isDemo && (
+                      <span className="rounded-full bg-blue/10 px-2 py-0.5 text-[10px] font-semibold text-blue">
+                        {fa ? "نمونه" : "Demo"}
+                      </span>
+                    )}
+                    <span className="rounded-full bg-blue/10 px-2.5 py-1 text-[11px] font-medium text-blue">
+                      {fa
+                        ? `${item.remainingSeats} صندلی خالی`
+                        : `${item.remainingSeats} seats left`}
+                    </span>
+                  </div>
                 </div>
                 <p className="mb-3 text-[12.5px] text-muted">
                   {item.description}
@@ -228,8 +331,8 @@ export default function TeacherClassPicker() {
                 )}
                 <button
                   type="button"
-                  disabled={!canAccept || savingId === item.id}
-                  onClick={() => void accept(item)}
+                  disabled={!canRequest || savingId === item.id}
+                  onClick={() => void requestClass(item)}
                   className="mt-4 w-full rounded-xl bg-blue px-4 py-2.5 text-[13px] font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {savingId === item.id
@@ -238,19 +341,27 @@ export default function TeacherClassPicker() {
                       : "Saving…"
                     : accepted
                       ? fa
-                        ? "پذیرفته‌شده"
-                        : "Accepted"
-                      : conflict
+                        ? "تأیید و قابل رزرو"
+                        : "Approved · Bookable"
+                      : pending
                         ? fa
-                          ? "تداخل زمانی"
-                          : "Schedule conflict"
-                        : item.assignmentStatus !== "available"
+                          ? "در انتظار تأیید ادمین"
+                          : "Waiting for admin approval"
+                        : rejected
                           ? fa
-                            ? "در دسترس نیست"
-                            : "Unavailable"
-                          : fa
-                            ? "پذیرفتن تدریس این کلاس"
-                            : "Accept this class"}
+                            ? "تأیید نشد"
+                            : "Not approved"
+                          : conflict
+                            ? fa
+                              ? "تداخل زمانی"
+                              : "Schedule conflict"
+                            : item.assignmentStatus !== "available"
+                              ? fa
+                                ? "در دسترس نیست"
+                                : "Unavailable"
+                              : fa
+                                ? "درخواست برگزاری این کلاس"
+                                : "Request to teach this class"}
                 </button>
               </article>
             );

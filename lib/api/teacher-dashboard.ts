@@ -214,7 +214,7 @@ function normalizeTeacherClass(
   const record = (raw ?? {}) as ApiRecord;
   const id = text(record, "id", "Id", "classId", "ClassId");
   const courseId = text(record, "courseId", "CourseId");
-  if (!courseId) return null;
+  if (!courseId && !id) return null;
 
   const statusRaw = text(record, "status", "Status").toLowerCase();
   const status: TeacherClass["status"] =
@@ -232,13 +232,17 @@ function normalizeTeacherClass(
   return {
     id: id || `class-${index}`,
     courseId,
-    courseTitle: text(record, "courseTitle", "CourseTitle"),
+    courseTitle:
+      text(record, "courseTitle", "CourseTitle") ||
+      text(record, "title", "Title"),
     teacherId: text(record, "teacherId", "TeacherId"),
     subject: text(record, "subject", "Subject"),
     scheduledDate: text(
       record,
       "scheduledDate",
       "ScheduledDate",
+      "startsAt",
+      "StartsAt",
       "date",
       "Date",
     ),
@@ -349,7 +353,8 @@ export async function getTeacherSchedule(
 
 /**
  * GET /api/teacher/dashboard/students
- * Get teacher's students
+ * Get only students linked to classes taught by the authenticated teacher.
+ * The API must derive teacher identity from the session/token, not a query/body ID.
  */
 export async function getTeacherStudents(filters?: {
   courseId?: string;
