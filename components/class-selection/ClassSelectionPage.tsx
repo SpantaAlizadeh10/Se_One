@@ -128,7 +128,11 @@ function createMockClasses(): CourseClass[] {
       18,
       500000,
       sara,
-      { id: "mock-course-conversation", title: "Practical English", imageUrl: "/images/course-placeholder.jpg" },
+      {
+        id: "mock-course-conversation",
+        title: "Practical English",
+        imageUrl: "/images/course-placeholder.jpg",
+      },
     ),
     mockClass(
       "mock-class-beginners",
@@ -142,7 +146,11 @@ function createMockClasses(): CourseClass[] {
       16,
       420000,
       daniel,
-      { id: "mock-course-beginners", title: "English Foundations", imageUrl: "/images/course-placeholder.jpg" },
+      {
+        id: "mock-course-beginners",
+        title: "English Foundations",
+        imageUrl: "/images/course-placeholder.jpg",
+      },
     ),
     mockClass(
       "mock-class-ielts",
@@ -156,7 +164,11 @@ function createMockClasses(): CourseClass[] {
       17,
       700000,
       sara,
-      { id: "mock-course-ielts", title: "IELTS Preparation", imageUrl: "/images/course-placeholder.jpg" },
+      {
+        id: "mock-course-ielts",
+        title: "IELTS Preparation",
+        imageUrl: "/images/course-placeholder.jpg",
+      },
     ),
     mockClass(
       "mock-class-german",
@@ -170,7 +182,11 @@ function createMockClasses(): CourseClass[] {
       15,
       650000,
       daniel,
-      { id: "mock-course-german", title: "Travel German", imageUrl: "/images/course-placeholder.jpg" },
+      {
+        id: "mock-course-german",
+        title: "Travel German",
+        imageUrl: "/images/course-placeholder.jpg",
+      },
     ),
   ];
 }
@@ -178,10 +194,9 @@ function createMockClasses(): CourseClass[] {
 function getMockTeacherOptions() {
   return Array.from(
     new Map(
-      createMockClasses().map((item) => [
-        item.teacher.id,
-        item.teacher.name,
-      ] as const),
+      createMockClasses().map(
+        (item) => [item.teacher.id, item.teacher.name] as const,
+      ),
     ),
     ([id, name]) => ({ id, name }),
   );
@@ -203,7 +218,9 @@ export default function ClassSelectionPage() {
 
   // Filters
   const [teacherFilter, setTeacherFilter] = useState("");
-  const [typeFilter, setTypeFilter] = useState<"all" | "public" | "private">("all");
+  const [typeFilter, setTypeFilter] = useState<"all" | "public" | "private">(
+    "all",
+  );
   const [availableOnly, setAvailableOnly] = useState(false);
   const [levelFilter, setLevelFilter] = useState("");
   const [subjectFilter, setSubjectFilter] = useState("");
@@ -319,7 +336,11 @@ export default function ClassSelectionPage() {
   const confirmPayment = async () => {
     const isMockClass = selectedClass?.id.startsWith("mock-") ?? false;
     if (!selectedClass || (!isMockClass && !receiptFile)) {
-      setError(fa ? "لطفاً فیش پرداخت را آپلود کنید" : "Please upload the payment receipt");
+      setError(
+        fa
+          ? "لطفاً فیش پرداخت را آپلود کنید"
+          : "Please upload the payment receipt",
+      );
       return;
     }
 
@@ -376,9 +397,7 @@ export default function ClassSelectionPage() {
         const code = `DEMO${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
         setInviteCode(code);
         setSuccess(
-          fa
-            ? "کد دعوت آزمایشی ساخته شد."
-            : "Demo invite code created.",
+          fa ? "کد دعوت آزمایشی ساخته شد." : "Demo invite code created.",
         );
         return;
       }
@@ -386,7 +405,9 @@ export default function ClassSelectionPage() {
       setInviteCode(result.inviteCode);
       setSuccess(fa ? "کد دعوت ایجاد شد" : "Invite code created");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not create invite code");
+      setError(
+        err instanceof Error ? err.message : "Could not create invite code",
+      );
     }
   };
 
@@ -444,12 +465,18 @@ export default function ClassSelectionPage() {
             <span className="mb-1 block">{fa ? "نوع کلاس" : "Class Type"}</span>
             <select
               value={typeFilter}
-              onChange={(e) => setTypeFilter(e.target.value as "all" | "public" | "private")}
+              onChange={(e) =>
+                setTypeFilter(e.target.value as "all" | "public" | "private")
+              }
               className="w-full rounded-xl border border-line bg-white px-3 py-2.5 text-[13px] outline-none focus:border-blue"
             >
               <option value="all">{fa ? "همه" : "All"}</option>
-              <option value="public">{fa ? "عمومی (10 نفر)" : "Public (10 seats)"}</option>
-              <option value="private">{fa ? "خصوصی (2 نفر)" : "Private (2 seats)"}</option>
+              <option value="public">
+                {fa ? "عمومی (10 نفر)" : "Public (10 seats)"}
+              </option>
+              <option value="private">
+                {fa ? "خصوصی (2 نفر)" : "Private (2 seats)"}
+              </option>
             </select>
           </label>
 
@@ -538,9 +565,14 @@ export default function ClassSelectionPage() {
             const isFull = classItem.remainingCapacity <= 0;
             const isMockEnrolled = mockEnrolledIds.includes(classItem.id);
             const hasDiscount = classItem.finalPrice < classItem.basePrice;
-            const discountPercent = classItem.basePrice > 0
-              ? Math.round(((classItem.basePrice - classItem.finalPrice) / classItem.basePrice) * 100)
-              : 0;
+            const discountPercent =
+              classItem.basePrice > 0
+                ? Math.round(
+                    ((classItem.basePrice - classItem.finalPrice) /
+                      classItem.basePrice) *
+                      100,
+                  )
+                : 0;
 
             return (
               <article
@@ -566,12 +598,15 @@ export default function ClassSelectionPage() {
                         {classItem.teacher.rating}
                       </div>
                     </div>
-                    <h3 className="text-[14px] font-semibold truncate">{classItem.title}</h3>
+                    <h3 className="text-[14px] font-semibold truncate">
+                      {classItem.title}
+                    </h3>
                     <span
-                      className={`inline-block mt-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${classItem.type === "private"
-                        ? "bg-purple/10 text-purple"
-                        : "bg-blue/10 text-blue"
-                        }`}
+                      className={`inline-block mt-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                        classItem.type === "private"
+                          ? "bg-purple/10 text-purple"
+                          : "bg-blue/10 text-blue"
+                      }`}
                     >
                       {classItem.type === "private"
                         ? fa
@@ -592,7 +627,8 @@ export default function ClassSelectionPage() {
                   </div>
                   <div className="flex items-center gap-2">
                     <Clock size={14} />
-                    {formatTime(classItem.startTime)} – {formatTime(classItem.endTime)}
+                    {formatTime(classItem.startTime)} –{" "}
+                    {formatTime(classItem.endTime)}
                   </div>
                   <div className="flex items-center gap-2">
                     <Users size={14} />
@@ -617,19 +653,24 @@ export default function ClassSelectionPage() {
                       </span>
                     </div>
                   ) : (
-                    <span className="text-[13px] font-bold">{formatPrice(classItem.basePrice)}</span>
+                    <span className="text-[13px] font-bold">
+                      {formatPrice(classItem.basePrice)}
+                    </span>
                   )}
                 </div>
 
                 {/* Enroll Button */}
                 <button
                   type="button"
-                  disabled={isFull || isMockEnrolled || enrollingId === classItem.id}
+                  disabled={
+                    isFull || isMockEnrolled || enrollingId === classItem.id
+                  }
                   onClick={() => handleEnroll(classItem)}
-                  className={`w-full rounded-xl px-3.5 py-2.5 text-[13px] font-semibold transition-colors ${isFull
-                    ? "bg-line text-muted cursor-not-allowed"
-                    : "bg-blue text-white hover:bg-blueDeep"
-                    } disabled:opacity-50`}
+                  className={`w-full rounded-xl px-3.5 py-2.5 text-[13px] font-semibold transition-colors ${
+                    isFull
+                      ? "bg-line text-muted cursor-not-allowed"
+                      : "bg-blue text-white hover:bg-blueDeep"
+                  } disabled:opacity-50`}
                 >
                   {enrollingId === classItem.id
                     ? fa
@@ -643,13 +684,13 @@ export default function ClassSelectionPage() {
                         ? fa
                           ? "رزرو شد (آزمایشی)"
                           : "Booked (demo)"
-                      : classItem.type === "private"
-                        ? fa
-                          ? "رزرو یا دعوت دوست"
-                          : "Book or Invite Friend"
-                        : fa
-                          ? "رزرو کلاس"
-                          : "Book this class"}
+                        : classItem.type === "private"
+                          ? fa
+                            ? "رزرو یا دعوت دوست"
+                            : "Book or Invite Friend"
+                          : fa
+                            ? "رزرو کلاس"
+                            : "Book this class"}
                 </button>
               </article>
             );
@@ -690,8 +731,12 @@ export default function ClassSelectionPage() {
                   className="rounded-full object-cover"
                 />
                 <div>
-                  <div className="text-[13px] font-semibold">{selectedClass.title}</div>
-                  <div className="text-[11px] text-muted">{selectedClass.teacher.name}</div>
+                  <div className="text-[13px] font-semibold">
+                    {selectedClass.title}
+                  </div>
+                  <div className="text-[11px] text-muted">
+                    {selectedClass.teacher.name}
+                  </div>
                 </div>
               </div>
 
@@ -702,7 +747,8 @@ export default function ClassSelectionPage() {
                 </div>
                 <div className="flex items-center gap-2">
                   <Clock size={14} />
-                  {formatTime(selectedClass.startTime)} – {formatTime(selectedClass.endTime)}
+                  {formatTime(selectedClass.startTime)} –{" "}
+                  {formatTime(selectedClass.endTime)}
                 </div>
               </div>
 
@@ -713,13 +759,14 @@ export default function ClassSelectionPage() {
                 <div className="text-[18px] font-bold text-blue">
                   {formatPrice(selectedClass.finalPrice)}
                 </div>
-                {selectedClass.type === "private" && selectedClass.currentEnrollment === 0 && (
-                  <div className="text-[11px] text-muted mt-1">
-                    {fa
-                      ? "با دعوت یک دوست، هر دو 30% تخفیف می‌گیرید"
-                      : "Invite a friend and both get 30% off"}
-                  </div>
-                )}
+                {selectedClass.type === "private" &&
+                  selectedClass.currentEnrollment === 0 && (
+                    <div className="text-[11px] text-muted mt-1">
+                      {fa
+                        ? "با دعوت یک دوست، هر دو 30% تخفیف می‌گیرید"
+                        : "Invite a friend and both get 30% off"}
+                    </div>
+                  )}
               </div>
             </div>
 
@@ -815,13 +862,19 @@ export default function ClassSelectionPage() {
                     className="rounded-full object-cover"
                   />
                   <div>
-                    <div className="text-[13px] font-semibold">{selectedClass.title}</div>
-                    <div className="text-[11px] text-muted">{selectedClass.teacher.name}</div>
+                    <div className="text-[13px] font-semibold">
+                      {selectedClass.title}
+                    </div>
+                    <div className="text-[11px] text-muted">
+                      {selectedClass.teacher.name}
+                    </div>
                   </div>
                 </div>
                 <div className="border-t border-line pt-3">
                   <div className="flex justify-between items-center">
-                    <span className="text-[12px] text-muted">{fa ? "قیمت نهایی" : "Final Price"}</span>
+                    <span className="text-[12px] text-muted">
+                      {fa ? "قیمت نهایی" : "Final Price"}
+                    </span>
                     <span className="text-[16px] font-bold text-blue">
                       {formatPrice(selectedClass.finalPrice)}
                     </span>
@@ -838,10 +891,14 @@ export default function ClassSelectionPage() {
                     </label>
                     <div className="bg-cream border border-line rounded-xl px-4 py-3 flex items-center gap-3">
                       <Smartphone size={18} className="text-muted" />
-                      <code className="text-[14px] font-mono text-ink">{cardNumber}</code>
+                      <code className="text-[14px] font-mono text-ink">
+                        {cardNumber}
+                      </code>
                     </div>
                     <p className="text-[10px] text-muted mt-1">
-                      {fa ? "مبلغ را به این شماره کارت واریز کنید" : "Transfer the amount to this card number"}
+                      {fa
+                        ? "مبلغ را به این شماره کارت واریز کنید"
+                        : "Transfer the amount to this card number"}
                     </p>
                   </div>
 
@@ -873,7 +930,9 @@ export default function ClassSelectionPage() {
                           <>
                             <Upload size={24} className="text-muted" />
                             <span className="text-[12px] text-muted">
-                              {fa ? "کلیک کنید یا فایل را بکشید" : "Click or drag file here"}
+                              {fa
+                                ? "کلیک کنید یا فایل را بکشید"
+                                : "Click or drag file here"}
                             </span>
                           </>
                         )}
@@ -884,7 +943,10 @@ export default function ClassSelectionPage() {
                   {/* WhatsApp Info */}
                   <div className="bg-green-50 border border-green-200 rounded-xl p-3">
                     <div className="flex items-start gap-2">
-                      <Smartphone size={16} className="text-green-600 shrink-0 mt-0.5" />
+                      <Smartphone
+                        size={16}
+                        className="text-green-600 shrink-0 mt-0.5"
+                      />
                       <div className="text-[11px] text-green-800">
                         {fa
                           ? "فیش پرداخت به واتساپ ارسال می‌شود و پس از تایید، ثبت‌نام شما نهایی می‌شود."

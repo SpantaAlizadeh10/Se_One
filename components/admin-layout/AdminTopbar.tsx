@@ -3,11 +3,20 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { Bell, LayoutGrid, ChevronDown, Menu, X } from "lucide-react";
+import {
+  Bell,
+  LayoutGrid,
+  ChevronDown,
+  LogOut,
+  Menu,
+  Settings,
+  X,
+} from "lucide-react";
 import { adminNavItems } from "@/lib/admin-nav";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 import { stripLocale } from "@/lib/i18n/paths";
-import { getName } from "@/lib/auth-client";
+import { clearSession, getName } from "@/lib/auth-client";
+import { logoutApi } from "@/lib/api/auth";
 import {
   getNotifications,
   getNotificationStats,
@@ -26,7 +35,7 @@ export default function AdminTopbar({
 }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { t, lang } = useLanguage();
+  const { t, lang, href } = useLanguage();
   const current = adminNavItems.find(
     (i) => i.href === stripLocale(pathname || "/"),
   );
@@ -34,6 +43,7 @@ export default function AdminTopbar({
   const [unreadCount, setUnreadCount] = useState(0);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
 
   useEffect(() => {
     const n = getName();
@@ -94,6 +104,18 @@ export default function AdminTopbar({
       !notification.actionUrl.startsWith("//")
     ) {
       router.push(notification.actionUrl);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logoutApi();
+    } catch (error) {
+      console.error("Failed to log out:", error);
+    } finally {
+      localStorage.removeItem("se-one-admin-session");
+      clearSession();
+      router.push(href("/admin-login"));
     }
   };
 
@@ -185,23 +207,69 @@ export default function AdminTopbar({
         <button className="hidden sm:flex w-10 h-10 rounded-full bg-white border border-line items-center justify-center text-ink70">
           <LayoutGrid size={17} />
         </button>
-        <div className="flex items-center gap-2 sm:gap-2.5 bg-white border border-line rounded-full ps-1 pe-2 sm:pe-3 py-1">
-          <Image
-            src="https://i.pravatar.cc/64?img=5"
-            alt={name}
-            width={32}
-            height={32}
-            className="rounded-full object-cover"
-          />
-          <div className="hidden sm:block">
-            <div className="text-[13.5px] font-semibold leading-tight">
-              {name}
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => setShowProfileMenu((visible) => !visible)}
+            aria-label={lang === "fa" ? "منوی حساب مدیر" : "Admin account menu"}
+            aria-haspopup="menu"
+            aria-expanded={showProfileMenu}
+            className="flex items-center gap-2 rounded-full border border-line bg-white py-1 ps-1 pe-2 transition-colors hover:border-ink sm:gap-2.5 sm:pe-3"
+          >
+            <Image
+              src="https://i.pravatar.cc/64?img=5"
+              alt={name}
+              width={32}
+              height={32}
+              className="rounded-full object-cover"
+            />
+            <span className="hidden text-start sm:block">
+              <span className="block text-[13.5px] font-semibold leading-tight">
+                {name}
+              </span>
+              <span className="block text-[11px] leading-tight text-muted">
+                {t("adminNav.badge")}
+              </span>
+            </span>
+            <ChevronDown
+              size={14}
+              className={`hidden transition-transform sm:block ${showProfileMenu ? "rotate-180" : ""}`}
+            />
+          </button>
+          {showProfileMenu && (
+            <div
+              role="menu"
+              className="absolute end-0 top-full z-[70] mt-2 w-52 overflow-hidden rounded-xl border border-line bg-white p-1.5 shadow-card"
+            >
+              <div className="border-b border-line px-3 py-2">
+                <div className="truncate text-[12px] font-semibold">{name}</div>
+                <div className="text-[10px] text-muted">
+                  {t("adminNav.badge")}
+                </div>
+              </div>
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => {
+                  setShowProfileMenu(false);
+                  router.push(href("/admin/settings"));
+                }}
+                className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-start text-[12px] text-ink70 hover:bg-cream"
+              >
+                <Settings size={15} />
+                {lang === "fa" ? "تنظیمات حساب" : "Account settings"}
+              </button>
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => void handleLogout()}
+                className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-start text-[12px] text-danger hover:bg-danger/5"
+              >
+                <LogOut size={15} />
+                {t("adminNav.logout")}
+              </button>
             </div>
-            <div className="text-[11px] text-muted leading-tight">
-              {t("adminNav.badge")}
-            </div>
-          </div>
-          <ChevronDown size={14} className="hidden sm:block" />
+          )}
         </div>
       </div>
     </div>

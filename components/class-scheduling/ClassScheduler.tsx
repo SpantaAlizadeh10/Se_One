@@ -2,6 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { CalendarDays, Clock3, Users, Plus, CheckCircle2 } from "lucide-react";
+import DatePicker from "react-multi-date-picker";
+import persian from "react-date-object/calendars/persian";
+import persian_fa from "react-date-object/locales/persian_fa";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 import { isApiConfigured } from "@/lib/is-api-configured";
 import {
@@ -20,6 +23,24 @@ const defaultSlot = {
   startsAt: "",
   endsAt: "",
 };
+
+function localDateTime(date: Date, time: string) {
+  const [hours, minutes] = time.split(":").map(Number);
+  date.setHours(hours || 0, minutes || 0, 0, 0);
+  const pad = (value: number) => String(value).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
+function updateDate(current: string, selectedDate: Date | null) {
+  if (!selectedDate) return "";
+  const time = current.split("T")[1]?.slice(0, 5) || "09:00";
+  return localDateTime(selectedDate, time);
+}
+
+function updateTime(current: string, time: string) {
+  const date = current ? new Date(current) : new Date();
+  return localDateTime(date, time);
+}
 
 export default function ClassScheduler() {
   const { lang } = useLanguage();
@@ -176,22 +197,74 @@ export default function ClassScheduler() {
 
           <label className="space-y-2 text-[13px] text-muted">
             <span>{fa ? "تاریخ و ساعت شروع" : "Start date & time"}</span>
-            <input
-              type="datetime-local"
-              value={slot.startsAt}
-              onChange={(e) => handleChange("startsAt", e.target.value)}
-              className="w-full rounded-xl border border-line bg-cream px-3.5 py-3 outline-none focus:border-blue"
-            />
+            <div className="grid grid-cols-[minmax(0,1fr)_112px] gap-2">
+              <DatePicker
+                value={slot.startsAt ? new Date(slot.startsAt) : ""}
+                calendar={fa ? persian : undefined}
+                locale={fa ? persian_fa : undefined}
+                format={fa ? "YYYY/MM/DD" : "MMM DD, YYYY"}
+                calendarPosition={fa ? "bottom-right" : "bottom-left"}
+                inputClass="w-full rounded-xl border border-line bg-cream px-3.5 py-3 outline-none focus:border-blue"
+                onChange={(value) =>
+                  handleChange(
+                    "startsAt",
+                    updateDate(
+                      slot.startsAt,
+                      value && !Array.isArray(value) ? value.toDate() : null,
+                    ),
+                  )
+                }
+              />
+              <input
+                type="time"
+                lang={fa ? "fa-IR" : "en-US"}
+                aria-label={fa ? "ساعت شروع" : "Start time"}
+                value={slot.startsAt.split("T")[1]?.slice(0, 5) ?? ""}
+                onChange={(event) =>
+                  handleChange(
+                    "startsAt",
+                    updateTime(slot.startsAt, event.target.value),
+                  )
+                }
+                className="w-full rounded-xl border border-line bg-cream px-2 py-3 outline-none focus:border-blue"
+              />
+            </div>
           </label>
 
           <label className="space-y-2 text-[13px] text-muted">
             <span>{fa ? "تاریخ و ساعت پایان" : "End date & time"}</span>
-            <input
-              type="datetime-local"
-              value={slot.endsAt}
-              onChange={(e) => handleChange("endsAt", e.target.value)}
-              className="w-full rounded-xl border border-line bg-cream px-3.5 py-3 outline-none focus:border-blue"
-            />
+            <div className="grid grid-cols-[minmax(0,1fr)_112px] gap-2">
+              <DatePicker
+                value={slot.endsAt ? new Date(slot.endsAt) : ""}
+                calendar={fa ? persian : undefined}
+                locale={fa ? persian_fa : undefined}
+                format={fa ? "YYYY/MM/DD" : "MMM DD, YYYY"}
+                calendarPosition={fa ? "bottom-right" : "bottom-left"}
+                inputClass="w-full rounded-xl border border-line bg-cream px-3.5 py-3 outline-none focus:border-blue"
+                onChange={(value) =>
+                  handleChange(
+                    "endsAt",
+                    updateDate(
+                      slot.endsAt,
+                      value && !Array.isArray(value) ? value.toDate() : null,
+                    ),
+                  )
+                }
+              />
+              <input
+                type="time"
+                lang={fa ? "fa-IR" : "en-US"}
+                aria-label={fa ? "ساعت پایان" : "End time"}
+                value={slot.endsAt.split("T")[1]?.slice(0, 5) ?? ""}
+                onChange={(event) =>
+                  handleChange(
+                    "endsAt",
+                    updateTime(slot.endsAt, event.target.value),
+                  )
+                }
+                className="w-full rounded-xl border border-line bg-cream px-2 py-3 outline-none focus:border-blue"
+              />
+            </div>
           </label>
 
           <label className="space-y-2 text-[13px] text-muted md:col-span-2">
@@ -311,19 +384,25 @@ export default function ClassScheduler() {
                   <div className="flex items-center gap-2">
                     <CalendarDays size={14} />
                     <span>
-                      {new Intl.DateTimeFormat(fa ? "fa-IR" : "en-US", {
-                        dateStyle: "medium",
-                        timeStyle: "short",
-                      }).format(new Date(slotItem.startsAt))}
+                      {new Intl.DateTimeFormat(
+                        fa ? "fa-IR-u-ca-persian" : "en-US",
+                        {
+                          dateStyle: "medium",
+                          timeStyle: "short",
+                        },
+                      ).format(new Date(slotItem.startsAt))}
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Clock3 size={14} />
                     <span>
-                      {new Intl.DateTimeFormat(fa ? "fa-IR" : "en-US", {
-                        dateStyle: "medium",
-                        timeStyle: "short",
-                      }).format(new Date(slotItem.endsAt))}
+                      {new Intl.DateTimeFormat(
+                        fa ? "fa-IR-u-ca-persian" : "en-US",
+                        {
+                          dateStyle: "medium",
+                          timeStyle: "short",
+                        },
+                      ).format(new Date(slotItem.endsAt))}
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
