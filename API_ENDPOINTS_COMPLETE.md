@@ -99,7 +99,7 @@
 | GET  | `/api/student/class-slots?teacherId={id}`        | دانش‌آموز واردشده؛ کلاس‌های فعال و پذیرفته‌شده توسط معلم، با صندلی خالی و وضعیت ثبت‌نام دانش‌آموز فعلی                |
 | POST | `/api/student/class-slots/{assignmentId}/enroll` | ثبت‌نام اتمیک در کلاس؛ رد با 409 برای ظرفیت پر، تکرار ثبت‌نام یا تداخل برنامه دانش‌آموز                               |
 
-**مدل کلاس پیشنهادی:** `{ id, title, description, classType: "public" | "private", teacherRole, capacity, startsAt, endsAt, status, enrolledCount, remainingSeats }`. برای public ظرفیت باید ۱۰ و برای private ظرفیت باید ۱ یا ۲ باشد. تاریخ‌ها ISO-8601 باشند. هر پذیرش معلم یک `assignmentId` دارد و پاسخ کلاس دانش‌آموز باید شامل `assignmentId`, `teacherId`, `teacherName`, `enrolled` باشد.
+**مدل کلاس پیشنهادی:** `{ id, courseId?, title, description, classType: "public" | "private", teacherRole, capacity, startsAt, endsAt, status, enrolledCount, remainingSeats }`. `courseId` اختیاری است و هنگام ساخت کلاس از فرم ایجاد دوره برای اتصال کلاس به دوره ارسال می‌شود؛ اگر ارسال شد، سرور باید وجود دوره را اعتبارسنجی و شناسه را در پاسخ/فهرست کلاس‌ها برگرداند. برای public ظرفیت باید ۱۰ و برای private ظرفیت باید ۱ یا ۲ باشد. تاریخ‌ها ISO-8601 باشند. هر پذیرش معلم یک `assignmentId` دارد و پاسخ کلاس دانش‌آموز باید شامل `assignmentId`, `teacherId`, `teacherName`, `enrolled` باشد.
 
 **الزامات اجباری سمت سرور:**
 

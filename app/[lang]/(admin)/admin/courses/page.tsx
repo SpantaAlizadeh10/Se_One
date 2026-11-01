@@ -1,7 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Check, Eye, EyeOff, Plus, X, Star, Upload } from "lucide-react";
+import {
+  CalendarDays,
+  Check,
+  Eye,
+  EyeOff,
+  Plus,
+  Users,
+  X,
+  Star,
+  Upload,
+} from "lucide-react";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 import { getDiscountedPrice, formatPrice } from "@/lib/courses-pricing";
 import { isApiConfigured } from "@/lib/is-api-configured";
@@ -16,6 +26,40 @@ import {
   type CreateCourseInput,
   type AdminTeacher,
 } from "@/lib/api/admin";
+import {
+  createAdminClassSlot,
+  listAdminClassSlots,
+  type AdminClassSlot,
+  type ClassType,
+} from "@/lib/api/class-scheduling";
+
+type CourseDraft = CreateCourseInput & {
+  classType: ClassType;
+  startsAt: string;
+  endsAt: string;
+  capacity: number;
+  teacherRole: string;
+};
+
+const emptyCourseDraft: CourseDraft = {
+  title: "",
+  description: "",
+  level: "",
+  basePrice: 0,
+  currency: "IRR",
+  duration: "",
+  category: "",
+  language: "english",
+  discountPercent: 0,
+  isFeatured: false,
+  imageUrl: "",
+  teacherId: "",
+  classType: "public",
+  startsAt: "",
+  endsAt: "",
+  capacity: 10,
+  teacherRole: "english",
+};
 
 export default function AdminCoursesPage() {
   const { t, lang } = useLanguage();
@@ -30,20 +74,8 @@ export default function AdminCoursesPage() {
   const [creating, setCreating] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [teachers, setTeachers] = useState<AdminTeacher[]>([]);
-  const [newCourse, setNewCourse] = useState<CreateCourseInput>({
-    title: "",
-    description: "",
-    level: "",
-    basePrice: 0,
-    currency: "IRR",
-    duration: "",
-    category: "",
-    language: "english",
-    discountPercent: 0,
-    isFeatured: false,
-    imageUrl: "",
-    teacherId: "",
-  });
+  const [classSlots, setClassSlots] = useState<AdminClassSlot[]>([]);
+  const [newCourse, setNewCourse] = useState<CourseDraft>(emptyCourseDraft);
 
   useEffect(() => {
     if (!isApiConfigured()) {
@@ -59,6 +91,9 @@ export default function AdminCoursesPage() {
           error instanceof Error ? error.message : "Could not load courses",
         ),
       );
+    listAdminClassSlots()
+      .then(setClassSlots)
+      .catch(() => setClassSlots([]));
   }, []);
 
   useEffect(() => {
@@ -157,23 +192,65 @@ export default function AdminCoursesPage() {
     setApiError(null);
 
     try {
-      const created = await createAdminCourse(newCourse);
+      const start = new Date(newCourse.startsAt);
+      const end = new Date(newCourse.endsAt);
+      if (!newCourse.startsAt || !newCourse.endsAt) {
+        throw new Error(
+          lang === "fa"
+            ? "زمان شروع و پایان کلاس الزامی است."
+            : "Class start and end times are required.",
+        );
+      }
+      if (start.getTime() <= Date.now()) {
+        throw new Error(
+          lang === "fa"
+            ? "زمان شروع باید در آینده باشد."
+            : "The class must start in the future.",
+        );
+      }
+      if (end.getTime() <= start.getTime()) {
+        throw new Error(
+          lang === "fa"
+            ? "زمان پایان باید بعد از زمان شروع باشد."
+            : "The end time must be after the start time.",
+        );
+      }
+
+      const {
+        classType,
+        startsAt,
+        endsAt,
+        capacity,
+        teacherRole,
+        ...courseDetails
+      } = newCourse;
+      const created = await createAdminCourse(courseDetails);
       setApiCourses((prev) => [created, ...prev]);
+
+      try {
+        const scheduledClass = await createAdminClassSlot({
+          courseId: created.id,
+          title: created.title,
+          description: created.description ?? "",
+          classType,
+          capacity: classType === "public" ? 10 : capacity,
+          teacherRole,
+          startsAt: start.toISOString(),
+          endsAt: end.toISOString(),
+        });
+        setClassSlots((prev) => [scheduledClass, ...prev]);
+      } catch (scheduleError) {
+        setShowCreateModal(false);
+        setNewCourse(emptyCourseDraft);
+        throw new Error(
+          lang === "fa"
+            ? `دوره ساخته شد اما زمان‌بندی کلاس ثبت نشد: ${scheduleError instanceof Error ? scheduleError.message : "خطای نامشخص"}`
+            : `The course was created, but its class could not be scheduled: ${scheduleError instanceof Error ? scheduleError.message : "Unknown error"}`,
+        );
+      }
+
       setShowCreateModal(false);
-      setNewCourse({
-        title: "",
-        description: "",
-        level: "",
-        basePrice: 0,
-        currency: "IRR",
-        duration: "",
-        category: "",
-        language: "english",
-        discountPercent: 0,
-        isFeatured: false,
-        imageUrl: "",
-        teacherId: "",
-      });
+      setNewCourse(emptyCourseDraft);
     } catch (error) {
       setApiError(
         error instanceof Error ? error.message : "Could not create course",
@@ -381,6 +458,131 @@ export default function AdminCoursesPage() {
                   </select>
                 </div>
               </div>
+              <section className="space-y-4 rounded-xl border border-line bg-cream/60 p-4">
+                <div className="flex items-start gap-2">
+                  <CalendarDays size={17} className="mt-0.5 text-blue" />
+                  <div>
+                    <h4 className="text-[13.5px] font-semibold text-ink">
+                      {lang === "fa" ? "برنامه‌ریزی کلاس" : "Class schedule"}
+                    </h4>
+                    <p className="text-[12px] text-muted">
+                      {lang === "fa"
+                        ? "هر دوره همراه با یک کلاس زمان‌بندی‌شده ساخته می‌شود."
+                        : "Every course is created with a scheduled class."}
+                    </p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <label className="space-y-2 text-[12.5px] font-semibold text-ink70">
+                    <span>{lang === "fa" ? "نوع کلاس" : "Class type"}</span>
+                    <select
+                      value={newCourse.classType}
+                      onChange={(e) => {
+                        const classType = e.target.value as ClassType;
+                        setNewCourse((current) => ({
+                          ...current,
+                          classType,
+                          capacity: classType === "public" ? 10 : 1,
+                        }));
+                      }}
+                      className="w-full rounded-lg border border-line bg-white px-3.5 py-2.5 text-[13px] outline-none focus:border-blue"
+                    >
+                      <option value="public">
+                        {lang === "fa"
+                          ? "عمومی (۱۰ نفر)"
+                          : "Public (10 students)"}
+                      </option>
+                      <option value="private">
+                        {lang === "fa"
+                          ? "خصوصی (۱ تا ۲ نفر)"
+                          : "Private (1–2 students)"}
+                      </option>
+                    </select>
+                  </label>
+                  <label className="space-y-2 text-[12.5px] font-semibold text-ink70">
+                    <span>
+                      {lang === "fa" ? "گروه معلم‌ها" : "Teacher group"}
+                    </span>
+                    <select
+                      value={newCourse.teacherRole}
+                      onChange={(e) =>
+                        setNewCourse((current) => ({
+                          ...current,
+                          teacherRole: e.target.value,
+                        }))
+                      }
+                      className="w-full rounded-lg border border-line bg-white px-3.5 py-2.5 text-[13px] outline-none focus:border-blue"
+                    >
+                      <option value="all">
+                        {lang === "fa" ? "همه معلم‌ها" : "All teachers"}
+                      </option>
+                      <option value="english">English</option>
+                      <option value="german">Deutsch / German</option>
+                    </select>
+                  </label>
+                  <label className="space-y-2 text-[12.5px] font-semibold text-ink70">
+                    <span>
+                      {lang === "fa" ? "زمان شروع" : "Start date & time"} *
+                    </span>
+                    <input
+                      type="datetime-local"
+                      value={newCourse.startsAt}
+                      onChange={(e) =>
+                        setNewCourse((current) => ({
+                          ...current,
+                          startsAt: e.target.value,
+                        }))
+                      }
+                      required
+                      className="w-full rounded-lg border border-line bg-white px-3.5 py-2.5 text-[13px] outline-none focus:border-blue"
+                    />
+                  </label>
+                  <label className="space-y-2 text-[12.5px] font-semibold text-ink70">
+                    <span>
+                      {lang === "fa" ? "زمان پایان" : "End date & time"} *
+                    </span>
+                    <input
+                      type="datetime-local"
+                      value={newCourse.endsAt}
+                      onChange={(e) =>
+                        setNewCourse((current) => ({
+                          ...current,
+                          endsAt: e.target.value,
+                        }))
+                      }
+                      required
+                      className="w-full rounded-lg border border-line bg-white px-3.5 py-2.5 text-[13px] outline-none focus:border-blue"
+                    />
+                  </label>
+                  <label className="space-y-2 text-[12.5px] font-semibold text-ink70 sm:col-span-2">
+                    <span>{lang === "fa" ? "ظرفیت" : "Capacity"}</span>
+                    {newCourse.classType === "public" ? (
+                      <div className="flex items-center gap-2 rounded-lg border border-line bg-white px-3.5 py-2.5 text-[13px]">
+                        <Users size={15} />
+                        {lang === "fa" ? "۱۰ دانش‌آموز" : "10 students"}
+                      </div>
+                    ) : (
+                      <select
+                        value={newCourse.capacity}
+                        onChange={(e) =>
+                          setNewCourse((current) => ({
+                            ...current,
+                            capacity: Number(e.target.value),
+                          }))
+                        }
+                        className="w-full rounded-lg border border-line bg-white px-3.5 py-2.5 text-[13px] outline-none focus:border-blue"
+                      >
+                        <option value={1}>
+                          {lang === "fa" ? "۱ دانش‌آموز" : "1 student"}
+                        </option>
+                        <option value={2}>
+                          {lang === "fa" ? "۲ دانش‌آموز" : "2 students"}
+                        </option>
+                      </select>
+                    )}
+                  </label>
+                </div>
+              </section>
               <div>
                 <label className="block text-[12.5px] font-semibold text-ink70 mb-2">
                   Discount Percent
@@ -463,6 +665,7 @@ export default function AdminCoursesPage() {
             <tr className="bg-cream border-b border-line">
               {[
                 s.colCourse,
+                lang === "fa" ? "برنامه کلاس" : "Class schedule",
                 s.colBasePrice,
                 s.colDiscount,
                 s.colFinalPrice,
@@ -511,6 +714,9 @@ export default function AdminCoursesPage() {
                   p.basePrice,
                   previewDiscount,
                 );
+                const linkedClass = classSlots.find(
+                  (slotItem) => slotItem.courseId === p.id,
+                );
 
                 return (
                   <tr
@@ -519,6 +725,35 @@ export default function AdminCoursesPage() {
                   >
                     <td className="px-5 py-3.5 text-[13.5px] font-semibold">
                       {courseTitle}
+                    </td>
+                    <td className="px-5 py-3.5 text-[12px] text-ink70">
+                      {linkedClass ? (
+                        <div className="space-y-1">
+                          <div className="font-semibold">
+                            {linkedClass.classType === "private"
+                              ? lang === "fa"
+                                ? "خصوصی"
+                                : "Private"
+                              : lang === "fa"
+                                ? "عمومی"
+                                : "Public"}
+                            {" · "}
+                            {linkedClass.capacity}{" "}
+                            {lang === "fa" ? "نفر" : "seats"}
+                          </div>
+                          <div>
+                            {new Intl.DateTimeFormat(
+                              lang === "fa" ? "fa-IR" : "en-US",
+                              {
+                                dateStyle: "medium",
+                                timeStyle: "short",
+                              },
+                            ).format(new Date(linkedClass.startsAt))}
+                          </div>
+                        </div>
+                      ) : (
+                        <span className="text-muted">—</span>
+                      )}
                     </td>
                     <td className="px-5 py-3.5 text-[13px] text-ink70">
                       {formatPrice(p.basePrice, lang)}

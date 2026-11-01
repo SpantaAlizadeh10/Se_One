@@ -7,6 +7,7 @@ export type StudentEnrollmentStatus = "active" | "cancelled";
 
 export type AdminClassSlot = {
   id: string;
+  courseId?: string;
   title: string;
   description: string;
   classType: ClassType;
@@ -110,6 +111,7 @@ function normalizeClassSlot(raw: unknown): AdminClassSlot {
   );
   return {
     id: text(record, "id", "Id", "slotId", "SlotId"),
+    courseId: text(record, "courseId", "CourseId") || undefined,
     title: text(record, "title", "Title", "name", "Name"),
     description: text(record, "description", "Description"),
     classType,
@@ -172,7 +174,7 @@ function normalizeStudentClass(raw: unknown): StudentAvailableClass {
 export type CreateClassSlotInput = Pick<
   AdminClassSlot,
   "title" | "description" | "classType" | "teacherRole" | "startsAt" | "endsAt"
-> & { capacity?: number };
+> & { capacity?: number; courseId?: string };
 
 /** Admin-only list. The API computes seat counts from active enrollments. */
 export async function listAdminClassSlots(): Promise<AdminClassSlot[]> {
