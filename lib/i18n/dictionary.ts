@@ -189,13 +189,11 @@ export const dictionary = {
       levelsTitle: "سطوح یادگیری ما",
       classFinder: {
         title: "کلاس موردنظرت را پیدا کن",
-        placeholder: "جستجوی آیلتس، کودکان، فری دیسکاشن...",
+        placeholder: "جستجوی آیلتس، PTE، کودکان، فری دیسکاشن...",
         search: "جستجوی کلاس",
         categories: [
-          { label: "کلاس آنلاین", query: "online", contact: true },
-          { label: "کلاس حضوری", query: "in-person", contact: true },
-          { label: "کلاس آفلاین", query: "offline", contact: true },
           { label: "آیلتس", query: "آیلتس" },
+          { label: "دوره PTE", query: "PTE" },
           { label: "خصوصی", query: "private", contact: true },
           { label: "کودکان", query: "کودک" },
           { label: "فری دیسکاشن", query: "فری دیسکاشن" },
@@ -1455,13 +1453,11 @@ export const dictionary = {
       levelsTitle: "Our Learning Levels",
       classFinder: {
         title: "Find the class you want",
-        placeholder: "Search IELTS, kids, free discussion...",
+        placeholder: "Search IELTS, PTE, kids, free discussion...",
         search: "Search classes",
         categories: [
-          { label: "Online", query: "online", contact: true },
-          { label: "In-person", query: "in-person", contact: true },
-          { label: "Offline", query: "offline", contact: true },
           { label: "IELTS", query: "IELTS" },
+          { label: "PTE", query: "PTE" },
           { label: "Private", query: "private", contact: true },
           { label: "Kids", query: "children" },
           { label: "Free discussion", query: "Free Discussion" },

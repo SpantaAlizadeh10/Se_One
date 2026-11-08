@@ -12,11 +12,9 @@ import {
   Smile,
   Sparkle,
   Award,
+  BookOpenCheck,
   MessageCircle,
   Search,
-  Monitor,
-  MapPin,
-  WifiOff,
   UserRound,
   Baby,
   Target,
@@ -197,10 +195,8 @@ export default function Hero() {
         <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
           {classTypes.map((category, index) => {
             const Icon = [
-              Monitor,
-              MapPin,
-              WifiOff,
               Award,
+              BookOpenCheck,
               UserRound,
               Baby,
               MessageCircle,
