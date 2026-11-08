@@ -268,6 +268,52 @@ export async function getAdminStudentEnrollments(
   return unwrapList(data, (raw) => normalizeEnrollment(raw));
 }
 
+export type AdminCourseEnrollment = {
+  id: string;
+  courseId: string;
+  studentId: string;
+  studentName: string;
+  studentEmail: string;
+  status: Enrollment["status"];
+  enrolledAt: string;
+};
+
+function normalizeCourseEnrollment(raw: unknown): AdminCourseEnrollment {
+  const record = (raw ?? {}) as ApiRecord;
+  const student = (value(record, "student", "Student") ?? {}) as ApiRecord;
+  const id = text(record, "id", "Id", "enrollmentId", "EnrollmentId");
+  const studentId =
+    text(record, "studentId", "StudentId", "userId", "UserId") ||
+    text(student, "id", "Id", "studentId", "StudentId", "userId", "UserId");
+  if (!id || !studentId) {
+    throw new Error("The server returned an invalid course enrollment.");
+  }
+  return {
+    id,
+    courseId: text(record, "courseId", "CourseId"),
+    studentId,
+    studentName:
+      text(record, "studentName", "StudentName", "fullName", "FullName") ||
+      text(student, "fullName", "FullName", "name", "Name"),
+    studentEmail:
+      text(record, "studentEmail", "StudentEmail", "email", "Email") ||
+      text(student, "email", "Email"),
+    status:
+      (text(record, "status", "Status") as Enrollment["status"]) || "active",
+    enrolledAt: text(record, "enrolledAt", "EnrolledAt"),
+  };
+}
+
+export async function getAdminCourseEnrollments(
+  courseId: string,
+): Promise<AdminCourseEnrollment[]> {
+  const data = await apiFetch<unknown>(
+    `/api/admin/courses/${encodeURIComponent(courseId)}/enrollments`,
+    { cache: "no-store" },
+  );
+  return unwrapList(data, normalizeCourseEnrollment);
+}
+
 export type AdminStudentProgress = {
   courseId: string;
   courseTitle: string;

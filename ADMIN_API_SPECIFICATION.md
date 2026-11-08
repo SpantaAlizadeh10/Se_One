@@ -172,6 +172,35 @@ teacher is changed or removed, the frontend also uses
 `PUT /api/admin/class-slots/{slotId}/teacher`; the backend must validate the
 teacher's approval and schedule conflicts.
 
+### Course student enrollments
+
+`GET /api/admin/courses/{courseId}/enrollments` returns enrollments for this
+course, including student display information:
+
+```json
+[
+  {
+    "id": "enrollment-id",
+    "courseId": "course-id",
+    "studentId": "student-id",
+    "studentName": "Student Name",
+    "studentEmail": "student@example.com",
+    "status": "active",
+    "enrolledAt": "2026-11-01T10:00:00Z"
+  }
+]
+```
+
+In the course editor, admins can search active students with
+`GET /api/admin/students?page=1&pageSize=20&search={name-or-email}` and add
+them using the existing
+`POST /api/admin/students/{studentId}/enrollments` request with
+`{ "courseId": "course-id", "waivePayment": true }`. Removing a student uses
+the existing
+`DELETE /api/admin/students/{studentId}/enrollments/{enrollmentId}` endpoint.
+The backend must reject duplicate active enrollments and ensure the
+enrollment belongs to both the specified course and student before removal.
+
 ### PATCH /api/admin/courses/{courseId}/pricing
 
 **Request:**

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   CalendarDays,
   Check,
@@ -11,6 +11,9 @@ import {
   X,
   Star,
   Upload,
+  Search,
+  UserPlus,
+  Trash2,
 } from "lucide-react";
 import DatePicker from "react-multi-date-picker";
 import persian from "react-date-object/calendars/persian";
@@ -25,7 +28,13 @@ import {
   createAdminCourse,
   uploadCourseImage,
   listAdminTeachers,
+  listAdminStudents,
+  getAdminCourseEnrollments,
+  adminEnrollStudent,
+  adminCancelStudentEnrollment,
   type AdminCourse,
+  type AdminCourseEnrollment,
+  type AdminStudent,
   type CreateCourseInput,
   type AdminTeacher,
 } from "@/lib/api/admin";
@@ -109,6 +118,18 @@ export default function AdminCoursesPage() {
   const [teachers, setTeachers] = useState<AdminTeacher[]>([]);
   const [classSlots, setClassSlots] = useState<AdminClassSlot[]>([]);
   const [newCourse, setNewCourse] = useState<CourseDraft>(emptyCourseDraft);
+  const [courseEnrollments, setCourseEnrollments] = useState<
+    AdminCourseEnrollment[]
+  >([]);
+  const [courseStudentSearch, setCourseStudentSearch] = useState("");
+  const [courseStudentCandidates, setCourseStudentCandidates] = useState<
+    AdminStudent[]
+  >([]);
+  const [loadingCourseEnrollments, setLoadingCourseEnrollments] =
+    useState(false);
+  const [searchingCourseStudents, setSearchingCourseStudents] = useState(false);
+  const [updatingEnrollmentId, setUpdatingEnrollmentId] = useState("");
+  const courseEnrollmentLoadRequest = useRef(0);
 
   useEffect(() => {
     if (!isApiConfigured()) {
@@ -253,15 +274,126 @@ export default function AdminCoursesPage() {
       capacity: linkedClass?.capacity ?? 10,
       teacherRole: linkedClass?.teacherRole ?? course.language ?? "english",
     });
+    setCourseEnrollments([]);
+    setCourseStudentCandidates([]);
+    setCourseStudentSearch("");
     setApiError(null);
     setShowCreateModal(true);
+    const requestId = ++courseEnrollmentLoadRequest.current;
+    setLoadingCourseEnrollments(true);
+    getAdminCourseEnrollments(course.id)
+      .then((enrollments) => {
+        if (courseEnrollmentLoadRequest.current === requestId) {
+          setCourseEnrollments(enrollments);
+        }
+      })
+      .catch((error) => {
+        if (courseEnrollmentLoadRequest.current === requestId) {
+          setApiError(
+            error instanceof Error
+              ? error.message
+              : lang === "fa"
+                ? "فهرست دانش‌آموزان دوره بارگذاری نشد."
+                : "Could not load course students.",
+          );
+        }
+      })
+      .finally(() => {
+        if (courseEnrollmentLoadRequest.current === requestId) {
+          setLoadingCourseEnrollments(false);
+        }
+      });
+  };
+
+  const searchCourseStudents = async () => {
+    setSearchingCourseStudents(true);
+    setApiError(null);
+    try {
+      const result = await listAdminStudents({
+        page: 1,
+        pageSize: 20,
+        search: courseStudentSearch.trim() || undefined,
+      });
+      setCourseStudentCandidates(
+        result.items.filter((student) => student.status === "active"),
+      );
+    } catch (error) {
+      setApiError(
+        error instanceof Error
+          ? error.message
+          : lang === "fa"
+            ? "جستجوی دانش‌آموز ناموفق بود."
+            : "Could not search students.",
+      );
+    } finally {
+      setSearchingCourseStudents(false);
+    }
+  };
+
+  const addStudentToCourse = async (student: AdminStudent) => {
+    if (!editingCourseId) return;
+    setUpdatingEnrollmentId(student.id);
+    setApiError(null);
+    try {
+      await adminEnrollStudent(student.id, editingCourseId);
+      setCourseEnrollments(await getAdminCourseEnrollments(editingCourseId));
+      setCourseStudentCandidates((current) =>
+        current.filter((candidate) => candidate.id !== student.id),
+      );
+    } catch (error) {
+      setApiError(
+        error instanceof Error
+          ? error.message
+          : lang === "fa"
+            ? "افزودن دانش‌آموز به دوره انجام نشد."
+            : "Could not add student to the course.",
+      );
+    } finally {
+      setUpdatingEnrollmentId("");
+    }
+  };
+
+  const removeStudentFromCourse = async (
+    enrollment: AdminCourseEnrollment,
+  ) => {
+    if (!editingCourseId) return;
+    const confirmed = window.confirm(
+      lang === "fa"
+        ? `ثبت‌نام ${enrollment.studentName || enrollment.studentEmail} از این دوره حذف شود؟`
+        : `Remove ${enrollment.studentName || enrollment.studentEmail} from this course?`,
+    );
+    if (!confirmed) return;
+    setUpdatingEnrollmentId(enrollment.id);
+    setApiError(null);
+    try {
+      await adminCancelStudentEnrollment(
+        enrollment.studentId,
+        enrollment.id,
+      );
+      setCourseEnrollments((current) =>
+        current.filter((item) => item.id !== enrollment.id),
+      );
+    } catch (error) {
+      setApiError(
+        error instanceof Error
+          ? error.message
+          : lang === "fa"
+            ? "حذف دانش‌آموز از دوره انجام نشد."
+            : "Could not remove student from the course.",
+      );
+    } finally {
+      setUpdatingEnrollmentId("");
+    }
   };
 
   const closeCourseModal = () => {
     if (creating) return;
+    courseEnrollmentLoadRequest.current += 1;
     setShowCreateModal(false);
     setEditingCourseId(null);
     setNewCourse(emptyCourseDraft);
+    setCourseEnrollments([]);
+    setCourseStudentCandidates([]);
   };
 
   const handleSaveCourse = async (e: React.FormEvent) => {
@@ -708,6 +840,179 @@ export default function AdminCoursesPage() {
                   </select>
                 </div>
               </div>
+              {editingCourseId && (
+                <section className="space-y-4 rounded-xl border border-line bg-cream/60 p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <h4 className="text-[13.5px] font-semibold text-ink">
+                        {lang === "fa"
+                          ? "دانش‌آموزان دوره"
+                          : "Students in this course"}
+                      </h4>
+                      <p className="mt-1 text-[12px] text-muted">
+                        {lang === "fa"
+                          ? "دانش‌آموز اضافه کنید یا ثبت‌نام او را از دوره حذف کنید."
+                          : "Add students or remove their enrollment from this course."}
+                      </p>
+                    </div>
+                    <span className="rounded-full bg-white px-3 py-1 text-[12px] font-semibold text-ink70">
+                      {
+                        courseEnrollments.filter(
+                          (enrollment) => enrollment.status === "active",
+                        ).length
+                      }
+                    </span>
+                  </div>
+
+                  <div className="flex flex-col gap-2 sm:flex-row">
+                    <label className="flex min-w-0 flex-1 items-center gap-2 rounded-lg border border-line bg-white px-3">
+                      <Search size={15} className="shrink-0 text-muted" />
+                      <input
+                        type="search"
+                        value={courseStudentSearch}
+                        onChange={(event) =>
+                          setCourseStudentSearch(event.target.value)
+                        }
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter") {
+                            event.preventDefault();
+                            void searchCourseStudents();
+                          }
+                        }}
+                        placeholder={
+                          lang === "fa"
+                            ? "جستجو بر اساس نام یا ایمیل دانش‌آموز"
+                            : "Search students by name or email"
+                        }
+                        className="min-w-0 flex-1 bg-transparent py-2.5 text-[12px] outline-none"
+                      />
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => void searchCourseStudents()}
+                      disabled={searchingCourseStudents}
+                      className="inline-flex items-center justify-center gap-2 rounded-lg border border-line bg-white px-3 py-2 text-[12px] font-semibold text-ink70 hover:border-blue hover:text-blue disabled:opacity-60"
+                    >
+                      <Search size={14} />
+                      {searchingCourseStudents
+                        ? lang === "fa"
+                          ? "در حال جستجو..."
+                          : "Searching..."
+                        : lang === "fa"
+                          ? "جستجوی دانش‌آموز"
+                          : "Search students"}
+                    </button>
+                  </div>
+
+                  {courseStudentCandidates.length > 0 && (
+                    <div className="max-h-40 space-y-2 overflow-y-auto rounded-lg border border-line bg-white p-2">
+                      {courseStudentCandidates.map((student) => {
+                        const alreadyEnrolled = courseEnrollments.some(
+                          (enrollment) =>
+                            enrollment.studentId === student.id &&
+                            enrollment.status === "active",
+                        );
+                        return (
+                          <div
+                            key={student.id}
+                            className="flex items-center gap-3 rounded-lg px-2 py-1.5"
+                          >
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate text-[12px] font-semibold text-ink">
+                                {student.fullName}
+                              </p>
+                              <p className="truncate text-[11px] text-muted">
+                                {student.email}
+                              </p>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => void addStudentToCourse(student)}
+                              disabled={
+                                alreadyEnrolled ||
+                                Boolean(updatingEnrollmentId)
+                              }
+                              className="inline-flex shrink-0 items-center gap-1 rounded-full bg-blue px-2.5 py-1.5 text-[11px] font-semibold text-white hover:bg-blueDeep disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                              <UserPlus size={13} />
+                              {alreadyEnrolled
+                                ? lang === "fa"
+                                  ? "عضو دوره"
+                                  : "Enrolled"
+                                : updatingEnrollmentId === student.id
+                                  ? lang === "fa"
+                                    ? "در حال افزودن..."
+                                    : "Adding..."
+                                  : lang === "fa"
+                                    ? "افزودن"
+                                    : "Add"}
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  <div className="space-y-2">
+                    {loadingCourseEnrollments ? (
+                      <p className="text-[12px] text-muted">
+                        {lang === "fa"
+                          ? "در حال بارگذاری دانش‌آموزان دوره..."
+                          : "Loading course students..."}
+                      </p>
+                    ) : courseEnrollments.filter(
+                          (enrollment) => enrollment.status === "active",
+                        ).length === 0 ? (
+                      <p className="text-[12px] text-muted">
+                        {lang === "fa"
+                          ? "هنوز دانش‌آموز فعالی در این دوره ثبت‌نام نشده است."
+                          : "No active students are enrolled in this course."}
+                      </p>
+                    ) : (
+                      courseEnrollments
+                        .filter((enrollment) => enrollment.status === "active")
+                        .map((enrollment) => (
+                          <div
+                            key={enrollment.id}
+                            className="flex items-center gap-3 rounded-lg border border-line bg-white px-3 py-2"
+                          >
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate text-[12px] font-semibold text-ink">
+                                {enrollment.studentName ||
+                                  enrollment.studentEmail ||
+                                  enrollment.studentId}
+                              </p>
+                              {enrollment.studentEmail && (
+                                <p className="truncate text-[11px] text-muted">
+                                  {enrollment.studentEmail}
+                                </p>
+                              )}
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                void removeStudentFromCourse(enrollment)
+                              }
+                              disabled={Boolean(updatingEnrollmentId)}
+                              title={
+                                lang === "fa"
+                                  ? "حذف دانش‌آموز از دوره"
+                                  : "Remove student from course"
+                              }
+                              className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-danger/10 text-danger hover:bg-danger/20 disabled:opacity-50"
+                            >
+                              {updatingEnrollmentId === enrollment.id ? (
+                                <span className="text-[10px]">...</span>
+                              ) : (
+                                <Trash2 size={14} />
+                              )}
+                            </button>
+                          </div>
+                        ))
+                    )}
+                  </div>
+                </section>
+              )}
               <section className="space-y-4 rounded-xl border border-line bg-cream/60 p-4">
                 <div className="flex items-start gap-2">
                   <CalendarDays size={17} className="mt-0.5 text-blue" />
