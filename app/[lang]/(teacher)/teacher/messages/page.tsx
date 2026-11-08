@@ -1,9 +1,9 @@
-import TeacherGroupChat from "@/components/messages/TeacherGroupChat";
+import TeacherMessagesHome from "@/components/messages/TeacherMessagesHome";
 
 export default function TeacherMessagesPage() {
   return (
     <div>
-      <TeacherGroupChat />
+      <TeacherMessagesHome />
     </div>
   );
 }
