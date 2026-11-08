@@ -19,6 +19,7 @@
   "level": "B1",
   "classType": "public",
   "teacherRole": "english",
+  "language": "english",
   "startsAt": "2026-12-01T14:00:00Z",
   "endsAt": "2026-12-01T15:00:00Z",
   "timeZone": "Asia/Tehran",

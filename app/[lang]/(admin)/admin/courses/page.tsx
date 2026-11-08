@@ -7,6 +7,7 @@ import {
   Eye,
   EyeOff,
   Plus,
+  Pencil,
   X,
   Star,
   Upload,
@@ -30,6 +31,10 @@ import {
 } from "@/lib/api/admin";
 import {
   createAdminClassSlot,
+  assignTeacherToClassSlot,
+  replaceAdminClassTeacher,
+  updateAdminClassSlot,
+  toDateTimeLocalValue,
   listAdminClassSlots,
   type AdminClassSlot,
   type ClassType,
@@ -89,6 +94,7 @@ export default function AdminCoursesPage() {
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [savedId, setSavedId] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [editingCourseId, setEditingCourseId] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [teachers, setTeachers] = useState<AdminTeacher[]>([]);
@@ -111,7 +117,13 @@ export default function AdminCoursesPage() {
       );
     listAdminClassSlots()
       .then(setClassSlots)
-      .catch(() => setClassSlots([]));
+      .catch((error) =>
+        setApiError(
+          error instanceof Error
+            ? error.message
+            : "Could not load scheduled classes",
+        ),
+      );
   }, []);
 
   useEffect(() => {
@@ -196,7 +208,7 @@ export default function AdminCoursesPage() {
     setApiError(null);
     try {
       const result = await uploadCourseImage(file);
-      setNewCourse({ ...newCourse, imageUrl: result.imageUrl });
+      setNewCourse((current) => ({ ...current, imageUrl: result.imageUrl }));
     } catch (error) {
       setApiError(
         error instanceof Error ? error.message : "Failed to upload image",
@@ -206,7 +218,60 @@ export default function AdminCoursesPage() {
     }
   };
 
-  const handleCreateCourse = async (e: React.FormEvent) => {
+  const openEditCourse = async (course: AdminCourse) => {
+    let availableClassSlots = classSlots;
+    try {
+      availableClassSlots = await listAdminClassSlots();
+      setClassSlots(availableClassSlots);
+    } catch (error) {
+      setApiError(
+        error instanceof Error
+          ? error.message
+          : lang === "fa"
+            ? "برنامهٔ کلاس دریافت نشد؛ ویرایش دوره انجام نشد."
+            : "Could not load the class schedule, so the course was not opened for editing.",
+      );
+      return;
+    }
+    const linkedClass = availableClassSlots.find(
+      (slot) => slot.courseId === course.id,
+    );
+    const currentTeacher = linkedClass?.teacherAssignments?.find(
+      (assignment) => assignment.status === "confirmed",
+    );
+    setEditingCourseId(course.id);
+    setNewCourse({
+      ...emptyCourseDraft,
+      title: course.title,
+      description: course.description ?? "",
+      level: course.level,
+      basePrice: course.basePrice,
+      currency: course.currency || "IRR",
+      duration: course.duration ?? "",
+      category: course.category ?? "",
+      language: course.language || "english",
+      discountPercent: course.discountPercent,
+      isFeatured: course.isFeatured ?? false,
+      imageUrl: course.imageUrl ?? "",
+      teacherId: currentTeacher?.teacherId ?? course.teacherId ?? "",
+      classType: linkedClass?.classType ?? "public",
+      startsAt: linkedClass ? toDateTimeLocalValue(linkedClass.startsAt) : "",
+      endsAt: linkedClass ? toDateTimeLocalValue(linkedClass.endsAt) : "",
+      capacity: linkedClass?.capacity ?? 10,
+      teacherRole: linkedClass?.teacherRole ?? course.language ?? "english",
+    });
+    setApiError(null);
+    setShowCreateModal(true);
+  };
+
+  const closeCourseModal = () => {
+    if (creating) return;
+    setShowCreateModal(false);
+    setEditingCourseId(null);
+    setNewCourse(emptyCourseDraft);
+  };
+
+  const handleSaveCourse = async (e: React.FormEvent) => {
     e.preventDefault();
     setCreating(true);
     setApiError(null);
@@ -221,12 +286,21 @@ export default function AdminCoursesPage() {
             : "Class start and end times are required.",
         );
       }
-      if (start.getTime() <= Date.now()) {
-        throw new Error(
-          lang === "fa"
-            ? "زمان شروع باید در آینده باشد."
-            : "The class must start in the future.",
-        );
+      const currentLinkedClass = editingCourseId
+        ? classSlots.find((slot) => slot.courseId === editingCourseId)
+        : undefined;
+      const scheduleChanged =
+        !currentLinkedClass ||
+        start.getTime() !== new Date(currentLinkedClass.startsAt).getTime() ||
+        end.getTime() !== new Date(currentLinkedClass.endsAt).getTime();
+      if (!editingCourseId || scheduleChanged) {
+        if (start.getTime() <= Date.now()) {
+          throw new Error(
+            lang === "fa"
+              ? "زمان شروع باید در آینده باشد."
+              : "The class must start in the future.",
+          );
+        }
       }
       if (end.getTime() <= start.getTime()) {
         throw new Error(
@@ -244,38 +318,123 @@ export default function AdminCoursesPage() {
         teacherRole,
         ...courseDetails
       } = newCourse;
-      const created = await createAdminCourse(courseDetails);
-      setApiCourses((prev) => [created, ...prev]);
+      const classDetails = {
+        courseId: editingCourseId ?? undefined,
+        title: courseDetails.title,
+        description: courseDetails.description,
+        classType,
+        capacity,
+        level: courseDetails.level,
+        teacherRole,
+        language: courseDetails.language,
+        basePrice: courseDetails.basePrice,
+        finalPrice: getDiscountedPrice(
+          courseDetails.basePrice,
+          courseDetails.discountPercent ?? 0,
+        ),
+        currency: courseDetails.currency,
+        startsAt: start.toISOString(),
+        endsAt: end.toISOString(),
+        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      } as const;
 
-      try {
-        const scheduledClass = await createAdminClassSlot({
-          courseId: created.id,
-          title: created.title,
-          description: created.description ?? "",
-          classType,
-          capacity,
-          level: created.level,
-          teacherRole,
-          startsAt: start.toISOString(),
-          endsAt: end.toISOString(),
-          timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-        });
-        setClassSlots((prev) => [scheduledClass, ...prev]);
-      } catch (scheduleError) {
-        setShowCreateModal(false);
-        setNewCourse(emptyCourseDraft);
-        throw new Error(
-          lang === "fa"
-            ? `دوره ساخته شد اما زمان‌بندی کلاس ثبت نشد: ${scheduleError instanceof Error ? scheduleError.message : "خطای نامشخص"}`
-            : `The course was created, but its class could not be scheduled: ${scheduleError instanceof Error ? scheduleError.message : "Unknown error"}`,
+      if (editingCourseId) {
+        const updatedCourse = await updateAdminCourse(
+          editingCourseId,
+          courseDetails,
         );
+        setApiCourses((prev) =>
+          prev.map((course) =>
+            course.id === editingCourseId ? updatedCourse : course,
+          ),
+        );
+
+        try {
+          const updatedClass = currentLinkedClass
+            ? await updateAdminClassSlot(currentLinkedClass.id, classDetails)
+            : await createAdminClassSlot(classDetails);
+          setClassSlots((prev) =>
+            currentLinkedClass
+              ? prev.map((slot) =>
+                  slot.id === currentLinkedClass.id ? updatedClass : slot,
+                )
+              : [updatedClass, ...prev],
+          );
+          const assignedTeacher = currentLinkedClass?.teacherAssignments?.find(
+            (assignment) => assignment.status === "confirmed",
+          );
+          if (courseDetails.teacherId !== (assignedTeacher?.teacherId ?? "")) {
+            if (assignedTeacher) {
+              await replaceAdminClassTeacher(
+                updatedClass.id,
+                courseDetails.teacherId || null,
+              );
+            } else if (courseDetails.teacherId) {
+              await assignTeacherToClassSlot(
+                updatedClass.id,
+                courseDetails.teacherId,
+              );
+            }
+            const refreshedSlots = await listAdminClassSlots();
+            setClassSlots(refreshedSlots);
+          }
+        } catch (classUpdateError) {
+          throw new Error(
+            lang === "fa"
+              ? `اطلاعات دوره ذخیره شد اما تغییرات کلاس کامل نشد: ${classUpdateError instanceof Error ? classUpdateError.message : "خطای نامشخص"}`
+              : `Course details were saved, but its scheduled class was not fully updated: ${classUpdateError instanceof Error ? classUpdateError.message : "Unknown error"}`,
+          );
+        }
+      } else {
+        const created = await createAdminCourse(courseDetails);
+        setApiCourses((prev) => [created, ...prev]);
+
+        try {
+          const scheduledClass = await createAdminClassSlot({
+            ...classDetails,
+            courseId: created.id,
+          });
+          setClassSlots((prev) => [scheduledClass, ...prev]);
+          if (courseDetails.teacherId) {
+            const assignment = await assignTeacherToClassSlot(
+              scheduledClass.id,
+              courseDetails.teacherId,
+            );
+            setClassSlots((prev) =>
+              prev.map((slot) =>
+                slot.id === scheduledClass.id
+                  ? {
+                      ...slot,
+                      teacherAssignments: [
+                        ...(slot.teacherAssignments ?? []),
+                        assignment,
+                      ],
+                    }
+                  : slot,
+              ),
+            );
+          }
+        } catch (scheduleError) {
+          setShowCreateModal(false);
+          setNewCourse(emptyCourseDraft);
+          throw new Error(
+            lang === "fa"
+              ? `دوره ساخته شد اما زمان‌بندی یا تخصیص مدرس کلاس کامل نشد: ${scheduleError instanceof Error ? scheduleError.message : "خطای نامشخص"}`
+              : `The course was created, but its class schedule or teacher assignment was not fully saved: ${scheduleError instanceof Error ? scheduleError.message : "Unknown error"}`,
+          );
+        }
       }
 
       setShowCreateModal(false);
+      setEditingCourseId(null);
       setNewCourse(emptyCourseDraft);
     } catch (error) {
       setApiError(
-        error instanceof Error ? error.message : "Could not create course",
+        error instanceof Error
+          ? error.message
+          : editingCourseId
+            ? "Could not update course"
+            : "Could not create course",
       );
     } finally {
       setCreating(false);
@@ -287,7 +446,12 @@ export default function AdminCoursesPage() {
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-muted text-[14px] max-w-[560px]">{s.sub}</p>
         <button
-          onClick={() => setShowCreateModal(true)}
+          onClick={() => {
+            setEditingCourseId(null);
+            setNewCourse(emptyCourseDraft);
+            setApiError(null);
+            setShowCreateModal(true);
+          }}
           className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-blue px-4 py-2.5 text-[13.5px] font-semibold text-white transition-colors hover:bg-blueDeep sm:w-auto"
         >
           <Plus size={14} />
@@ -298,17 +462,34 @@ export default function AdminCoursesPage() {
 
       {showCreateModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/50 p-4">
-          <div className="bg-white border border-line rounded-lg shadow-card w-full max-w-lg max-h-[90vh] overflow-y-auto">
+          <div className="bg-white border border-line rounded-lg shadow-card w-full max-w-3xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between p-5 border-b border-line">
-              <h3 className="text-[18px] font-semibold">Create New Course</h3>
+              <h3 className="text-[18px] font-semibold">
+                {editingCourseId
+                  ? lang === "fa"
+                    ? "ویرایش کامل دوره و کلاس"
+                    : "Edit course and scheduled class"
+                  : lang === "fa"
+                    ? "ایجاد دوره جدید"
+                    : "Create New Course"}
+              </h3>
               <button
-                onClick={() => setShowCreateModal(false)}
+                type="button"
+                onClick={closeCourseModal}
                 className="w-8 h-8 rounded-full flex items-center justify-center text-ink70 hover:bg-cream"
               >
                 <X size={18} />
               </button>
             </div>
-            <form onSubmit={handleCreateCourse} className="p-5 space-y-4">
+            <form onSubmit={handleSaveCourse} className="p-5 space-y-4">
+              {apiError && (
+                <p
+                  role="alert"
+                  className="rounded-lg bg-danger/10 p-3 text-[12px] text-danger"
+                >
+                  {apiError}
+                </p>
+              )}
               <div>
                 <label className="block text-[12.5px] font-semibold text-ink70 mb-2">
                   Title *
@@ -730,6 +911,17 @@ export default function AdminCoursesPage() {
                       {teacher.fullName}
                     </option>
                   ))}
+                  {newCourse.teacherId &&
+                    !teachers.some(
+                      (teacher) =>
+                        teacher.id === newCourse.teacherId,
+                    ) && (
+                      <option value={newCourse.teacherId}>
+                        {lang === "fa"
+                          ? "مدرس فعلی"
+                          : "Current teacher"}
+                      </option>
+                    )}
                 </select>
               </div>
               <div className="flex items-center gap-2">
@@ -749,17 +941,27 @@ export default function AdminCoursesPage() {
               <div className="flex justify-end gap-2.5 pt-4">
                 <button
                   type="button"
-                  onClick={() => setShowCreateModal(false)}
+                  onClick={closeCourseModal}
                   className="px-4 py-2.5 rounded-lg text-[13.5px] font-semibold border border-line text-ink70 hover:border-ink transition-colors"
                 >
-                  Cancel
+                  {lang === "fa" ? "لغو" : "Cancel"}
                 </button>
                 <button
                   type="submit"
                   disabled={creating}
                   className="px-5 py-2.5 rounded-lg text-[13.5px] font-semibold bg-blue text-white hover:bg-blueDeep transition-colors disabled:opacity-70"
                 >
-                  {creating ? "Creating..." : "Create Course"}
+                  {creating
+                    ? lang === "fa"
+                      ? "در حال ذخیره..."
+                      : "Saving..."
+                    : editingCourseId
+                      ? lang === "fa"
+                        ? "ذخیره همه تغییرات"
+                        : "Save all changes"
+                      : lang === "fa"
+                        ? "ایجاد دوره"
+                        : "Create Course"}
                 </button>
               </div>
             </form>
@@ -824,6 +1026,9 @@ export default function AdminCoursesPage() {
                 );
                 const linkedClass = classSlots.find(
                   (slotItem) => slotItem.courseId === p.id,
+                );
+                const fullCourse = apiCourses.find(
+                  (item) => item.id === p.id,
                 );
 
                 return (
@@ -915,6 +1120,19 @@ export default function AdminCoursesPage() {
                     </td>
                     <td className="px-5 py-3.5">
                       <div className="flex items-center gap-2">
+                        {fullCourse && (
+                          <button
+                            type="button"
+                            onClick={() => openEditCourse(fullCourse)}
+                            className="inline-flex items-center gap-1.5 rounded-full border border-line px-3 py-1.5 text-[12px] font-semibold text-ink70 transition-colors hover:border-blue hover:text-blue"
+                            title={
+                              lang === "fa" ? "ویرایش کامل دوره" : "Edit course"
+                            }
+                          >
+                            <Pencil size={13} />
+                            {lang === "fa" ? "ویرایش" : "Edit"}
+                          </button>
+                        )}
                         <button
                           onClick={() => save(p.id)}
                           className="inline-flex items-center gap-1.5 text-[12px] font-bold text-white bg-blue hover:bg-blueDeep px-3.5 py-1.5 rounded-full transition-colors"

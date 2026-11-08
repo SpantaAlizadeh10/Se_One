@@ -642,6 +642,9 @@ export type CreateCourseInput = {
   isFeatured?: boolean;
 };
 
+export type UpdateAdminCourseInput = Partial<CreateCourseInput> &
+  Partial<Pick<AdminCourse, "isPublished">>;
+
 function normalizeAdminCourse(raw: unknown, index: number): AdminCourse | null {
   const r = (raw ?? {}) as ApiRecord;
   const id = text(r, "id", "Id", "courseId", "CourseId");
@@ -726,9 +729,7 @@ export async function patchAdminCoursePricing(
 
 export async function updateAdminCourse(
   courseId: string,
-  body: Partial<
-    Pick<AdminCourse, "title" | "level" | "isPublished" | "isFeatured">
-  >,
+  body: UpdateAdminCourseInput,
 ): Promise<AdminCourse> {
   const data = await apiFetch<unknown>(`/api/admin/courses/${courseId}`, {
     method: "PATCH",

@@ -138,16 +138,36 @@ All courses with admin pricing fields.
 
 ### PATCH /api/admin/courses/{courseId}
 
-Update publish flag and/or metadata (not student-facing lesson content if you prefer separate CMS).
+Update course metadata and all editable fields from the admin course form
+(student-facing lesson content remains managed through modules and lessons).
 
 **Request (partial):**
 
 ```json
 {
   "title": "Updated title",
+  "description": "Updated course description",
+  "level": "B1",
+  "basePrice": 990000,
+  "currency": "IRR",
+  "discountPercent": 20,
+  "duration": "8 weeks",
+  "category": "Conversation",
+  "language": "english",
+  "imageUrl": "https://cdn.example.com/course.jpg",
+  "teacherId": "teacher-id",
+  "isFeatured": true,
   "isPublished": true
 }
 ```
+
+The endpoint accepts any subset of these fields and returns the complete
+updated course. The admin frontend edits the matching scheduled class via
+`PATCH /api/admin/class-slots/{slotId}` with its title, description, level,
+type, capacity, price, currency, teacher role, and start/end timestamps. If a
+teacher is changed or removed, the frontend also uses
+`PUT /api/admin/class-slots/{slotId}/teacher`; the backend must validate the
+teacher's approval and schedule conflicts.
 
 ### PATCH /api/admin/courses/{courseId}/pricing
 

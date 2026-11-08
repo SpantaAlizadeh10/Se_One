@@ -292,6 +292,7 @@ export type CreateClassSlotInput = Pick<
   term?: string;
   language?: string;
   basePrice?: number;
+  finalPrice?: number;
   currency?: string;
 };
 
