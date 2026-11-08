@@ -172,6 +172,31 @@ teacher is changed or removed, the frontend also uses
 `PUT /api/admin/class-slots/{slotId}/teacher`; the backend must validate the
 teacher's approval and schedule conflicts.
 
+### Multiple teacher-led groups for one course
+
+A course can have multiple scheduled class slots, each with the same
+`courseId` and its own schedule, teacher assignment, class type, capacity,
+price, and enrollment count. Create one slot per group with
+`POST /api/admin/class-slots`; then use
+`GET /api/admin/class-slots/{slotId}/available-teachers` and assign the
+selected teacher to that specific slot. Do not duplicate the course record or
+save one shared `teacherId` as the source of truth for all groups.
+
+The admin course editor creates additional groups with
+`POST /api/admin/class-slots`, carrying the shared `courseId` and the
+group-specific `startsAt`, `endsAt`, `classType`, `capacity`, `basePrice`,
+`finalPrice`, and `currency`. Availability matching must exclude teachers
+whose availability does not cover the whole slot or who have a conflicting
+confirmed class assignment.
+
+`GET /api/student/class-slots` must return each confirmed teacher-slot pair as
+a separate student-facing option. Each item must include its slot-specific
+`courseId`, `assignmentId`, schedule, capacity and enrollment counts,
+`basePrice`, `finalPrice`, currency, and teacher identity. Include the
+teacher's `name` and `avatarUrl` (or `teacherName` and `teacherAvatarUrl`) so
+students can distinguish the parallel groups. The course image and title can
+be resolved from the shared course record.
+
 ### Course student enrollments
 
 `GET /api/admin/courses/{courseId}/enrollments` returns enrollments for this

@@ -14,6 +14,7 @@ import {
   Search,
   UserPlus,
   Trash2,
+  Users,
 } from "lucide-react";
 import DatePicker from "react-multi-date-picker";
 import persian from "react-date-object/calendars/persian";
@@ -57,6 +58,22 @@ type CourseDraft = CreateCourseInput & {
   endsAt: string;
   capacity: number;
   teacherRole: string;
+};
+
+type AdditionalOfferingDraft = {
+  startsAt: string;
+  endsAt: string;
+  classType: ClassType;
+  capacity: number;
+  basePrice: number;
+};
+
+const emptyOfferingDraft: AdditionalOfferingDraft = {
+  startsAt: "",
+  endsAt: "",
+  classType: "public",
+  capacity: 10,
+  basePrice: 0,
 };
 
 const emptyCourseDraft: CourseDraft = {
@@ -133,11 +150,14 @@ export default function AdminCoursesPage() {
   const [updatingEnrollmentId, setUpdatingEnrollmentId] = useState("");
   const courseEnrollmentLoadRequest = useRef(0);
   const [availableCourseTeachers, setAvailableCourseTeachers] = useState<
-    AdminAssignableTeacher[]
-  >([]);
-  const [loadingCourseTeachers, setLoadingCourseTeachers] = useState(false);
+    Record<string, AdminAssignableTeacher[]>
+  >({});
+  const [loadingCourseTeachers, setLoadingCourseTeachers] = useState("");
   const [assigningCourseTeacherId, setAssigningCourseTeacherId] = useState("");
-  const [teacherAssignmentMessage, setTeacherAssignmentMessage] = useState("");
+  const [additionalOffering, setAdditionalOffering] =
+    useState<AdditionalOfferingDraft>(emptyOfferingDraft);
+  const [creatingOffering, setCreatingOffering] = useState(false);
+  const [offeringMessage, setOfferingMessage] = useState("");
 
   useEffect(() => {
     if (!isApiConfigured()) {
@@ -285,8 +305,14 @@ export default function AdminCoursesPage() {
     setCourseEnrollments([]);
     setCourseStudentCandidates([]);
     setCourseStudentSearch("");
-    setAvailableCourseTeachers([]);
-    setTeacherAssignmentMessage("");
+    setAvailableCourseTeachers({});
+    setAdditionalOffering({
+      ...emptyOfferingDraft,
+      classType: linkedClass?.classType ?? "public",
+      capacity: linkedClass?.capacity ?? 10,
+      basePrice: linkedClass?.basePrice ?? course.basePrice,
+    });
+    setOfferingMessage("");
     setApiError(null);
     setShowCreateModal(true);
     const requestId = ++courseEnrollmentLoadRequest.current;
@@ -315,45 +341,22 @@ export default function AdminCoursesPage() {
       });
   };
 
-  const findAvailableCourseTeachers = async () => {
+  const findAvailableCourseTeachers = async (slot: AdminClassSlot) => {
     if (!editingCourseId) return;
-    const linkedClass = classSlots.find(
-      (slot) => slot.courseId === editingCourseId,
-    );
-    if (!linkedClass) {
-      setApiError(
-        lang === "fa"
-          ? "ابتدا برنامهٔ کلاس را ذخیره کنید تا معلم‌های آزاد در آن زمان بررسی شوند."
-          : "Save the class schedule first to check teacher availability for that time.",
-      );
-      return;
-    }
-
-    const scheduleIsSaved =
-      new Date(newCourse.startsAt).getTime() ===
-        new Date(linkedClass.startsAt).getTime() &&
-      new Date(newCourse.endsAt).getTime() ===
-        new Date(linkedClass.endsAt).getTime();
-    if (!scheduleIsSaved) {
-      setApiError(
-        lang === "fa"
-          ? "زمان کلاس تغییر کرده است؛ ابتدا تغییرات دوره را ذخیره کنید."
-          : "The class time has changed. Save the course before checking availability.",
-      );
-      return;
-    }
-
-    setLoadingCourseTeachers(true);
+    setLoadingCourseTeachers(slot.id);
     setApiError(null);
-    setTeacherAssignmentMessage("");
+    setOfferingMessage("");
     try {
-      const teachers = await listAvailableTeachersForClass(linkedClass.id);
-      setAvailableCourseTeachers(teachers);
+      const teachers = await listAvailableTeachersForClass(slot.id);
+      setAvailableCourseTeachers((current) => ({
+        ...current,
+        [slot.id]: teachers,
+      }));
       if (teachers.length === 0) {
-        setTeacherAssignmentMessage(
+        setOfferingMessage(
           lang === "fa"
-            ? "برای این زمان و سطح، معلم تأییدشدهٔ آزادی پیدا نشد."
-            : "No approved teacher is available for this time and level.",
+            ? `برای زمان کلاس «${slot.title}»، معلم آزاد مناسبی پیدا نشد.`
+            : `No matching available teacher was found for "${slot.title}".`,
         );
       }
     } catch (error) {
@@ -365,67 +368,39 @@ export default function AdminCoursesPage() {
             : "Could not check teacher availability.",
       );
     } finally {
-      setLoadingCourseTeachers(false);
+      setLoadingCourseTeachers("");
     }
   };
 
   const assignAvailableCourseTeacher = async (
+    slot: AdminClassSlot,
     teacher: AdminAssignableTeacher,
   ) => {
     if (!editingCourseId) return;
-    const linkedClass = classSlots.find(
-      (slot) => slot.courseId === editingCourseId,
-    );
-    if (!linkedClass) return;
-
-    setAssigningCourseTeacherId(teacher.id);
+    setAssigningCourseTeacherId(`${slot.id}:${teacher.id}`);
     setApiError(null);
-    setTeacherAssignmentMessage("");
+    setOfferingMessage("");
     try {
-      const currentAssignment = linkedClass.teacherAssignments?.find(
+      const currentAssignment = slot.teacherAssignments?.find(
         (assignment) => assignment.status === "confirmed",
       );
       if (currentAssignment) {
-        await replaceAdminClassTeacher(linkedClass.id, teacher.id);
+        await replaceAdminClassTeacher(slot.id, teacher.id);
       } else {
-        await assignTeacherToClassSlot(linkedClass.id, teacher.id);
+        await assignTeacherToClassSlot(slot.id, teacher.id);
       }
-
-      let updatedCourse: AdminCourse;
-      try {
-        updatedCourse = await updateAdminCourse(editingCourseId, {
-          teacherId: teacher.id,
-        });
-      } catch (error) {
-        throw new Error(
-          lang === "fa"
-            ? `مدرس به کلاس اختصاص یافت، اما ذخیرهٔ مدرس در مشخصات دوره انجام نشد: ${error instanceof Error ? error.message : "خطای نامشخص"}`
-            : `The teacher was assigned to the class, but the course record could not be updated: ${error instanceof Error ? error.message : "Unknown error"}`,
-        );
-      }
-      setApiCourses((current) =>
-        current.map((course) =>
-          course.id === updatedCourse.id ? updatedCourse : course,
-        ),
-      );
-      setNewCourse((current) => ({ ...current, teacherId: teacher.id }));
-      let refreshedSlots: AdminClassSlot[];
-      try {
-        refreshedSlots = await listAdminClassSlots();
-      } catch (error) {
-        throw new Error(
-          lang === "fa"
-            ? `معلم اختصاص یافت، اما تازه‌سازی برنامهٔ کلاس ناموفق بود: ${error instanceof Error ? error.message : "خطای نامشخص"}`
-            : `The teacher was assigned, but the class schedule could not be refreshed: ${error instanceof Error ? error.message : "Unknown error"}`,
-        );
-      }
+      const refreshedSlots = await listAdminClassSlots();
       setClassSlots(refreshedSlots);
-      setTeacherAssignmentMessage(
+      setOfferingMessage(
         lang === "fa"
-          ? `معلم ${teacher.name} با موفقیت به دوره اختصاص یافت.`
-          : `${teacher.name} was assigned to the course.`,
+          ? `معلم ${teacher.name} به گروه «${slot.title}» اختصاص یافت.`
+          : `${teacher.name} was assigned to "${slot.title}".`,
       );
-      setAvailableCourseTeachers([]);
+      setAvailableCourseTeachers((current) => {
+        const next = { ...current };
+        delete next[slot.id];
+        return next;
+      });
     } catch (error) {
       setApiError(
         error instanceof Error
@@ -436,6 +411,122 @@ export default function AdminCoursesPage() {
       );
     } finally {
       setAssigningCourseTeacherId("");
+    }
+  };
+
+  const createAdditionalOffering = async () => {
+    if (!editingCourseId) return;
+    const start = new Date(additionalOffering.startsAt);
+    const end = new Date(additionalOffering.endsAt);
+    if (
+      !additionalOffering.startsAt ||
+      !additionalOffering.endsAt ||
+      !Number.isFinite(start.getTime()) ||
+      !Number.isFinite(end.getTime())
+    ) {
+      setApiError(
+        lang === "fa"
+          ? "زمان شروع و پایان گروه جدید را وارد کنید."
+          : "Enter a start and end time for the new class group.",
+      );
+      return;
+    }
+    if (start.getTime() <= Date.now() || end.getTime() <= start.getTime()) {
+      setApiError(
+        lang === "fa"
+          ? "زمان شروع باید در آینده و زمان پایان بعد از شروع باشد."
+          : "The start time must be in the future and the end time must follow it.",
+      );
+      return;
+    }
+
+    setCreatingOffering(true);
+    setApiError(null);
+    setOfferingMessage("");
+    try {
+      const updatedCourse = await updateAdminCourse(editingCourseId, {
+        title: newCourse.title,
+        description: newCourse.description,
+        level: newCourse.level,
+        basePrice: newCourse.basePrice,
+        currency: newCourse.currency,
+        discountPercent: newCourse.discountPercent,
+        duration: newCourse.duration,
+        category: newCourse.category,
+        language: newCourse.language,
+        imageUrl: newCourse.imageUrl,
+      });
+      setApiCourses((current) =>
+        current.map((course) =>
+          course.id === updatedCourse.id ? updatedCourse : course,
+        ),
+      );
+
+      const basePrice = Math.max(0, additionalOffering.basePrice);
+      const newSlot = await createAdminClassSlot({
+        courseId: editingCourseId,
+        title: updatedCourse.title,
+        description: updatedCourse.description ?? "",
+        level: updatedCourse.level,
+        classType: additionalOffering.classType,
+        capacity:
+          additionalOffering.classType === "semi_private"
+            ? 4
+            : additionalOffering.capacity,
+        teacherRole: newCourse.teacherRole,
+        language: updatedCourse.language,
+        startsAt: start.toISOString(),
+        endsAt: end.toISOString(),
+        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        basePrice,
+        finalPrice: getDiscountedPrice(
+          basePrice,
+          updatedCourse.discountPercent,
+        ),
+        currency: updatedCourse.currency,
+      });
+      setClassSlots((current) => [newSlot, ...current]);
+
+      try {
+        const teachers = await listAvailableTeachersForClass(newSlot.id);
+        setAvailableCourseTeachers((current) => ({
+          ...current,
+          [newSlot.id]: teachers,
+        }));
+        setOfferingMessage(
+          teachers.length
+            ? lang === "fa"
+              ? `گروه جدید ساخته شد؛ ${teachers.length} معلم با زمان آزاد مناسب پیدا شد.`
+              : `Class group created; ${teachers.length} available teacher(s) found.`
+            : lang === "fa"
+              ? "گروه ساخته شد، اما برای این زمان معلم آزادی پیدا نشد. زمان دیگری انتخاب و دوباره بررسی کنید."
+              : "Class group created, but no available teacher was found. Choose another time and check again.",
+        );
+      } catch (error) {
+        setOfferingMessage(
+          lang === "fa"
+            ? "گروه ساخته شد، اما بررسی معلم‌های آزاد انجام نشد. از دکمهٔ بررسی در کارت گروه دوباره تلاش کنید."
+            : "Class group created, but availability could not be checked. Retry from the group card.",
+        );
+        setApiError(
+          error instanceof Error ? error.message : "Availability check failed.",
+        );
+      }
+
+      setAdditionalOffering({
+        ...emptyOfferingDraft,
+        basePrice: updatedCourse.basePrice,
+      });
+    } catch (error) {
+      setApiError(
+        error instanceof Error
+          ? error.message
+          : lang === "fa"
+            ? "ساخت گروه جدید دوره ناموفق بود."
+            : "Could not create another course group.",
+      );
+    } finally {
+      setCreatingOffering(false);
     }
   };
 
@@ -594,6 +685,7 @@ export default function AdminCoursesPage() {
         endsAt,
         capacity,
         teacherRole,
+        teacherId,
         ...courseDetails
       } = newCourse;
       const classDetails =
@@ -640,27 +732,8 @@ export default function AdminCoursesPage() {
                 ? prev.map((slot) =>
                     slot.id === currentLinkedClass.id ? updatedClass : slot,
                   )
-                : [updatedClass, ...prev],
+                  : [updatedClass, ...prev],
             );
-            const assignedTeacher =
-              currentLinkedClass?.teacherAssignments?.find(
-                (assignment) => assignment.status === "confirmed",
-              );
-            if (courseDetails.teacherId !== (assignedTeacher?.teacherId ?? "")) {
-              if (assignedTeacher) {
-                await replaceAdminClassTeacher(
-                  updatedClass.id,
-                  courseDetails.teacherId || null,
-                );
-              } else if (courseDetails.teacherId) {
-                await assignTeacherToClassSlot(
-                  updatedClass.id,
-                  courseDetails.teacherId,
-                );
-              }
-              const refreshedSlots = await listAdminClassSlots();
-              setClassSlots(refreshedSlots);
-            }
           } catch (classUpdateError) {
             throw new Error(
               lang === "fa"
@@ -670,7 +743,7 @@ export default function AdminCoursesPage() {
           }
         }
       } else {
-        const created = await createAdminCourse(courseDetails);
+        const created = await createAdminCourse({ ...courseDetails, teacherId });
         setApiCourses((prev) => [created, ...prev]);
         if (!classDetails) {
           throw new Error(
@@ -686,10 +759,10 @@ export default function AdminCoursesPage() {
             courseId: created.id,
           });
           setClassSlots((prev) => [scheduledClass, ...prev]);
-          if (courseDetails.teacherId) {
+          if (teacherId) {
             const assignment = await assignTeacherToClassSlot(
               scheduledClass.id,
-              courseDetails.teacherId,
+              teacherId,
             );
             setClassSlots((prev) =>
               prev.map((slot) =>
@@ -731,20 +804,6 @@ export default function AdminCoursesPage() {
       setCreating(false);
     }
   };
-
-  const currentEditingClass = editingCourseId
-    ? classSlots.find((slot) => slot.courseId === editingCourseId)
-    : undefined;
-  const currentClassTeacher = currentEditingClass?.teacherAssignments?.find(
-    (assignment) => assignment.status === "confirmed",
-  );
-  const isEditingScheduleSaved = Boolean(
-    currentEditingClass &&
-      new Date(newCourse.startsAt).getTime() ===
-        new Date(currentEditingClass.startsAt).getTime() &&
-      new Date(newCourse.endsAt).getTime() ===
-        new Date(currentEditingClass.endsAt).getTime(),
-  );
 
   return (
     <div>
@@ -1410,136 +1469,306 @@ export default function AdminCoursesPage() {
               </section>
               {editingCourseId && (
                 <section className="space-y-4 rounded-xl border border-blue/20 bg-blue/5 p-4">
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="flex items-start gap-3">
-                      <div className="rounded-lg bg-white p-2 text-blue">
-                        <CalendarDays size={17} />
-                      </div>
-                      <div>
-                        <h4 className="text-[13.5px] font-semibold text-ink">
-                          {lang === "fa"
-                            ? "اختصاص معلم بر اساس زمان آزاد"
-                            : "Assign by teacher availability"}
-                        </h4>
-                        <p className="mt-1 text-[12px] leading-relaxed text-ink70">
-                          {lang === "fa"
-                            ? "فقط معلم‌های تأییدشده‌ای نمایش داده می‌شوند که زمان آزادشان با برنامهٔ این کلاس هماهنگ است."
-                            : "Only approved teachers whose availability matches this class schedule will be shown."}
-                        </p>
-                      </div>
+                  <div className="flex items-start gap-3">
+                    <div className="rounded-lg bg-white p-2 text-blue">
+                      <Users size={17} />
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => void findAvailableCourseTeachers()}
-                      disabled={
-                        loadingCourseTeachers ||
-                        Boolean(assigningCourseTeacherId) ||
-                        !isEditingScheduleSaved
-                      }
-                      className="inline-flex shrink-0 items-center justify-center gap-2 rounded-full bg-blue px-4 py-2.5 text-[12px] font-semibold text-white transition-colors hover:bg-blueDeep disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                      <Search size={14} />
-                      {loadingCourseTeachers
-                        ? lang === "fa"
-                          ? "در حال بررسی..."
-                          : "Checking..."
-                        : lang === "fa"
-                          ? "بررسی معلم‌های آزاد"
-                          : "Find available teachers"}
-                    </button>
+                    <div>
+                      <h4 className="text-[13.5px] font-semibold text-ink">
+                        {lang === "fa"
+                          ? "گروه‌های این دوره و معلم‌ها"
+                          : "Course groups and teachers"}
+                      </h4>
+                      <p className="mt-1 text-[12px] leading-relaxed text-ink70">
+                        {lang === "fa"
+                          ? "برای هر معلم یک گروه جدا بسازید؛ زمان، ظرفیت و قیمت هر گروه مستقل است و دانش‌آموز هر گزینه را جداگانه می‌بیند."
+                          : "Create a separate class group for each teacher. Each group has its own schedule, seats, and price, and appears separately to students."}
+                      </p>
+                    </div>
                   </div>
 
-                  {!classSlots.some(
-                    (slot) => slot.courseId === editingCourseId,
-                  ) && (
-                    <p className="rounded-lg bg-white/80 px-3 py-2 text-[12px] text-muted">
-                      {lang === "fa"
-                        ? "برای این دوره هنوز کلاس زمان‌بندی‌شده‌ای ثبت نشده است. ابتدا تاریخ و ساعت را وارد و دوره را ذخیره کنید."
-                        : "This course has no scheduled class yet. Set the class date and time, then save the course first."}
-                    </p>
-                  )}
+                  <div className="space-y-3">
+                    {classSlots
+                      .filter((slot) => slot.courseId === editingCourseId)
+                      .map((slot) => {
+                        const assignment = slot.teacherAssignments?.find(
+                          (item) => item.status === "confirmed",
+                        );
+                        const candidates = availableCourseTeachers[slot.id] ?? [];
+                        return (
+                          <article
+                            key={slot.id}
+                            className="space-y-3 rounded-xl border border-line bg-white p-3"
+                          >
+                            <div className="flex flex-wrap items-start gap-3">
+                              <div className="min-w-0 flex-1">
+                                <h5 className="truncate text-[12.5px] font-semibold text-ink">
+                                  {slot.title}
+                                </h5>
+                                <p className="mt-1 text-[11px] text-muted">
+                                  {new Intl.DateTimeFormat(
+                                    lang === "fa" ? "fa-IR" : "en-US",
+                                    {
+                                      dateStyle: "medium",
+                                      timeStyle: "short",
+                                    },
+                                  ).format(new Date(slot.startsAt))}
+                                  {" · "}
+                                  {slot.capacity}{" "}
+                                  {lang === "fa" ? "ظرفیت" : "seats"}
+                                  {" · "}
+                                  {formatPrice(slot.basePrice ?? 0, lang)}
+                                </p>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  void findAvailableCourseTeachers(slot)
+                                }
+                                disabled={
+                                  loadingCourseTeachers === slot.id ||
+                                  Boolean(assigningCourseTeacherId)
+                                }
+                                className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-full border border-blue/20 bg-blue/5 px-3 py-1.5 text-[11px] font-semibold text-blue hover:bg-blue/10 disabled:opacity-60"
+                              >
+                                <Search size={13} />
+                                {loadingCourseTeachers === slot.id
+                                  ? lang === "fa"
+                                    ? "در حال بررسی..."
+                                    : "Checking..."
+                                  : lang === "fa"
+                                    ? "بررسی معلم آزاد"
+                                    : "Find available teacher"}
+                              </button>
+                            </div>
 
-                  {currentEditingClass && !isEditingScheduleSaved && (
-                    <p className="rounded-lg bg-white/80 px-3 py-2 text-[12px] text-muted">
-                      {lang === "fa"
-                        ? "برای تطبیق زمان آزاد معلم‌ها، تغییرات زمان‌بندی کلاس را ابتدا ذخیره کنید."
-                        : "Save the changed class schedule before matching teacher availability."}
-                    </p>
-                  )}
+                            <div className="flex items-center gap-2 rounded-lg bg-sage/20 px-3 py-2">
+                              {assignment ? (
+                                <>
+                                  {assignment.teacherAvatarUrl ? (
+                                    <img
+                                      src={assignment.teacherAvatarUrl}
+                                      alt=""
+                                      className="h-8 w-8 rounded-full object-cover"
+                                    />
+                                  ) : (
+                                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white text-sageDeep">
+                                      <Check size={14} />
+                                    </div>
+                                  )}
+                                  <span className="text-[12px] font-medium text-sageDeep">
+                                    {assignment.teacherName ||
+                                      assignment.teacherId}
+                                  </span>
+                                </>
+                              ) : (
+                                <span className="text-[12px] text-muted">
+                                  {lang === "fa"
+                                    ? "هنوز معلمی به این گروه اختصاص نیافته"
+                                    : "No teacher assigned to this group yet"}
+                                </span>
+                              )}
+                            </div>
 
-                  {currentClassTeacher && (
-                    <div className="flex items-center gap-3 rounded-xl border border-sage/30 bg-white p-3">
-                      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-sage text-sageDeep">
-                        <Check size={16} />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-[11px] text-muted">
-                          {lang === "fa"
-                            ? "معلم فعلی دوره"
-                            : "Currently assigned"}
-                        </p>
-                        <p className="truncate text-[12.5px] font-semibold text-ink">
-                          {currentClassTeacher.teacherName ||
-                            currentClassTeacher.teacherId}
-                        </p>
-                      </div>
-                    </div>
-                  )}
+                            {candidates.length > 0 && (
+                              <div className="grid gap-2 sm:grid-cols-2">
+                                {candidates.map((teacher) => (
+                                  <div
+                                    key={teacher.id}
+                                    className="flex min-w-0 items-center gap-2 rounded-lg border border-line bg-cream/40 p-2"
+                                  >
+                                    {teacher.avatarUrl ? (
+                                      <img
+                                        src={teacher.avatarUrl}
+                                        alt=""
+                                        className="h-9 w-9 shrink-0 rounded-full object-cover"
+                                      />
+                                    ) : (
+                                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue/10 text-blue">
+                                        <UserPlus size={15} />
+                                      </div>
+                                    )}
+                                    <div className="min-w-0 flex-1">
+                                      <p className="truncate text-[11.5px] font-semibold text-ink">
+                                        {teacher.name}
+                                      </p>
+                                      <p className="truncate text-[10px] text-muted">
+                                        {teacher.matchedAvailability ||
+                                          [
+                                            teacher.subject,
+                                            teacher.teachingLanguage,
+                                          ]
+                                            .filter(Boolean)
+                                            .join(" · ")}
+                                      </p>
+                                    </div>
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        void assignAvailableCourseTeacher(
+                                          slot,
+                                          teacher,
+                                        )
+                                      }
+                                      disabled={Boolean(
+                                        assigningCourseTeacherId,
+                                      )}
+                                      className="shrink-0 rounded-full bg-blue px-2.5 py-1.5 text-[10px] font-semibold text-white hover:bg-blueDeep disabled:opacity-60"
+                                    >
+                                      {assigningCourseTeacherId ===
+                                      `${slot.id}:${teacher.id}`
+                                        ? lang === "fa"
+                                          ? "در حال اختصاص..."
+                                          : "Assigning..."
+                                        : lang === "fa"
+                                          ? "اختصاص"
+                                          : "Assign"}
+                                    </button>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </article>
+                        );
+                      })}
+                  </div>
 
-                  {teacherAssignmentMessage && (
+                  {offeringMessage && (
                     <p
                       role="status"
                       className="rounded-lg bg-white px-3 py-2 text-[12px] font-medium text-sageDeep"
                     >
-                      {teacherAssignmentMessage}
+                      {offeringMessage}
                     </p>
                   )}
 
-                  {availableCourseTeachers.length > 0 && (
-                    <div className="grid gap-2 sm:grid-cols-2">
-                      {availableCourseTeachers.map((teacher) => (
-                        <div
-                          key={teacher.id}
-                          className="flex min-w-0 items-center gap-3 rounded-xl border border-line bg-white p-3"
-                        >
-                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue/10 text-blue">
-                            <UserPlus size={17} />
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <p className="truncate text-[12.5px] font-semibold text-ink">
-                              {teacher.name}
-                            </p>
-                            <p className="truncate text-[11px] text-muted">
-                              {[teacher.subject, teacher.teachingLanguage]
-                                .filter(Boolean)
-                                .join(" · ")}
-                            </p>
-                            {teacher.matchedAvailability && (
-                              <p className="mt-1 truncate text-[11px] font-medium text-sageDeep">
-                                {teacher.matchedAvailability}
-                              </p>
-                            )}
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() =>
-                              void assignAvailableCourseTeacher(teacher)
-                            }
-                            disabled={Boolean(assigningCourseTeacherId)}
-                            className="shrink-0 rounded-full border border-blue/20 bg-blue/5 px-3 py-1.5 text-[11px] font-semibold text-blue hover:bg-blue hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
-                          >
-                            {assigningCourseTeacherId === teacher.id
-                              ? lang === "fa"
-                                ? "در حال اختصاص..."
-                                : "Assigning..."
-                              : lang === "fa"
-                                ? "اختصاص"
-                                : "Assign"}
-                          </button>
-                        </div>
-                      ))}
+                  <div className="space-y-3 rounded-xl border border-dashed border-blue/30 bg-white p-3">
+                    <div>
+                      <h5 className="text-[12.5px] font-semibold text-ink">
+                        {lang === "fa"
+                          ? "افزودن گروه با زمان جدید"
+                          : "Add a class at another time"}
+                      </h5>
+                      <p className="mt-1 text-[11px] text-muted">
+                        {lang === "fa"
+                          ? "زمان آزاد معلم را انتخاب کنید؛ سپس معلم‌های قابل‌تخصیص برای همان بازه نمایش داده می‌شوند."
+                          : "Choose a time when a teacher is available, then view teachers who can take this group."}
+                      </p>
                     </div>
-                  )}
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <label className="space-y-1 text-[11px] font-semibold text-muted">
+                        {lang === "fa" ? "شروع" : "Starts"}
+                        <input
+                          type="datetime-local"
+                          value={additionalOffering.startsAt}
+                          onChange={(event) =>
+                            setAdditionalOffering((current) => ({
+                              ...current,
+                              startsAt: event.target.value,
+                            }))
+                          }
+                          className="w-full rounded-lg border border-line bg-white px-2.5 py-2 text-[12px] text-ink"
+                        />
+                      </label>
+                      <label className="space-y-1 text-[11px] font-semibold text-muted">
+                        {lang === "fa" ? "پایان" : "Ends"}
+                        <input
+                          type="datetime-local"
+                          value={additionalOffering.endsAt}
+                          onChange={(event) =>
+                            setAdditionalOffering((current) => ({
+                              ...current,
+                              endsAt: event.target.value,
+                            }))
+                          }
+                          className="w-full rounded-lg border border-line bg-white px-2.5 py-2 text-[12px] text-ink"
+                        />
+                      </label>
+                      <label className="space-y-1 text-[11px] font-semibold text-muted">
+                        {lang === "fa" ? "نوع کلاس" : "Class type"}
+                        <select
+                          value={additionalOffering.classType}
+                          onChange={(event) => {
+                            const classType = event.target.value as ClassType;
+                            setAdditionalOffering((current) => ({
+                              ...current,
+                              classType,
+                              capacity:
+                                classType === "semi_private"
+                                  ? 4
+                                  : current.capacity,
+                            }));
+                          }}
+                          className="w-full rounded-lg border border-line bg-white px-2.5 py-2 text-[12px] text-ink"
+                        >
+                          <option value="public">
+                            {lang === "fa" ? "عمومی" : "Public"}
+                          </option>
+                          <option value="semi_private">
+                            {lang === "fa"
+                              ? "نیمه‌خصوصی · ۴ نفر"
+                              : "Semi-private · 4 seats"}
+                          </option>
+                          <option value="private">
+                            {lang === "fa" ? "خصوصی" : "Private"}
+                          </option>
+                        </select>
+                      </label>
+                      <label className="space-y-1 text-[11px] font-semibold text-muted">
+                        {lang === "fa" ? "ظرفیت" : "Capacity"}
+                        <input
+                          type="number"
+                          min="1"
+                          max={
+                            additionalOffering.classType === "semi_private"
+                              ? 4
+                              : undefined
+                          }
+                          value={additionalOffering.capacity}
+                          disabled={
+                            additionalOffering.classType === "semi_private"
+                          }
+                          onChange={(event) =>
+                            setAdditionalOffering((current) => ({
+                              ...current,
+                              capacity: Number(event.target.value),
+                            }))
+                          }
+                          className="w-full rounded-lg border border-line bg-white px-2.5 py-2 text-[12px] text-ink disabled:bg-cream"
+                        />
+                      </label>
+                      <label className="space-y-1 text-[11px] font-semibold text-muted sm:col-span-2">
+                        {lang === "fa" ? "قیمت این گروه" : "This group's price"}
+                        <input
+                          type="number"
+                          min="0"
+                          value={additionalOffering.basePrice}
+                          onChange={(event) =>
+                            setAdditionalOffering((current) => ({
+                              ...current,
+                              basePrice: Number(event.target.value),
+                            }))
+                          }
+                          className="w-full rounded-lg border border-line bg-white px-2.5 py-2 text-[12px] text-ink"
+                        />
+                      </label>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => void createAdditionalOffering()}
+                      disabled={creatingOffering}
+                      className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-blue px-4 py-2.5 text-[12px] font-semibold text-white hover:bg-blueDeep disabled:opacity-60 sm:w-auto"
+                    >
+                      <Plus size={14} />
+                      {creatingOffering
+                        ? lang === "fa"
+                          ? "در حال ساخت گروه..."
+                          : "Creating group..."
+                        : lang === "fa"
+                          ? "ساخت گروه و بررسی معلم‌های آزاد"
+                          : "Create group and find available teachers"}
+                    </button>
+                  </div>
                 </section>
               )}
               <div>

@@ -183,7 +183,7 @@ function studentSlotsToBookingClasses(
       teacher: {
         id: item.teacherId,
         name: item.teacherName,
-        avatar: "/images/Teacher.jpeg",
+        avatar: item.teacherAvatarUrl || "/images/Teacher.jpeg",
         rating: 4.8,
       },
       course: {

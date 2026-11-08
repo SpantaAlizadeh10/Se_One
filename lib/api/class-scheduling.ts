@@ -42,11 +42,13 @@ export type TeacherClassAssignment = {
   status: TeacherAssignmentStatus;
   selectedAt: string;
   teacherName?: string;
+  teacherAvatarUrl?: string;
 };
 
 export type AdminAssignableTeacher = {
   id: string;
   name: string;
+  avatarUrl?: string;
   teachingLanguage: string;
   subject: string;
   matchedAvailability: string;
@@ -73,6 +75,7 @@ export type StudentAvailableClass = AdminClassSlot & {
   assignmentId: string;
   teacherId: string;
   teacherName: string;
+  teacherAvatarUrl?: string;
   enrolled: boolean;
   classGroupId?: string;
 };
@@ -182,6 +185,14 @@ function normalizeClassSlot(raw: unknown): AdminClassSlot {
             teacherId,
             teacherName:
               text(assignment, "teacherName", "TeacherName") || undefined,
+            teacherAvatarUrl:
+              text(
+                assignment,
+                "teacherAvatarUrl",
+                "TeacherAvatarUrl",
+                "avatarUrl",
+                "AvatarUrl",
+              ) || undefined,
             status,
             selectedAt: text(
               assignment,
@@ -261,12 +272,27 @@ function normalizeTeacherClass(raw: unknown): TeacherClassSlot {
 
 function normalizeStudentClass(raw: unknown): StudentAvailableClass {
   const record = (raw ?? {}) as ApiRecord;
+  const teacher = (value(record, "teacher", "Teacher") ?? {}) as ApiRecord;
   const slot = normalizeClassSlot(value(record, "slot", "Slot") ?? record);
   return {
     ...slot,
     assignmentId: text(record, "assignmentId", "AssignmentId"),
-    teacherId: text(record, "teacherId", "TeacherId"),
-    teacherName: text(record, "teacherName", "TeacherName"),
+    teacherId:
+      text(record, "teacherId", "TeacherId") ||
+      text(teacher, "id", "Id", "teacherId", "TeacherId"),
+    teacherName:
+      text(record, "teacherName", "TeacherName") ||
+      text(teacher, "name", "Name", "fullName", "FullName"),
+    teacherAvatarUrl:
+      text(
+        record,
+        "teacherAvatarUrl",
+        "TeacherAvatarUrl",
+        "avatarUrl",
+        "AvatarUrl",
+      ) ||
+      text(teacher, "avatarUrl", "AvatarUrl", "avatar", "Avatar") ||
+      undefined,
     enrolled: Boolean(
       value(record, "enrolled", "Enrolled", "isEnrolled", "IsEnrolled"),
     ),
@@ -434,6 +460,9 @@ export async function listAvailableTeachersForClass(
       return {
         id,
         name,
+        avatarUrl:
+          text(record, "avatarUrl", "AvatarUrl", "imageUrl", "ImageUrl") ||
+          undefined,
         teachingLanguage: text(
           record,
           "teachingLanguage",
