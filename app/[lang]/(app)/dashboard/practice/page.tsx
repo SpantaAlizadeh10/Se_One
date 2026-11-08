@@ -10,10 +10,28 @@ import type { PracticeSkill } from "@/components/practice/SkillGrid";
 
 export const dynamic = "force-dynamic";
 
+const skillLabels: Record<PracticeSkill, { fa: string; en: string }> = {
+  all: { fa: "همه مهارت‌ها", en: "all skills" },
+  speaking: { fa: "مکالمه", en: "speaking" },
+  listening: { fa: "شنیداری", en: "listening" },
+  reading: { fa: "خواندن", en: "reading" },
+  writing: { fa: "نوشتن", en: "writing" },
+  grammar: { fa: "گرامر", en: "grammar" },
+  vocabulary: { fa: "واژگان", en: "vocabulary" },
+};
+
 export default function PracticePage() {
   const { lang } = useLanguage();
   const { isChildMode } = useStudentExperience();
   const [activeSkill, setActiveSkill] = useState<PracticeSkill>("all");
+  const selectSkill = (skill: PracticeSkill) => {
+    setActiveSkill(skill);
+    requestAnimationFrame(() => {
+      document
+        .getElementById("practice-exercises")
+        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  };
   return (
     <div>
       <header className="mb-6 rounded-2xl bg-gradient-to-br from-[#182163] via-[#273A8A] to-[#3865B5] p-5 text-white shadow-card sm:p-7">
@@ -57,15 +75,19 @@ export default function PracticePage() {
       <SkillGrid
         lang={lang}
         activeSkill={activeSkill}
-        onSelect={setActiveSkill}
+        onSelect={selectSkill}
       />
 
-      <div className="flex items-baseline justify-between mb-4">
-        <h2 className="text-[21px] font-semibold relative inline-block after:content-[''] after:absolute after:left-0 after:right-0 after:-bottom-1.5 after:h-[3px] after:bg-gold after:rounded">
-          {lang === "fa" ? "تمرین‌های قابل انجام" : "Available exercises"}
-        </h2>
-      </div>
-      <PracticeList skill={activeSkill} />
+      <section id="practice-exercises" className="scroll-mt-6">
+        <div className="flex items-baseline justify-between mb-4">
+          <h2 className="text-[21px] font-semibold relative inline-block after:content-[''] after:absolute after:left-0 after:right-0 after:-bottom-1.5 after:h-[3px] after:bg-gold after:rounded">
+            {lang === "fa"
+              ? `تمرین‌های ${skillLabels[activeSkill].fa}`
+              : `${skillLabels[activeSkill].en} exercises`}
+          </h2>
+        </div>
+        <PracticeList skill={activeSkill} />
+      </section>
     </div>
   );
 }
