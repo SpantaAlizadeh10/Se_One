@@ -274,7 +274,25 @@ export type CreateClassSlotInput = Pick<
   | "teacherRole"
   | "startsAt"
   | "endsAt"
-> & { capacity?: number; courseId?: string; timeZone?: string };
+> & {
+  capacity?: number;
+  courseId?: string;
+  timeZone?: string;
+  term?: string;
+  language?: string;
+  basePrice?: number;
+  currency?: string;
+};
+
+export type AdminClassEnrollment = {
+  id: string;
+  assignmentId: string;
+  studentId: string;
+  studentName: string;
+  studentEmail: string;
+  status: StudentEnrollmentStatus;
+  enrolledAt: string;
+};
 
 /** Admin-only list. The API computes seat counts from active enrollments. */
 export async function listAdminClassSlots(): Promise<AdminClassSlot[]> {
@@ -293,6 +311,91 @@ export async function createAdminClassSlot(
     body: { ...input, capacity },
   });
   return normalizeClassSlot(data);
+}
+
+/** Admin-only update of a scheduled class and its capacity/pricing. */
+export async function updateAdminClassSlot(
+  slotId: string,
+  input: Partial<CreateClassSlotInput>,
+): Promise<AdminClassSlot> {
+  const data = await apiFetch<unknown>(
+    `/api/admin/class-slots/${encodeURIComponent(slotId)}`,
+    {
+      method: "PATCH",
+      body: input,
+    },
+  );
+  return normalizeClassSlot(data);
+}
+
+function normalizeAdminClassEnrollment(raw: unknown): AdminClassEnrollment {
+  const record = (raw ?? {}) as ApiRecord;
+  return {
+    id: text(record, "id", "Id", "enrollmentId", "EnrollmentId"),
+    assignmentId: text(record, "assignmentId", "AssignmentId"),
+    studentId: text(record, "studentId", "StudentId"),
+    studentName: text(record, "studentName", "StudentName", "fullName", "FullName"),
+    studentEmail: text(record, "studentEmail", "StudentEmail", "email", "Email"),
+    status: (text(record, "status", "Status") ||
+      "active") as StudentEnrollmentStatus,
+    enrolledAt: text(record, "enrolledAt", "EnrolledAt"),
+  };
+}
+
+/** Admin-only roster for a scheduled class. */
+export async function listAdminClassEnrollments(
+  slotId: string,
+): Promise<AdminClassEnrollment[]> {
+  return unwrapList(
+    await apiFetch<unknown>(
+      `/api/admin/class-slots/${encodeURIComponent(slotId)}/enrollments`,
+      { cache: "no-store" },
+    ),
+  ).map(normalizeAdminClassEnrollment);
+}
+
+/** Admin-only add of a student to a scheduled class. */
+export async function addAdminStudentToClass(
+  slotId: string,
+  studentId: string,
+): Promise<AdminClassEnrollment> {
+  const data = await apiFetch<unknown>(
+    `/api/admin/class-slots/${encodeURIComponent(slotId)}/enrollments`,
+    {
+      method: "POST",
+      body: { studentId },
+    },
+  );
+  return normalizeAdminClassEnrollment(data);
+}
+
+/** Admin-only atomic transfer that preserves the student's active enrollment. */
+export async function moveAdminClassEnrollment(
+  enrollmentId: string,
+  targetSlotId: string,
+): Promise<AdminClassEnrollment> {
+  const data = await apiFetch<unknown>(
+    `/api/admin/class-enrollments/${encodeURIComponent(enrollmentId)}/move`,
+    {
+      method: "POST",
+      body: { targetSlotId },
+    },
+  );
+  return normalizeAdminClassEnrollment(data);
+}
+
+/** Admin-only atomic teacher replacement for an existing scheduled class. */
+export async function replaceAdminClassTeacher(
+  slotId: string,
+  teacherId: string | null,
+): Promise<void> {
+  await apiFetch(
+    `/api/admin/class-slots/${encodeURIComponent(slotId)}/teacher`,
+    {
+      method: "PUT",
+      body: { teacherId },
+    },
+  );
 }
 
 /** Admin-only list of approved teachers whose saved availability matches a class. */

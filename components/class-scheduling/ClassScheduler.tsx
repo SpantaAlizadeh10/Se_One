@@ -1,19 +1,39 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CalendarDays, Clock3, Users, Plus, CheckCircle2 } from "lucide-react";
+import {
+  ArrowRightLeft,
+  CalendarDays,
+  CheckCircle2,
+  Clock3,
+  Pencil,
+  Plus,
+  Save,
+  Search,
+  Users,
+  UserPlus,
+  X,
+} from "lucide-react";
 import DatePicker from "react-multi-date-picker";
 import persian from "react-date-object/calendars/persian";
 import persian_fa from "react-date-object/locales/persian_fa";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 import { isApiConfigured } from "@/lib/is-api-configured";
+import { listAdminStudents, type AdminStudent } from "@/lib/api/admin";
 import {
+  addAdminStudentToClass,
   createAdminClassSlot,
   assignTeacherToClassSlot,
+  listAdminClassEnrollments,
   listAvailableTeachersForClass,
   listAdminClassSlots,
+  moveAdminClassEnrollment,
+  replaceAdminClassTeacher,
   reviewAdminTeacherClassAssignment,
+  toDateTimeLocalValue,
+  updateAdminClassSlot,
   type AdminClassSlot,
+  type AdminClassEnrollment,
   type AdminAssignableTeacher,
   type CreateClassSlotInput,
   type TeacherClassAssignment,
@@ -39,6 +59,19 @@ type DisplayClassSlot = AdminClassSlot & {
   courseTitle?: string;
   isDemo?: boolean;
   teacherAssignments?: (TeacherClassAssignment & { isDemo?: boolean })[];
+};
+
+type SlotEditDraft = {
+  title: string;
+  description: string;
+  level: string;
+  classType: "public" | "private";
+  capacity: number;
+  teacherRole: string;
+  startsAt: string;
+  endsAt: string;
+  basePrice: number;
+  currency: string;
 };
 
 function localDateTime(date: Date, time: string) {
@@ -77,6 +110,24 @@ export default function ClassScheduler() {
   const [error, setError] = useState("");
   const [slots, setSlots] = useState<DisplayClassSlot[]>([]);
   const [loading, setLoading] = useState(true);
+  const [editingSlotId, setEditingSlotId] = useState("");
+  const [editDraft, setEditDraft] = useState<SlotEditDraft | null>(null);
+  const [savingEdit, setSavingEdit] = useState(false);
+  const [selectedEditTeacher, setSelectedEditTeacher] = useState("");
+  const [changingTeacher, setChangingTeacher] = useState(false);
+  const [rosterSlotId, setRosterSlotId] = useState("");
+  const [classRosters, setClassRosters] = useState<
+    Record<string, AdminClassEnrollment[]>
+  >({});
+  const [loadingRoster, setLoadingRoster] = useState(false);
+  const [studentSearch, setStudentSearch] = useState("");
+  const [studentCandidates, setStudentCandidates] = useState<AdminStudent[]>([]);
+  const [selectedStudentId, setSelectedStudentId] = useState("");
+  const [addingStudent, setAddingStudent] = useState(false);
+  const [studentTargetByEnrollment, setStudentTargetByEnrollment] = useState<
+    Record<string, string>
+  >({});
+  const [movingEnrollmentId, setMovingEnrollmentId] = useState("");
 
   const refresh = async () => {
     const loadedSlots = isApiConfigured() ? await listAdminClassSlots() : [];
@@ -158,6 +209,236 @@ export default function ClassScheduler() {
     value: string | number,
   ) => {
     setSlot((current) => ({ ...current, [field]: value }));
+  };
+
+  const beginEdit = async (slotItem: DisplayClassSlot) => {
+    setEditingSlotId(slotItem.id);
+    setError("");
+    setEditDraft({
+      title: slotItem.title,
+      description: slotItem.description,
+      level: slotItem.level ?? "",
+      classType: slotItem.classType,
+      capacity: slotItem.capacity,
+      teacherRole: slotItem.teacherRole,
+      startsAt: toDateTimeLocalValue(slotItem.startsAt),
+      endsAt: toDateTimeLocalValue(slotItem.endsAt),
+      basePrice: slotItem.basePrice,
+      currency: slotItem.currency || "IRR",
+    });
+    const activeTeacher = slotItem.teacherAssignments?.find(
+      (assignment) => assignment.status === "confirmed",
+    );
+    setSelectedEditTeacher(activeTeacher?.teacherId ?? "");
+    try {
+      const teachers = await listAvailableTeachersForClass(slotItem.id);
+      setAvailableTeachers((current) => ({ ...current, [slotItem.id]: teachers }));
+    } catch (reason) {
+      setError(
+        reason instanceof Error
+          ? reason.message
+          : fa
+            ? "فهرست مدرسان واجدشرایط دریافت نشد."
+            : "Could not load eligible teachers.",
+      );
+    }
+  };
+
+  const saveClassEdit = async (slotItem: DisplayClassSlot) => {
+    if (!editDraft) return;
+    if (
+      !editDraft.title.trim() ||
+      !editDraft.level.trim() ||
+      !editDraft.startsAt ||
+      !editDraft.endsAt ||
+      !Number.isInteger(editDraft.capacity) ||
+      editDraft.capacity < 1 ||
+      editDraft.basePrice < 0
+    ) {
+      setError(
+        fa
+          ? "اطلاعات کلاس، ظرفیت و قیمت را معتبر وارد کنید."
+          : "Enter valid class details, capacity, and price.",
+      );
+      return;
+    }
+    if (new Date(editDraft.endsAt) <= new Date(editDraft.startsAt)) {
+      setError(
+        fa
+          ? "زمان پایان باید بعد از زمان شروع باشد."
+          : "End time must be after start time.",
+      );
+      return;
+    }
+
+    setSavingEdit(true);
+    setError("");
+    setMessage("");
+    try {
+      await updateAdminClassSlot(slotItem.id, {
+        title: editDraft.title.trim(),
+        description: editDraft.description.trim(),
+        level: editDraft.level,
+        classType: editDraft.classType,
+        capacity: editDraft.capacity,
+        teacherRole: editDraft.teacherRole,
+        startsAt: new Date(editDraft.startsAt).toISOString(),
+        endsAt: new Date(editDraft.endsAt).toISOString(),
+        basePrice: editDraft.basePrice,
+        currency: editDraft.currency,
+        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      });
+      await refresh();
+      setEditingSlotId("");
+      setEditDraft(null);
+      setMessage(
+        fa ? "اطلاعات کلاس ذخیره شد." : "Class details were saved.",
+      );
+    } catch (reason) {
+      setError(
+        reason instanceof Error
+          ? reason.message
+          : fa
+            ? "ویرایش کلاس انجام نشد."
+            : "Could not update the class.",
+      );
+    } finally {
+      setSavingEdit(false);
+    }
+  };
+
+  const saveClassTeacher = async (slotItem: DisplayClassSlot) => {
+    setChangingTeacher(true);
+    setError("");
+    try {
+      await replaceAdminClassTeacher(
+        slotItem.id,
+        selectedEditTeacher || null,
+      );
+      await refresh();
+      setMessage(
+        fa ? "مدرس کلاس به‌روزرسانی شد." : "Class teacher was updated.",
+      );
+    } catch (reason) {
+      setError(
+        reason instanceof Error
+          ? reason.message
+          : fa
+            ? "تغییر مدرس انجام نشد."
+            : "Could not change the class teacher.",
+      );
+    } finally {
+      setChangingTeacher(false);
+    }
+  };
+
+  const openRoster = async (slotItem: DisplayClassSlot) => {
+    setRosterSlotId(slotItem.id);
+    setLoadingRoster(true);
+    setError("");
+    try {
+      const enrollments = await listAdminClassEnrollments(slotItem.id);
+      setClassRosters((current) => ({
+        ...current,
+        [slotItem.id]: enrollments,
+      }));
+      const students = await listAdminStudents({ page: 1, pageSize: 20 });
+      setStudentCandidates(students.items);
+      setSelectedStudentId("");
+    } catch (reason) {
+      setError(
+        reason instanceof Error
+          ? reason.message
+          : fa
+            ? "فهرست دانش‌آموزان کلاس دریافت نشد."
+            : "Could not load the class roster.",
+      );
+    } finally {
+      setLoadingRoster(false);
+    }
+  };
+
+  const searchStudents = async () => {
+    setLoadingRoster(true);
+    setError("");
+    try {
+      const result = await listAdminStudents({
+        page: 1,
+        pageSize: 20,
+        search: studentSearch.trim() || undefined,
+      });
+      setStudentCandidates(result.items);
+      setSelectedStudentId("");
+    } catch (reason) {
+      setError(
+        reason instanceof Error
+          ? reason.message
+          : fa
+            ? "جستجوی دانش‌آموز ناموفق بود."
+            : "Could not search students.",
+      );
+    } finally {
+      setLoadingRoster(false);
+    }
+  };
+
+  const addStudentToSlot = async (slotItem: DisplayClassSlot) => {
+    if (!selectedStudentId) return;
+    setAddingStudent(true);
+    setError("");
+    try {
+      await addAdminStudentToClass(slotItem.id, selectedStudentId);
+      await openRoster(slotItem);
+      await refresh();
+      setMessage(
+        fa ? "دانش‌آموز به کلاس اضافه شد." : "Student added to the class.",
+      );
+    } catch (reason) {
+      setError(
+        reason instanceof Error
+          ? reason.message
+          : fa
+            ? "افزودن دانش‌آموز انجام نشد."
+            : "Could not add the student.",
+      );
+    } finally {
+      setAddingStudent(false);
+    }
+  };
+
+  const moveStudent = async (
+    enrollment: AdminClassEnrollment,
+  ) => {
+    const targetSlotId = studentTargetByEnrollment[enrollment.id];
+    if (!targetSlotId) return;
+    setMovingEnrollmentId(enrollment.id);
+    setError("");
+    try {
+      await moveAdminClassEnrollment(enrollment.id, targetSlotId);
+      if (rosterSlotId) {
+        const updatedRoster = await listAdminClassEnrollments(rosterSlotId);
+        setClassRosters((current) => ({
+          ...current,
+          [rosterSlotId]: updatedRoster,
+        }));
+      }
+      await refresh();
+      setMessage(
+        fa
+          ? "دانش‌آموز با موفقیت به کلاس دیگر منتقل شد."
+          : "Student was moved to the selected class.",
+      );
+    } catch (reason) {
+      setError(
+        reason instanceof Error
+          ? reason.message
+          : fa
+            ? "انتقال دانش‌آموز انجام نشد."
+            : "Could not move the student.",
+      );
+    } finally {
+      setMovingEnrollmentId("");
+    }
   };
 
   const reviewAvailability = async (slotItem: DisplayClassSlot) => {
@@ -543,6 +824,432 @@ export default function ClassScheduler() {
                 <p className="mb-3 text-[12.5px] text-muted">
                   {slotItem.description}
                 </p>
+
+                {!slotItem.isDemo && (
+                  <>
+                    <div className="mb-3 flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          editingSlotId === slotItem.id
+                            ? (setEditingSlotId(""), setEditDraft(null))
+                            : void beginEdit(slotItem)
+                        }
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-line bg-white px-3 py-2 text-[11px] font-semibold hover:border-blue hover:text-blue"
+                      >
+                        {editingSlotId === slotItem.id ? (
+                          <X size={14} />
+                        ) : (
+                          <Pencil size={14} />
+                        )}
+                        {editingSlotId === slotItem.id
+                          ? fa
+                            ? "بستن ویرایش"
+                            : "Close editor"
+                          : fa
+                            ? "ویرایش کلاس"
+                            : "Edit class"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          rosterSlotId === slotItem.id
+                            ? setRosterSlotId("")
+                            : void openRoster(slotItem)
+                        }
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-line bg-white px-3 py-2 text-[11px] font-semibold hover:border-blue hover:text-blue"
+                      >
+                        <Users size={14} />
+                        {rosterSlotId === slotItem.id
+                          ? fa
+                            ? "بستن فهرست"
+                            : "Close roster"
+                          : fa
+                            ? "مدیریت دانش‌آموزان"
+                            : "Manage students"}
+                      </button>
+                    </div>
+
+                    {editingSlotId === slotItem.id && editDraft && (
+                      <section className="mb-3 space-y-3 rounded-xl border border-blue/20 bg-white p-3">
+                        <div className="grid gap-3 sm:grid-cols-2">
+                          <label className="text-[11px] font-semibold text-muted">
+                            {fa ? "نام کلاس" : "Class name"}
+                            <input
+                              value={editDraft.title}
+                              onChange={(event) =>
+                                setEditDraft({
+                                  ...editDraft,
+                                  title: event.target.value,
+                                })
+                              }
+                              className="mt-1 w-full rounded-lg border border-line px-3 py-2 text-[12px] font-normal text-ink"
+                            />
+                          </label>
+                          <label className="text-[11px] font-semibold text-muted">
+                            {fa ? "سطح" : "Level"}
+                            <select
+                              value={editDraft.level}
+                              onChange={(event) =>
+                                setEditDraft({
+                                  ...editDraft,
+                                  level: event.target.value,
+                                })
+                              }
+                              className="mt-1 w-full rounded-lg border border-line px-3 py-2 text-[12px] font-normal text-ink"
+                            >
+                              {["A1", "A2", "B1", "B2", "C1", "C2"].map(
+                                (level) => (
+                                  <option key={level} value={level}>
+                                    {level}
+                                  </option>
+                                ),
+                              )}
+                            </select>
+                          </label>
+                          <label className="text-[11px] font-semibold text-muted">
+                            {fa ? "نوع کلاس" : "Class type"}
+                            <select
+                              value={editDraft.classType}
+                              onChange={(event) =>
+                                setEditDraft({
+                                  ...editDraft,
+                                  classType: event.target.value as
+                                    | "public"
+                                    | "private",
+                                })
+                              }
+                              className="mt-1 w-full rounded-lg border border-line px-3 py-2 text-[12px] font-normal text-ink"
+                            >
+                              <option value="public">
+                                {fa ? "عمومی" : "Public"}
+                              </option>
+                              <option value="private">
+                                {fa ? "خصوصی" : "Private"}
+                              </option>
+                            </select>
+                          </label>
+                          <label className="text-[11px] font-semibold text-muted">
+                            {fa ? "ظرفیت" : "Capacity"}
+                            <input
+                              type="number"
+                              min={Math.max(1, slotItem.enrolledCount)}
+                              step={1}
+                              value={editDraft.capacity}
+                              onChange={(event) =>
+                                setEditDraft({
+                                  ...editDraft,
+                                  capacity: Number(event.target.value),
+                                })
+                              }
+                              className="mt-1 w-full rounded-lg border border-line px-3 py-2 text-[12px] font-normal text-ink"
+                            />
+                          </label>
+                          <label className="text-[11px] font-semibold text-muted">
+                            {fa ? "قیمت" : "Price"}
+                            <input
+                              type="number"
+                              min={0}
+                              value={editDraft.basePrice}
+                              onChange={(event) =>
+                                setEditDraft({
+                                  ...editDraft,
+                                  basePrice: Number(event.target.value),
+                                })
+                              }
+                              className="mt-1 w-full rounded-lg border border-line px-3 py-2 text-[12px] font-normal text-ink"
+                            />
+                          </label>
+                          <label className="text-[11px] font-semibold text-muted">
+                            {fa ? "واحد پول" : "Currency"}
+                            <input
+                              value={editDraft.currency}
+                              onChange={(event) =>
+                                setEditDraft({
+                                  ...editDraft,
+                                  currency: event.target.value.toUpperCase(),
+                                })
+                              }
+                              className="mt-1 w-full rounded-lg border border-line px-3 py-2 text-[12px] font-normal text-ink"
+                            />
+                          </label>
+                          <label className="text-[11px] font-semibold text-muted">
+                            {fa ? "شروع" : "Starts at"}
+                            <input
+                              type="datetime-local"
+                              value={editDraft.startsAt}
+                              onChange={(event) =>
+                                setEditDraft({
+                                  ...editDraft,
+                                  startsAt: event.target.value,
+                                })
+                              }
+                              className="mt-1 w-full rounded-lg border border-line px-3 py-2 text-[12px] font-normal text-ink"
+                            />
+                          </label>
+                          <label className="text-[11px] font-semibold text-muted">
+                            {fa ? "پایان" : "Ends at"}
+                            <input
+                              type="datetime-local"
+                              value={editDraft.endsAt}
+                              onChange={(event) =>
+                                setEditDraft({
+                                  ...editDraft,
+                                  endsAt: event.target.value,
+                                })
+                              }
+                              className="mt-1 w-full rounded-lg border border-line px-3 py-2 text-[12px] font-normal text-ink"
+                            />
+                          </label>
+                          <label className="text-[11px] font-semibold text-muted sm:col-span-2">
+                            {fa ? "توضیحات" : "Description"}
+                            <textarea
+                              value={editDraft.description}
+                              onChange={(event) =>
+                                setEditDraft({
+                                  ...editDraft,
+                                  description: event.target.value,
+                                })
+                              }
+                              className="mt-1 min-h-20 w-full rounded-lg border border-line px-3 py-2 text-[12px] font-normal text-ink"
+                            />
+                          </label>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          <button
+                            type="button"
+                            onClick={() => void saveClassEdit(slotItem)}
+                            disabled={savingEdit}
+                            className="inline-flex items-center gap-1.5 rounded-lg bg-blue px-3 py-2 text-[11px] font-semibold text-white disabled:opacity-60"
+                          >
+                            <Save size={14} />
+                            {savingEdit
+                              ? fa
+                                ? "در حال ذخیره…"
+                                : "Saving…"
+                              : fa
+                                ? "ذخیره تغییرات"
+                                : "Save changes"}
+                          </button>
+                          <select
+                            value={selectedEditTeacher}
+                            onChange={(event) =>
+                              setSelectedEditTeacher(event.target.value)
+                            }
+                            aria-label={fa ? "مدرس کلاس" : "Class teacher"}
+                            className="min-w-48 flex-1 rounded-lg border border-line px-3 py-2 text-[11px]"
+                          >
+                            <option value="">
+                              {fa ? "بدون مدرس" : "No teacher"}
+                            </option>
+                            {slotItem.teacherAssignments
+                              ?.filter(
+                                (assignment) =>
+                                  assignment.status === "confirmed",
+                              )
+                              .map((assignment) => (
+                                <option
+                                  key={`current-${assignment.teacherId}`}
+                                  value={assignment.teacherId}
+                                >
+                                  {assignment.teacherName ||
+                                    assignment.teacherId}
+                                </option>
+                              ))}
+                            {(availableTeachers[slotItem.id] ?? [])
+                              .filter(
+                                (teacher) =>
+                                  !slotItem.teacherAssignments?.some(
+                                    (assignment) =>
+                                      assignment.teacherId === teacher.id,
+                                  ),
+                              )
+                              .map((teacher) => (
+                                <option key={teacher.id} value={teacher.id}>
+                                  {teacher.name}
+                                </option>
+                              ))}
+                          </select>
+                          <button
+                            type="button"
+                            onClick={() => void saveClassTeacher(slotItem)}
+                            disabled={changingTeacher}
+                            className="rounded-lg border border-line px-3 py-2 text-[11px] font-semibold disabled:opacity-60"
+                          >
+                            {changingTeacher
+                              ? fa
+                                ? "در حال تغییر…"
+                                : "Updating…"
+                              : fa
+                                ? "ثبت مدرس"
+                                : "Update teacher"}
+                          </button>
+                        </div>
+                      </section>
+                    )}
+
+                    {rosterSlotId === slotItem.id && (
+                      <section className="mb-3 space-y-3 rounded-xl border border-sage/50 bg-white p-3">
+                        <h5 className="m-0 text-[12px] font-semibold">
+                          {fa ? "دانش‌آموزان کلاس" : "Class students"}
+                        </h5>
+                        {loadingRoster ? (
+                          <p className="m-0 text-[11px] text-muted">
+                            {fa ? "در حال بارگذاری…" : "Loading…"}
+                          </p>
+                        ) : (
+                          <>
+                            <div className="space-y-2">
+                              {(classRosters[slotItem.id] ?? []).map(
+                                (enrollment) => (
+                                  <div
+                                    key={enrollment.id}
+                                    className="flex flex-wrap items-center gap-2 rounded-lg border border-line p-2"
+                                  >
+                                    <div className="min-w-0 flex-1">
+                                      <p className="m-0 truncate text-[11px] font-semibold">
+                                        {enrollment.studentName ||
+                                          enrollment.studentEmail ||
+                                          enrollment.studentId}
+                                      </p>
+                                      <p className="m-0 text-[10px] text-muted">
+                                        {enrollment.studentEmail}
+                                      </p>
+                                    </div>
+                                    <select
+                                      value={
+                                        studentTargetByEnrollment[
+                                          enrollment.id
+                                        ] ?? ""
+                                      }
+                                      onChange={(event) =>
+                                        setStudentTargetByEnrollment(
+                                          (current) => ({
+                                            ...current,
+                                            [enrollment.id]:
+                                              event.target.value,
+                                          }),
+                                        )
+                                      }
+                                      aria-label={
+                                        fa
+                                          ? "انتخاب کلاس مقصد"
+                                          : "Select destination class"
+                                      }
+                                      className="max-w-48 rounded-lg border border-line px-2 py-1.5 text-[10px]"
+                                    >
+                                      <option value="">
+                                        {fa ? "انتقال به کلاس…" : "Move to…"}
+                                      </option>
+                                      {slots
+                                        .filter(
+                                          (target) =>
+                                            target.id !== slotItem.id &&
+                                            !target.isDemo &&
+                                            target.status === "active",
+                                        )
+                                        .map((target) => (
+                                          <option
+                                            key={target.id}
+                                            value={target.id}
+                                          >
+                                            {target.title} ·{" "}
+                                            {target.remainingSeats}{" "}
+                                            {fa ? "ظرفیت" : "seats"}
+                                          </option>
+                                        ))}
+                                    </select>
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        void moveStudent(enrollment)
+                                      }
+                                      disabled={
+                                        movingEnrollmentId === enrollment.id ||
+                                        !studentTargetByEnrollment[
+                                          enrollment.id
+                                        ]
+                                      }
+                                      className="inline-flex items-center gap-1 rounded-lg border border-line px-2 py-1.5 text-[10px] font-semibold disabled:opacity-50"
+                                    >
+                                      <ArrowRightLeft size={12} />
+                                      {fa ? "انتقال" : "Move"}
+                                    </button>
+                                  </div>
+                                ),
+                              )}
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                              <input
+                                value={studentSearch}
+                                onChange={(event) =>
+                                  setStudentSearch(event.target.value)
+                                }
+                                placeholder={
+                                  fa
+                                    ? "جستجوی نام یا ایمیل دانش‌آموز"
+                                    : "Search student name or email"
+                                }
+                                className="min-w-48 flex-1 rounded-lg border border-line px-3 py-2 text-[11px]"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => void searchStudents()}
+                                className="inline-flex items-center gap-1 rounded-lg border border-line px-3 py-2 text-[11px] font-semibold"
+                              >
+                                <Search size={13} />
+                                {fa ? "جستجو" : "Search"}
+                              </button>
+                              <select
+                                value={selectedStudentId}
+                                onChange={(event) =>
+                                  setSelectedStudentId(event.target.value)
+                                }
+                                aria-label={
+                                  fa
+                                    ? "انتخاب دانش‌آموز برای افزودن"
+                                    : "Select student to add"
+                                }
+                                className="min-w-48 flex-1 rounded-lg border border-line px-3 py-2 text-[11px]"
+                              >
+                                <option value="">
+                                  {fa
+                                    ? "انتخاب دانش‌آموز"
+                                    : "Select a student"}
+                                </option>
+                                {studentCandidates
+                                  .filter(
+                                    (student) =>
+                                      !classRosters[slotItem.id]?.some(
+                                        (enrollment) =>
+                                          enrollment.studentId === student.id,
+                                      ),
+                                  )
+                                  .map((student) => (
+                                    <option
+                                      key={student.id}
+                                      value={student.id}
+                                    >
+                                      {student.fullName} · {student.email}
+                                    </option>
+                                  ))}
+                              </select>
+                              <button
+                                type="button"
+                                onClick={() => void addStudentToSlot(slotItem)}
+                                disabled={addingStudent || !selectedStudentId}
+                                className="inline-flex items-center gap-1 rounded-lg bg-blue px-3 py-2 text-[11px] font-semibold text-white disabled:opacity-50"
+                              >
+                                <UserPlus size={13} />
+                                {fa ? "افزودن" : "Add"}
+                              </button>
+                            </div>
+                          </>
+                        )}
+                      </section>
+                    )}
+                  </>
+                )}
 
                 <div className="mb-3 space-y-2">
                   {(slotItem.teacherAssignments ?? []).length === 0 ? (

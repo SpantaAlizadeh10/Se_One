@@ -8,6 +8,7 @@ import {
   Users,
   Star,
   Filter,
+  Search,
   Check,
   Share2,
   Copy,
@@ -99,6 +100,24 @@ type BookingClass = CourseClass & {
   isDemo?: boolean;
 };
 
+const CEFR_LEVELS = ["A1", "A2", "B1", "B2", "C1", "C2"];
+
+function normalizeLanguage(value?: string) {
+  const language = value?.trim().toLowerCase();
+  if (
+    ["en", "eng", "english", "انگلیسی"].includes(language ?? "") ||
+    language?.startsWith("english")
+  )
+    return "english";
+  if (
+    ["de", "ger", "german", "deutsch", "آلمانی"].includes(language ?? "") ||
+    language?.startsWith("german") ||
+    language?.startsWith("deutsch")
+  )
+    return "german";
+  return "";
+}
+
 function studentSlotsToBookingClasses(
   slots: StudentAvailableClass[],
   courseCatalog: Awaited<ReturnType<typeof getCourses>>,
@@ -112,11 +131,24 @@ function studentSlotsToBookingClasses(
   };
 
   return slots.map((item) => {
-    const course = courseCatalog.find((entry) => entry.id === item.courseId);
+    const course =
+      courseCatalog.find(
+        (entry) => entry.id.toLowerCase() === item.courseId?.toLowerCase(),
+      ) ??
+      courseCatalog.find(
+        (entry) =>
+          Boolean(item.courseTitle) &&
+          entry.title.trim().toLowerCase() === item.courseTitle?.trim().toLowerCase(),
+      );
     const start = new Date(item.startsAt);
     const end = new Date(item.endsAt);
     const price =
       item.basePrice || course?.basePrice || demoPrices[item.id] || 0;
+    const language =
+      normalizeLanguage(item.language) ||
+      normalizeLanguage(course?.language) ||
+      normalizeLanguage(item.teacherRole) ||
+      undefined;
     return {
       id: item.assignmentId,
       assignmentId: item.assignmentId,
@@ -125,7 +157,7 @@ function studentSlotsToBookingClasses(
       description: item.description,
       level: item.level || course?.level || "",
       term: item.term || course?.term,
-      language: item.language || course?.language,
+      language,
       subject: item.teacherRole,
       type: item.classType,
       maxCapacity: item.capacity,
@@ -186,13 +218,12 @@ export default function ClassSelectionPage() {
   const [success, setSuccess] = useState("");
 
   // Filters
-  const [teacherFilter, setTeacherFilter] = useState("");
+  const [teacherSearch, setTeacherSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<"all" | "public" | "private">(
     "all",
   );
   const [availableOnly, setAvailableOnly] = useState(false);
   const [levelFilter, setLevelFilter] = useState("");
-  const [subjectFilter, setSubjectFilter] = useState("");
   const [termFilter, setTermFilter] = useState("");
   const [languageFilter, setLanguageFilter] = useState("");
 
@@ -251,56 +282,47 @@ export default function ClassSelectionPage() {
     return unsubscribe;
   }, [loadClasses]);
 
-  const teachers = useMemo(
-    () =>
-      Array.from(
-        new Map(
-          classes.map((item) => [item.teacher.id, item.teacher.name] as const),
-        ),
-        ([id, name]) => ({ id, name }),
-      ),
-    [classes],
-  );
-
   const visibleClasses = useMemo(() => {
     return classes.filter(
       (item) =>
-        (!teacherFilter || item.teacher.id === teacherFilter) &&
+        (!teacherSearch ||
+          item.teacher.name
+            .toLocaleLowerCase()
+            .includes(teacherSearch.trim().toLocaleLowerCase())) &&
         (typeFilter === "all" || item.type === typeFilter) &&
         (!availableOnly || item.remainingCapacity > 0) &&
-        (!levelFilter || item.level === levelFilter) &&
+        (!levelFilter ||
+          item.level.trim().toLowerCase() === levelFilter.toLowerCase()) &&
         (!termFilter || item.term === termFilter) &&
-        (!languageFilter || item.language === languageFilter) &&
-        (!subjectFilter || item.subject === subjectFilter),
+        (!languageFilter ||
+          normalizeLanguage(item.language) === languageFilter),
     );
   }, [
     classes,
-    teacherFilter,
+    teacherSearch,
     typeFilter,
     availableOnly,
     levelFilter,
     termFilter,
     languageFilter,
-    subjectFilter,
   ]);
 
   const levels = useMemo(() => {
-    const unique = new Set(classes.map((c) => c.level));
-    return [...unique].filter(Boolean);
+    const additionalLevels = classes
+      .map((item) => item.level.trim())
+      .filter(Boolean)
+      .filter((level) => !CEFR_LEVELS.includes(level.toUpperCase()));
+    return [...CEFR_LEVELS, ...new Set(additionalLevels)];
   }, [classes]);
 
-  const subjects = useMemo(() => {
-    const unique = new Set(classes.map((c) => c.subject));
-    return [...unique].filter(Boolean);
-  }, [classes]);
   const terms = useMemo(
-    () =>
-      [...new Set(classes.map((item) => item.term).filter(Boolean))] as string[],
-    [classes],
-  );
-  const languages = useMemo(
-    () =>
-      [...new Set(classes.map((item) => item.language).filter(Boolean))] as string[],
+    () => [
+      ...new Set(
+        classes
+          .map((item) => item.term?.trim())
+          .filter((term): term is string => Boolean(term)),
+      ),
+    ],
     [classes],
   );
 
@@ -408,22 +430,24 @@ export default function ClassSelectionPage() {
           </span>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
           {/* Teacher Filter */}
           <label className="text-[12px] font-semibold text-muted">
             <span className="mb-1 block">{fa ? "معلم" : "Teacher"}</span>
-            <select
-              value={teacherFilter}
-              onChange={(e) => setTeacherFilter(e.target.value)}
-              className="w-full rounded-xl border border-line bg-white px-3 py-2.5 text-[13px] outline-none focus:border-blue"
-            >
-              <option value="">{fa ? "همه معلم‌ها" : "All teachers"}</option>
-              {teachers.map((teacher) => (
-                <option key={teacher.id} value={teacher.id}>
-                  {teacher.name}
-                </option>
-              ))}
-            </select>
+            <span className="relative block">
+              <Search
+                size={15}
+                aria-hidden="true"
+                className="pointer-events-none absolute start-3 top-1/2 -translate-y-1/2 text-muted"
+              />
+              <input
+                type="search"
+                value={teacherSearch}
+                onChange={(event) => setTeacherSearch(event.target.value)}
+                placeholder={fa ? "جستجوی نام مدرس" : "Search teacher"}
+                className="w-full rounded-xl border border-line bg-white py-2.5 pe-3 ps-9 text-[13px] outline-none focus:border-blue"
+              />
+            </span>
           </label>
 
           <label className="text-[12px] font-semibold text-muted">
@@ -450,11 +474,8 @@ export default function ClassSelectionPage() {
               className="w-full rounded-xl border border-line bg-white px-3 py-2.5 text-[13px] outline-none focus:border-blue"
             >
               <option value="">{fa ? "همه زبان‌ها" : "All languages"}</option>
-              {languages.map((language) => (
-                <option key={language} value={language}>
-                  {language}
-                </option>
-              ))}
+              <option value="english">{fa ? "انگلیسی" : "English"}</option>
+              <option value="german">{fa ? "آلمانی" : "German"}</option>
             </select>
           </label>
 
@@ -490,23 +511,6 @@ export default function ClassSelectionPage() {
               {levels.map((level) => (
                 <option key={level} value={level}>
                   {level}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          {/* Subject Filter */}
-          <label className="text-[12px] font-semibold text-muted">
-            <span className="mb-1 block">{fa ? "موضوع" : "Subject"}</span>
-            <select
-              value={subjectFilter}
-              onChange={(e) => setSubjectFilter(e.target.value)}
-              className="w-full rounded-xl border border-line bg-white px-3 py-2.5 text-[13px] outline-none focus:border-blue"
-            >
-              <option value="">{fa ? "همه موضوعات" : "All subjects"}</option>
-              {subjects.map((subject) => (
-                <option key={subject} value={subject}>
-                  {subject}
                 </option>
               ))}
             </select>
