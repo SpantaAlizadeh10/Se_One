@@ -5,6 +5,11 @@ import { ArrowRight, BookOpen, Users, Tag, Heart } from "lucide-react";
 import Link from "next/link";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 import { getWishlist, addToWishlist, removeFromWishlist } from "@/lib/api/wishlist";
+import {
+  formatCurrencyPrice,
+  getDiscountedPrice,
+  hasEffectiveDiscount,
+} from "@/lib/courses-pricing";
 import { useCourses } from "@/lib/use-courses";
 
 const gradients = [
@@ -206,25 +211,46 @@ export default function LatestCourses({
                 </div>
                 {(() => {
                   const discountPercent = course.discountPercent ?? 0;
-                  if (discountPercent > 0 && course.basePrice) {
-                    const discounted = Math.round(course.basePrice * (1 - discountPercent / 100));
+                  if (hasEffectiveDiscount(course.basePrice, discountPercent)) {
+                    const discounted = getDiscountedPrice(
+                      course.basePrice,
+                      discountPercent,
+                    );
                     return (
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="inline-flex items-center gap-1 bg-danger/10 text-danger text-[11px] font-bold px-2.5 py-1 rounded-full">
+                      <div className="flex min-h-10 flex-wrap items-center gap-x-2 gap-y-1.5">
+                        <span className="inline-flex items-center gap-1 rounded-full bg-danger/10 px-2.5 py-1 text-[10px] font-bold text-danger">
                           <Tag size={11} /> -{discountPercent}%
                         </span>
-                        <span className="text-[11px] text-muted line-through">
-                          {course.price}
+                        <span className="text-[11px] text-muted">
+                          {lang === "fa" ? "از" : "Was"}
                         </span>
-                        <span className="inline-block bg-goldSoft text-goldDeep text-[12px] font-bold px-3 py-1 rounded-full">
-                          {new Intl.NumberFormat(lang === "fa" ? "fa-IR" : "en-US", { style: "currency", currency: course.currency || (lang === "fa" ? "IRR" : "USD"), maximumFractionDigits: 0 }).format(discounted)}
+                        <span className="text-[11px] text-muted line-through decoration-danger/60">
+                          {formatCurrencyPrice(
+                            course.basePrice,
+                            course.currency,
+                            lang,
+                          )}
+                        </span>
+                        <span className="inline-flex items-center rounded-full bg-sage/70 px-3 py-1 text-[13px] font-bold text-sageDeep">
+                          {formatCurrencyPrice(
+                            discounted,
+                            course.currency,
+                            lang,
+                          )}
                         </span>
                       </div>
                     );
                   }
                   return (
-                    <span className="inline-block bg-goldSoft text-goldDeep text-[12px] font-bold px-3 py-1 rounded-full">
-                      {course.price}
+                    <span className="inline-block rounded-full bg-goldSoft px-3 py-1 text-[12px] font-bold text-goldDeep">
+                      {course.price ||
+                        (course.basePrice
+                          ? formatCurrencyPrice(
+                              course.basePrice,
+                              course.currency,
+                              lang,
+                            )
+                          : "")}
                     </span>
                   );
                 })()}

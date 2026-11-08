@@ -504,6 +504,10 @@ export default function AdminCoursesPage() {
                         setNewCourse((current) => ({
                           ...current,
                           classType,
+                          capacity:
+                            classType === "semi_private"
+                              ? 4
+                              : current.capacity,
                         }));
                       }}
                       className="w-full rounded-lg border border-line bg-white px-3.5 py-2.5 text-[13px] outline-none focus:border-blue"
@@ -517,6 +521,11 @@ export default function AdminCoursesPage() {
                         {lang === "fa"
                           ? "خصوصی"
                           : "Private"}
+                      </option>
+                      <option value="semi_private">
+                        {lang === "fa"
+                          ? "نیمه‌خصوصی (۴ نفر)"
+                          : "Semi-private (4 seats)"}
                       </option>
                     </select>
                   </label>
@@ -663,7 +672,10 @@ export default function AdminCoursesPage() {
                     <span>{lang === "fa" ? "ظرفیت" : "Capacity"}</span>
                     <input
                       type="number"
-                      min={1}
+                      min={newCourse.classType === "semi_private" ? 4 : 1}
+                      max={
+                        newCourse.classType === "semi_private" ? 4 : undefined
+                      }
                       step={1}
                       value={newCourse.capacity}
                       onChange={(e) =>
@@ -672,6 +684,7 @@ export default function AdminCoursesPage() {
                           capacity: Number(e.target.value),
                         }))
                       }
+                      disabled={newCourse.classType === "semi_private"}
                       className="w-full rounded-lg border border-line bg-white px-3.5 py-2.5 text-[13px] outline-none focus:border-blue"
                       required
                     />
@@ -825,13 +838,17 @@ export default function AdminCoursesPage() {
                       {linkedClass ? (
                         <div className="space-y-1">
                           <div className="font-semibold">
-                            {linkedClass.classType === "private"
+                            {linkedClass.classType === "semi_private"
                               ? lang === "fa"
-                                ? "خصوصی"
-                                : "Private"
-                              : lang === "fa"
-                                ? "عمومی"
-                                : "Public"}
+                                ? "نیمه‌خصوصی"
+                                : "Semi-private"
+                              : linkedClass.classType === "private"
+                                ? lang === "fa"
+                                  ? "خصوصی"
+                                  : "Private"
+                                : lang === "fa"
+                                  ? "عمومی"
+                                  : "Public"}
                             {" · "}
                             {linkedClass.capacity}{" "}
                             {lang === "fa" ? "نفر" : "seats"}

@@ -14,6 +14,11 @@ import {
 } from "lucide-react";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 import { useCourses } from "@/lib/use-courses";
+import {
+  formatCurrencyPrice,
+  getDiscountedPrice,
+  hasEffectiveDiscount,
+} from "@/lib/courses-pricing";
 import { isInWishlist, addToWishlist, removeFromWishlist } from "@/lib/api/wishlist";
 import CourseReviews from "@/components/marketing/course-detail/CourseReviews";
 import RelatedCourses from "@/components/marketing/course-detail/RelatedCourses";
@@ -53,7 +58,14 @@ export default function CourseDetailPage({
   if (!course) notFound();
 
   const discountPercent = course.discountPercent ?? 0;
-  const hasDiscount = discountPercent > 0 && Boolean(course.basePrice);
+  const originalPrice = course.basePrice;
+  const hasDiscount = hasEffectiveDiscount(
+    originalPrice,
+    discountPercent,
+  );
+  const discountedPrice = hasDiscount
+    ? getDiscountedPrice(originalPrice, discountPercent)
+    : null;
 
   const learnItems: string[] = c.whatYouLearnItems;
   const includesItems: string[] = c.includesItems;
@@ -135,23 +147,42 @@ export default function CourseDetailPage({
         <div className="bg-white border border-line rounded-lg shadow-card p-6 lg:sticky lg:top-24">
           <div className="text-[12px] text-muted mb-1.5">{c.priceLabel}</div>
           {hasDiscount ? (
-            <div className="flex items-center gap-2.5 mb-1">
-              <span className="text-[26px] font-serif font-semibold text-goldDeep">
-                {new Intl.NumberFormat(lang === "fa" ? "fa-IR" : "en-US", { style: "currency", currency: course.currency || (lang === "fa" ? "IRR" : "USD"), maximumFractionDigits: 0 }).format(Math.round((course.basePrice ?? 0) * (1 - discountPercent / 100)))}
-              </span>
-              <span className="text-[15px] text-muted line-through">
-                {course.price}
-              </span>
+            <div className="mb-2 rounded-xl border border-sage/50 bg-sage/20 p-4">
+              <div className="mb-1 flex flex-wrap items-center gap-2">
+                <span className="text-[11px] text-muted">
+                  {lang === "fa" ? "قیمت اصلی" : "Original price"}
+                </span>
+                <span className="text-[13px] text-muted line-through decoration-danger/60">
+                  {formatCurrencyPrice(
+                    originalPrice,
+                    course.currency,
+                    lang,
+                  )}
+                </span>
+                <span className="inline-flex items-center gap-1 rounded-full bg-danger/10 px-2 py-0.5 text-[10px] font-bold text-danger">
+                  <Tag size={10} /> {discountPercent}%{" "}
+                  {lang === "fa" ? "تخفیف" : "off"}
+                </span>
+              </div>
+              <div className="text-[26px] font-serif font-bold text-sageDeep">
+                {formatCurrencyPrice(
+                  discountedPrice ?? 0,
+                  course.currency,
+                  lang,
+                )}
+              </div>
             </div>
           ) : (
-            <div className="text-[26px] font-serif font-semibold mb-1">
-              {course.price}
+            <div className="mb-1 text-[26px] font-serif font-semibold">
+              {course.price ||
+                (course.basePrice
+                  ? formatCurrencyPrice(
+                      course.basePrice,
+                      course.currency,
+                      lang,
+                    )
+                  : "")}
             </div>
-          )}
-          {hasDiscount && (
-            <span className="inline-flex items-center gap-1 bg-danger/10 text-danger text-[11px] font-bold px-2.5 py-1 rounded-full mb-4">
-              <Tag size={11} /> -{discountPercent}%
-            </span>
           )}
 
           <Link

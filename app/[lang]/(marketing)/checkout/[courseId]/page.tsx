@@ -7,6 +7,11 @@ import { Lock, ArrowLeft, CheckCircle2 } from "lucide-react";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 import { useCourses } from "@/lib/use-courses";
 import { enrollInCourse } from "@/lib/api/enrollment";
+import {
+  formatCurrencyPrice,
+  getDiscountedPrice,
+  hasEffectiveDiscount,
+} from "@/lib/courses-pricing";
 
 export default function CheckoutPage({ params }: { params: { courseId: string } }) {
   const { t, href, lang } = useLanguage();
@@ -19,8 +24,15 @@ export default function CheckoutPage({ params }: { params: { courseId: string } 
 
   const basePrice = course.basePrice ?? 0;
   const discountPercent = course.discountPercent ?? 0;
-  const total = Math.round(basePrice * (1 - discountPercent / 100));
+  const hasDiscount = hasEffectiveDiscount(course.basePrice, discountPercent);
+  const total = hasDiscount
+    ? getDiscountedPrice(basePrice, discountPercent)
+    : basePrice;
   const discountAmount = basePrice - total;
+  const formattedTotal =
+    course.basePrice !== undefined
+      ? formatCurrencyPrice(total, course.currency, lang)
+      : course.price;
 
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -78,19 +90,33 @@ export default function CheckoutPage({ params }: { params: { courseId: string } 
 
           <div className="flex items-center justify-between text-[13px] text-ink70 py-2 border-t border-line">
             <span>{c.subtotal}</span>
-            <span>{course.price}</span>
+            <span>
+              {hasDiscount
+                ? formatCurrencyPrice(basePrice, course.currency, lang)
+                : course.price ||
+                  (course.basePrice !== undefined
+                    ? formatCurrencyPrice(basePrice, course.currency, lang)
+                    : "")}
+            </span>
           </div>
-          {discountPercent > 0 && (
+          {hasDiscount && (
             <div className="flex items-center justify-between text-[13px] text-danger py-2 border-t border-line">
               <span>
                 {c.discount} (-{discountPercent}%)
               </span>
-              <span>-{new Intl.NumberFormat(lang === "fa" ? "fa-IR" : "en-US", { style: "currency", currency: course.currency || (lang === "fa" ? "IRR" : "USD"), maximumFractionDigits: 0 }).format(discountAmount)}</span>
+              <span>
+                -
+                {formatCurrencyPrice(
+                  discountAmount,
+                  course.currency,
+                  lang,
+                )}
+              </span>
             </div>
           )}
           <div className="flex items-center justify-between text-[15px] font-bold py-3 border-t border-line mt-1">
             <span>{c.total}</span>
-            <span className="text-goldDeep">{new Intl.NumberFormat(lang === "fa" ? "fa-IR" : "en-US", { style: "currency", currency: course.currency || (lang === "fa" ? "IRR" : "USD"), maximumFractionDigits: 0 }).format(total)}</span>
+            <span className="text-goldDeep">{formattedTotal}</span>
           </div>
         </div>
 
@@ -104,7 +130,7 @@ export default function CheckoutPage({ params }: { params: { courseId: string } 
             className="w-full mt-6 inline-flex items-center justify-center gap-2 bg-blue text-white rounded-full py-4 text-[14.5px] font-bold hover:bg-blueDeep transition-colors disabled:opacity-70"
           >
             <Lock size={14} />
-            {loading ? c.processing : `${c.payButton} — ${course.price}`}
+            {loading ? c.processing : `${c.payButton} — ${formattedTotal}`}
           </button>
         </form>
       </div>

@@ -16,7 +16,11 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
-import { createInviteCode, type CourseClass } from "@/lib/api/classes";
+import {
+  createInviteCode,
+  type ClassType,
+  type CourseClass,
+} from "@/lib/api/classes";
 import { getCourses } from "@/lib/api/courses";
 import {
   enrollStudentInClass,
@@ -219,9 +223,7 @@ export default function ClassSelectionPage() {
 
   // Filters
   const [teacherSearch, setTeacherSearch] = useState("");
-  const [typeFilter, setTypeFilter] = useState<"all" | "public" | "private">(
-    "all",
-  );
+  const [typeFilter, setTypeFilter] = useState<"all" | ClassType>("all");
   const [availableOnly, setAvailableOnly] = useState(false);
   const [levelFilter, setLevelFilter] = useState("");
   const [termFilter, setTermFilter] = useState("");
@@ -444,7 +446,12 @@ export default function ClassSelectionPage() {
                 type="search"
                 value={teacherSearch}
                 onChange={(event) => setTeacherSearch(event.target.value)}
-                placeholder={fa ? "جستجوی نام مدرس" : "Search teacher"}
+                placeholder={
+                  fa
+                    ? "همه معلم‌ها · جستجوی نام"
+                    : "All teachers · Search by name"
+                }
+                aria-label={fa ? "جستجوی معلم‌ها" : "Search teachers"}
                 className="w-full rounded-xl border border-line bg-white py-2.5 pe-3 ps-9 text-[13px] outline-none focus:border-blue"
               />
             </span>
@@ -485,7 +492,7 @@ export default function ClassSelectionPage() {
             <select
               value={typeFilter}
               onChange={(e) =>
-                setTypeFilter(e.target.value as "all" | "public" | "private")
+                setTypeFilter(e.target.value as "all" | ClassType)
               }
               className="w-full rounded-xl border border-line bg-white px-3 py-2.5 text-[13px] outline-none focus:border-blue"
             >
@@ -493,8 +500,11 @@ export default function ClassSelectionPage() {
               <option value="public">
                 {fa ? "عمومی (10 نفر)" : "Public (10 seats)"}
               </option>
+              <option value="semi_private">
+                {fa ? "نیمه‌خصوصی (۴ نفر)" : "Semi-private (4 seats)"}
+              </option>
               <option value="private">
-                {fa ? "خصوصی (2 نفر)" : "Private (2 seats)"}
+                {fa ? "خصوصی" : "Private"}
               </option>
             </select>
           </label>
@@ -607,16 +617,22 @@ export default function ClassSelectionPage() {
                       className={`inline-block mt-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${
                         classItem.type === "private"
                           ? "bg-purple/10 text-purple"
-                          : "bg-blue/10 text-blue"
+                          : classItem.type === "semi_private"
+                            ? "bg-goldSoft text-goldDeep"
+                            : "bg-blue/10 text-blue"
                       }`}
                     >
-                      {classItem.type === "private"
+                      {classItem.type === "semi_private"
                         ? fa
-                          ? "خصوصی · 2 نفر"
-                          : "Private · 2 seats"
-                        : fa
-                          ? "عمومی · 10 نفر"
-                          : "Public · 10 seats"}
+                          ? "نیمه‌خصوصی · ۴ نفر"
+                          : "Semi-private · 4 seats"
+                        : classItem.type === "private"
+                          ? fa
+                            ? "خصوصی"
+                            : "Private"
+                          : fa
+                            ? `عمومی · ${classItem.maxCapacity} نفر`
+                            : `Public · ${classItem.maxCapacity} seats`}
                     </span>
                   </div>
                 </div>

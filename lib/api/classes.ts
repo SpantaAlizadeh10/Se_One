@@ -5,7 +5,7 @@ import { apiFetch } from "./client";
  * Handle class enrollment, filtering, and management
  */
 
-export type ClassType = "public" | "private";
+export type ClassType = "public" | "semi_private" | "private";
 export type ClassStatus = "scheduled" | "ongoing" | "completed" | "cancelled";
 export type EnrollmentStatus = "pending" | "confirmed" | "cancelled" | "completed";
 
@@ -110,7 +110,10 @@ function numberValue(record: ApiRecord, ...keys: string[]): number {
 }
 
 function normalizeClassType(raw: unknown): ClassType {
-  const value = String(raw).toLowerCase();
+  const value = String(raw).trim().toLowerCase().replace(/[\s-]+/g, "_");
+  if (value === "semi_private" || value === "semiprivate") {
+    return "semi_private";
+  }
   if (value === "private") return "private";
   return "public";
 }

@@ -1,7 +1,7 @@
 import { apiFetch } from "./client";
 
 export type ClassSlotStatus = "active" | "draft" | "cancelled" | "completed";
-export type ClassType = "public" | "private";
+export type ClassType = "public" | "semi_private" | "private";
 export type TeacherAssignmentStatus = "pending" | "confirmed" | "cancelled";
 export type StudentEnrollmentStatus =
   | "pending"
@@ -122,11 +122,22 @@ function normalizeClassSlot(raw: unknown): AdminClassSlot {
     "type",
     "Type",
   ).toLowerCase();
+  const normalizedClassType = classTypeRaw.replace(/[\s-]+/g, "_");
   const classType: ClassType =
-    classTypeRaw === "private" ? "private" : "public";
+    normalizedClassType === "semi_private" ||
+    normalizedClassType === "semiprivate"
+      ? "semi_private"
+      : normalizedClassType === "private"
+        ? "private"
+        : "public";
+  const defaultCapacity =
+    classType === "semi_private" ? 4 : classType === "private" ? 1 : 10;
   const requestedCapacity =
-    numberValue(record, "capacity", "Capacity") || (classType === "private" ? 1 : 10);
-  const capacity = Math.max(1, requestedCapacity);
+    numberValue(record, "capacity", "Capacity") || defaultCapacity;
+  const capacity =
+    classType === "semi_private"
+      ? 4
+      : Math.max(1, requestedCapacity);
   const enrolledCount = numberValue(
     record,
     "enrolledCount",
@@ -211,7 +222,7 @@ function normalizeClassSlot(raw: unknown): AdminClassSlot {
     enrolledCount,
     remainingSeats: Math.max(
       0,
-      reportedRemainingSeats === undefined
+      classType === "semi_private" || reportedRemainingSeats === undefined
         ? capacity - enrolledCount
         : numberValue(record, "remainingSeats", "RemainingSeats"),
     ),
@@ -305,7 +316,10 @@ export async function listAdminClassSlots(): Promise<AdminClassSlot[]> {
 export async function createAdminClassSlot(
   input: CreateClassSlotInput,
 ): Promise<AdminClassSlot> {
-  const capacity = Math.max(1, Math.floor(input.capacity ?? 10));
+  const capacity =
+    input.classType === "semi_private"
+      ? 4
+      : Math.max(1, Math.floor(input.capacity ?? 10));
   const data = await apiFetch<unknown>("/api/admin/class-slots", {
     method: "POST",
     body: { ...input, capacity },
@@ -318,11 +332,15 @@ export async function updateAdminClassSlot(
   slotId: string,
   input: Partial<CreateClassSlotInput>,
 ): Promise<AdminClassSlot> {
+  const body =
+    input.classType === "semi_private"
+      ? { ...input, capacity: 4 }
+      : input;
   const data = await apiFetch<unknown>(
     `/api/admin/class-slots/${encodeURIComponent(slotId)}`,
     {
       method: "PATCH",
-      body: input,
+      body,
     },
   );
   return normalizeClassSlot(data);

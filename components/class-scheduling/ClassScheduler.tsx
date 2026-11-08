@@ -36,6 +36,7 @@ import {
   type AdminClassEnrollment,
   type AdminAssignableTeacher,
   type CreateClassSlotInput,
+  type ClassType,
   type TeacherClassAssignment,
 } from "@/lib/api/class-scheduling";
 import {
@@ -48,7 +49,7 @@ const defaultSlot = {
   title: "",
   description: "",
   level: "",
-  classType: "public" as "public" | "private",
+  classType: "public" as ClassType,
   capacity: 10,
   teacherRole: "all",
   startsAt: "",
@@ -65,7 +66,7 @@ type SlotEditDraft = {
   title: string;
   description: string;
   level: string;
-  classType: "public" | "private";
+  classType: ClassType;
   capacity: number;
   teacherRole: string;
   startsAt: string;
@@ -259,6 +260,17 @@ export default function ClassScheduler() {
         fa
           ? "اطلاعات کلاس، ظرفیت و قیمت را معتبر وارد کنید."
           : "Enter valid class details, capacity, and price.",
+      );
+      return;
+    }
+    if (
+      editDraft.classType === "semi_private" &&
+      slotItem.enrolledCount > 4
+    ) {
+      setError(
+        fa
+          ? "این کلاس بیش از ۴ دانش‌آموز فعال دارد و نمی‌تواند نیمه‌خصوصی شود."
+          : "This class has more than 4 active students and cannot become semi-private.",
       );
       return;
     }
@@ -552,8 +564,8 @@ export default function ClassScheduler() {
       setSlot(defaultSlot);
       setMessage(
         fa
-          ? `کلاس ${slot.classType === "private" ? "خصوصی" : "عمومی"} با ظرفیت ${input.capacity} نفر ساخته شد.`
-          : `${slot.classType === "private" ? "Private" : "Public"} class created with ${input.capacity} seat${input.capacity === 1 ? "" : "s"}.`,
+          ? `کلاس ${slot.classType === "semi_private" ? "نیمه‌خصوصی" : slot.classType === "private" ? "خصوصی" : "عمومی"} با ظرفیت ${created.capacity} نفر ساخته شد.`
+          : `${slot.classType === "semi_private" ? "Semi-private" : slot.classType === "private" ? "Private" : "Public"} class created with ${created.capacity} seat${created.capacity === 1 ? "" : "s"}.`,
       );
     } catch (error) {
       setError(
@@ -616,12 +628,20 @@ export default function ClassScheduler() {
             <select
               value={slot.classType}
               onChange={(e) => {
-                const classType = e.target.value as "public" | "private";
-                setSlot((current) => ({ ...current, classType }));
+                const classType = e.target.value as ClassType;
+                setSlot((current) => ({
+                  ...current,
+                  classType,
+                  capacity:
+                    classType === "semi_private" ? 4 : current.capacity,
+                }));
               }}
               className="w-full rounded-xl border border-line bg-cream px-3.5 py-3 outline-none focus:border-blue"
             >
               <option value="public">{fa ? "عمومی" : "Public"}</option>
+              <option value="semi_private">
+                {fa ? "نیمه‌خصوصی (۴ نفر)" : "Semi-private (4 seats)"}
+              </option>
               <option value="private">{fa ? "خصوصی" : "Private"}</option>
             </select>
           </label>
@@ -729,10 +749,12 @@ export default function ClassScheduler() {
             <span>{fa ? "ظرفیت" : "Capacity"}</span>
             <input
               type="number"
-              min={1}
+              min={slot.classType === "semi_private" ? 4 : 1}
+              max={slot.classType === "semi_private" ? 4 : undefined}
               step={1}
               value={slot.capacity}
               onChange={(e) => handleChange("capacity", Number(e.target.value))}
+              disabled={slot.classType === "semi_private"}
               className="w-full rounded-xl border border-line bg-cream px-3.5 py-3 outline-none focus:border-blue"
             />
           </label>
@@ -802,8 +824,8 @@ export default function ClassScheduler() {
                     )}
                     <p className="text-[12px] text-muted">
                       {fa
-                        ? `${slotItem.classType === "private" ? "خصوصی" : "عمومی"} · ظرفیت ${slotItem.capacity} نفر${slotItem.level ? ` · سطح ${slotItem.level}` : ""}`
-                        : `${slotItem.classType === "private" ? "Private" : "Public"} · Capacity ${slotItem.capacity}${slotItem.level ? ` · ${slotItem.level}` : ""}`}
+                        ? `${slotItem.classType === "semi_private" ? "نیمه‌خصوصی" : slotItem.classType === "private" ? "خصوصی" : "عمومی"} · ظرفیت ${slotItem.capacity} نفر${slotItem.level ? ` · سطح ${slotItem.level}` : ""}`
+                        : `${slotItem.classType === "semi_private" ? "Semi-private" : slotItem.classType === "private" ? "Private" : "Public"} · Capacity ${slotItem.capacity}${slotItem.level ? ` · ${slotItem.level}` : ""}`}
                     </p>
                   </div>
                   <div className="flex flex-col items-end gap-1.5">
@@ -915,18 +937,29 @@ export default function ClassScheduler() {
                             {fa ? "نوع کلاس" : "Class type"}
                             <select
                               value={editDraft.classType}
-                              onChange={(event) =>
+                              onChange={(event) => {
+                                const classType = event.target.value as ClassType;
                                 setEditDraft({
                                   ...editDraft,
-                                  classType: event.target.value as
-                                    | "public"
-                                    | "private",
+                                  classType,
+                                  capacity:
+                                    classType === "semi_private"
+                                      ? 4
+                                      : editDraft.capacity,
                                 })
-                              }
+                              }}
                               className="mt-1 w-full rounded-lg border border-line px-3 py-2 text-[12px] font-normal text-ink"
                             >
                               <option value="public">
                                 {fa ? "عمومی" : "Public"}
+                              </option>
+                              <option
+                                value="semi_private"
+                                disabled={slotItem.enrolledCount > 4}
+                              >
+                                {fa
+                                  ? "نیمه‌خصوصی (۴ نفر)"
+                                  : "Semi-private (4 seats)"}
                               </option>
                               <option value="private">
                                 {fa ? "خصوصی" : "Private"}
@@ -937,7 +970,16 @@ export default function ClassScheduler() {
                             {fa ? "ظرفیت" : "Capacity"}
                             <input
                               type="number"
-                              min={Math.max(1, slotItem.enrolledCount)}
+                              min={
+                                editDraft.classType === "semi_private"
+                                  ? 4
+                                  : Math.max(1, slotItem.enrolledCount)
+                              }
+                              max={
+                                editDraft.classType === "semi_private"
+                                  ? 4
+                                  : undefined
+                              }
                               step={1}
                               value={editDraft.capacity}
                               onChange={(event) =>
@@ -945,6 +987,9 @@ export default function ClassScheduler() {
                                   ...editDraft,
                                   capacity: Number(event.target.value),
                                 })
+                              }
+                              disabled={
+                                editDraft.classType === "semi_private"
                               }
                               className="mt-1 w-full rounded-lg border border-line px-3 py-2 text-[12px] font-normal text-ink"
                             />

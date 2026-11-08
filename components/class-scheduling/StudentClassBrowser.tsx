@@ -8,8 +8,10 @@ import {
   Users,
   BookOpen,
   CheckCircle2,
+  Search,
 } from "lucide-react";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
+import type { ClassType } from "@/lib/api/class-scheduling";
 import { isApiConfigured } from "@/lib/is-api-configured";
 import {
   enrollStudentInClass,
@@ -47,10 +49,10 @@ export default function StudentClassBrowser() {
   const fa = lang === "fa";
   const locale = fa ? "fa-IR" : "en-US";
   const [classes, setClasses] = useState<DisplayStudentClass[]>([]);
-  const [teacherFilter, setTeacherFilter] = useState("");
-  const [classTypeFilter, setClassTypeFilter] = useState<
-    "all" | "public" | "private"
-  >("all");
+  const [teacherSearch, setTeacherSearch] = useState("");
+  const [classTypeFilter, setClassTypeFilter] = useState<"all" | ClassType>(
+    "all",
+  );
   const [loading, setLoading] = useState(true);
   const [enrollingId, setEnrollingId] = useState("");
   const [error, setError] = useState("");
@@ -90,20 +92,17 @@ export default function StudentClassBrowser() {
     };
   }, [fa]);
 
-  const teachers = useMemo(() => {
-    const unique = new Map<string, string>();
-    classes.forEach((item) => unique.set(item.teacherId, item.teacherName));
-    return [...unique.entries()].map(([id, name]) => ({ id, name }));
-  }, [classes]);
-
   const visibleClasses = useMemo(
     () =>
       classes.filter(
         (item) =>
-          (!teacherFilter || item.teacherId === teacherFilter) &&
+          (!teacherSearch ||
+            item.teacherName
+              .toLocaleLowerCase()
+              .includes(teacherSearch.trim().toLocaleLowerCase())) &&
           (classTypeFilter === "all" || item.classType === classTypeFilter),
       ),
-    [classes, teacherFilter, classTypeFilter],
+    [classes, teacherSearch, classTypeFilter],
   );
   const myClasses = classes.filter((item) => item.enrolled);
 
@@ -168,22 +167,29 @@ export default function StudentClassBrowser() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <label className="min-w-[180px] text-[12px] font-semibold text-muted">
+          <label className="min-w-[220px] text-[12px] font-semibold text-muted">
             <span className="mb-1 block">
-              {fa ? "فیلتر معلم" : "Filter by teacher"}
+              {fa ? "معلم‌ها" : "Teachers"}
             </span>
-            <select
-              value={teacherFilter}
-              onChange={(event) => setTeacherFilter(event.target.value)}
-              className="w-full rounded-xl border border-line bg-white px-3 py-2.5 text-[13px] text-ink outline-none focus:border-blue"
-            >
-              <option value="">{fa ? "همه معلم‌ها" : "All teachers"}</option>
-              {teachers.map((teacher) => (
-                <option key={teacher.id} value={teacher.id}>
-                  {teacher.name}
-                </option>
-              ))}
-            </select>
+            <span className="relative block">
+              <Search
+                size={15}
+                aria-hidden="true"
+                className="pointer-events-none absolute start-3 top-1/2 -translate-y-1/2 text-muted"
+              />
+              <input
+                type="search"
+                value={teacherSearch}
+                onChange={(event) => setTeacherSearch(event.target.value)}
+                placeholder={
+                  fa
+                    ? "همه معلم‌ها · جستجوی نام"
+                    : "All teachers · Search by name"
+                }
+                aria-label={fa ? "جستجوی معلم‌ها" : "Search teachers"}
+                className="w-full rounded-xl border border-line bg-white py-2.5 pe-3 ps-9 text-[13px] text-ink outline-none focus:border-blue"
+              />
+            </span>
           </label>
           <label className="min-w-[150px] text-[12px] font-semibold text-muted">
             <span className="mb-1 block">{fa ? "نوع کلاس" : "Class type"}</span>
@@ -191,7 +197,7 @@ export default function StudentClassBrowser() {
               value={classTypeFilter}
               onChange={(event) =>
                 setClassTypeFilter(
-                  event.target.value as "all" | "public" | "private",
+                  event.target.value as "all" | ClassType,
                 )
               }
               className="w-full rounded-xl border border-line bg-white px-3 py-2.5 text-[13px] text-ink outline-none focus:border-blue"
@@ -199,6 +205,9 @@ export default function StudentClassBrowser() {
               <option value="all">{fa ? "همه کلاس‌ها" : "All classes"}</option>
               <option value="public">
                 {fa ? "کلاس عمومی" : "Public class"}
+              </option>
+              <option value="semi_private">
+                {fa ? "کلاس نیمه‌خصوصی · ۴ نفر" : "Semi-private · 4 seats"}
               </option>
               <option value="private">
                 {fa ? "کلاس خصوصی" : "Private class"}
@@ -282,13 +291,17 @@ export default function StudentClassBrowser() {
                       </span>
                     )}
                     <span className="mt-1 inline-block rounded-full bg-blue/5 px-2 py-0.5 text-[10px] font-semibold text-blue">
-                      {item.classType === "private"
+                      {item.classType === "semi_private"
                         ? fa
-                          ? `خصوصی · ظرفیت ${item.capacity}`
-                          : `Private · ${item.capacity} seat${item.capacity === 1 ? "" : "s"}`
-                        : fa
-                          ? `عمومی · ظرفیت ${item.capacity}`
-                          : `Public · ${item.capacity} seats`}
+                          ? "نیمه‌خصوصی · ظرفیت ۴ نفر"
+                          : "Semi-private · 4 seats"
+                        : item.classType === "private"
+                          ? fa
+                            ? `خصوصی · ظرفیت ${item.capacity}`
+                            : `Private · ${item.capacity} seat${item.capacity === 1 ? "" : "s"}`
+                          : fa
+                            ? `عمومی · ظرفیت ${item.capacity}`
+                            : `Public · ${item.capacity} seats`}
                     </span>
                   </div>
                   <span
