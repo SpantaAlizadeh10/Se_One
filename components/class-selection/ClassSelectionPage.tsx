@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import Image from "next/image";
 import {
   CalendarDays,
   Clock,
@@ -147,7 +146,7 @@ function studentSlotsToBookingClasses(
     const start = new Date(item.startsAt);
     const end = new Date(item.endsAt);
     const price =
-      item.basePrice || course?.basePrice || demoPrices[item.id] || 0;
+      item.basePrice ?? course?.basePrice ?? demoPrices[item.id] ?? 0;
     const language =
       normalizeLanguage(item.language) ||
       normalizeLanguage(course?.language) ||
@@ -168,7 +167,7 @@ function studentSlotsToBookingClasses(
       currentEnrollment: item.enrolledCount,
       remainingCapacity: item.remainingSeats,
       basePrice: price,
-      finalPrice: item.finalPrice || price,
+      finalPrice: item.finalPrice ?? price,
       scheduledDate: item.startsAt,
       startTime: start.toLocaleTimeString("en-GB", {
         hour: "2-digit",
@@ -593,12 +592,12 @@ export default function ClassSelectionPage() {
               >
                 {/* Class Header */}
                 <div className="flex items-start gap-3 mb-3">
-                  <Image
+                  <img
                     src={classItem.teacher.avatar}
                     alt={classItem.teacher.name}
-                    width={48}
-                    height={48}
-                    className="rounded-full object-cover"
+                    width="48"
+                    height="48"
+                    className="h-12 w-12 rounded-full object-cover"
                   />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5 mb-1">
@@ -750,12 +749,12 @@ export default function ClassSelectionPage() {
 
             <div className="space-y-3 mb-6">
               <div className="flex items-center gap-3">
-                <Image
+                <img
                   src={selectedClass.teacher.avatar}
                   alt={selectedClass.teacher.name}
-                  width={40}
-                  height={40}
-                  className="rounded-full object-cover"
+                  width="40"
+                  height="40"
+                  className="h-10 w-10 rounded-full object-cover"
                 />
                 <div>
                   <div className="text-[13px] font-semibold">

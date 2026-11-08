@@ -28,7 +28,6 @@ import {
   updateAdminCourse,
   createAdminCourse,
   uploadCourseImage,
-  listAdminTeachers,
   listAdminStudents,
   getAdminCourseEnrollments,
   adminEnrollStudent,
@@ -37,7 +36,6 @@ import {
   type AdminCourseEnrollment,
   type AdminStudent,
   type CreateCourseInput,
-  type AdminTeacher,
 } from "@/lib/api/admin";
 import {
   createAdminClassSlot,
@@ -88,7 +86,6 @@ const emptyCourseDraft: CourseDraft = {
   discountPercent: 0,
   isFeatured: false,
   imageUrl: "",
-  teacherId: "",
   classType: "public",
   startsAt: "",
   endsAt: "",
@@ -134,7 +131,6 @@ export default function AdminCoursesPage() {
   const [editingCourseId, setEditingCourseId] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
-  const [teachers, setTeachers] = useState<AdminTeacher[]>([]);
   const [classSlots, setClassSlots] = useState<AdminClassSlot[]>([]);
   const [newCourse, setNewCourse] = useState<CourseDraft>(emptyCourseDraft);
   const [courseEnrollments, setCourseEnrollments] = useState<
@@ -183,20 +179,6 @@ export default function AdminCoursesPage() {
         ),
       );
   }, []);
-
-  useEffect(() => {
-    if (showCreateModal && !editingCourseId && isApiConfigured()) {
-      listAdminTeachers()
-        .then((result) =>
-          setTeachers(result.items.filter((teacher) => teacher.status === "active")),
-        )
-        .catch((error) =>
-          setApiError(
-            error instanceof Error ? error.message : "Could not load teachers",
-          ),
-        );
-    }
-  }, [showCreateModal, editingCourseId]);
 
   const setDraft = (id: string, value: string) =>
     setDrafts((prev) => ({ ...prev, [id]: value }));
@@ -278,9 +260,6 @@ export default function AdminCoursesPage() {
 
   const openEditCourse = (course: AdminCourse) => {
     const linkedClass = classSlots.find((slot) => slot.courseId === course.id);
-    const currentTeacher = linkedClass?.teacherAssignments?.find(
-      (assignment) => assignment.status === "confirmed",
-    );
     setEditingCourseId(course.id);
     setNewCourse({
       ...emptyCourseDraft,
@@ -295,7 +274,6 @@ export default function AdminCoursesPage() {
       discountPercent: course.discountPercent,
       isFeatured: course.isFeatured ?? false,
       imageUrl: course.imageUrl ?? "",
-      teacherId: currentTeacher?.teacherId ?? course.teacherId ?? "",
       classType: linkedClass?.classType ?? "public",
       startsAt: linkedClass ? toDateTimeLocalValue(linkedClass.startsAt) : "",
       endsAt: linkedClass ? toDateTimeLocalValue(linkedClass.endsAt) : "",
@@ -685,7 +663,6 @@ export default function AdminCoursesPage() {
         endsAt,
         capacity,
         teacherRole,
-        teacherId,
         ...courseDetails
       } = newCourse;
       const classDetails =
@@ -743,7 +720,7 @@ export default function AdminCoursesPage() {
           }
         }
       } else {
-        const created = await createAdminCourse({ ...courseDetails, teacherId });
+        const created = await createAdminCourse(courseDetails);
         setApiCourses((prev) => [created, ...prev]);
         if (!classDetails) {
           throw new Error(
@@ -759,32 +736,13 @@ export default function AdminCoursesPage() {
             courseId: created.id,
           });
           setClassSlots((prev) => [scheduledClass, ...prev]);
-          if (teacherId) {
-            const assignment = await assignTeacherToClassSlot(
-              scheduledClass.id,
-              teacherId,
-            );
-            setClassSlots((prev) =>
-              prev.map((slot) =>
-                slot.id === scheduledClass.id
-                  ? {
-                      ...slot,
-                      teacherAssignments: [
-                        ...(slot.teacherAssignments ?? []),
-                        assignment,
-                      ],
-                    }
-                  : slot,
-              ),
-            );
-          }
         } catch (scheduleError) {
           setShowCreateModal(false);
           setNewCourse(emptyCourseDraft);
           throw new Error(
             lang === "fa"
-              ? `دوره ساخته شد اما زمان‌بندی یا تخصیص مدرس کلاس کامل نشد: ${scheduleError instanceof Error ? scheduleError.message : "خطای نامشخص"}`
-              : `The course was created, but its class schedule or teacher assignment was not fully saved: ${scheduleError instanceof Error ? scheduleError.message : "Unknown error"}`,
+              ? `دوره ساخته شد اما زمان‌بندی کلاس ذخیره نشد: ${scheduleError instanceof Error ? scheduleError.message : "خطای نامشخص"}`
+              : `The course was created, but its class schedule was not saved: ${scheduleError instanceof Error ? scheduleError.message : "Unknown error"}`,
           );
         }
       }
@@ -1793,27 +1751,6 @@ export default function AdminCoursesPage() {
                   <span className="text-[12px] text-muted">%</span>
                 </div>
               </div>
-              {!editingCourseId && (
-                <div>
-                  <label className="block text-[12.5px] font-semibold text-ink70 mb-2">
-                    Teacher
-                  </label>
-                  <select
-                    value={newCourse.teacherId}
-                    onChange={(e) =>
-                      setNewCourse({ ...newCourse, teacherId: e.target.value })
-                    }
-                    className="w-full border border-line rounded-lg px-3.5 py-2.5 text-[13.5px] outline-none focus:border-blue"
-                  >
-                    <option value="">Select a teacher (optional)</option>
-                    {teachers.map((teacher) => (
-                      <option key={teacher.id} value={teacher.id}>
-                        {teacher.fullName}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
               <div className="flex items-center gap-2">
                 <input
                   type="checkbox"

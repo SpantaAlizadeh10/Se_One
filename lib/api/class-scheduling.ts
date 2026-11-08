@@ -217,8 +217,14 @@ function normalizeClassSlot(raw: unknown): AdminClassSlot {
     classGroupId:
       text(record, "classGroupId", "ClassGroupId", "groupId", "GroupId") ||
       undefined,
-    basePrice: numberValue(record, "basePrice", "BasePrice"),
-    finalPrice: numberValue(record, "finalPrice", "FinalPrice"),
+    basePrice:
+      value(record, "basePrice", "BasePrice") === undefined
+        ? undefined
+        : numberValue(record, "basePrice", "BasePrice"),
+    finalPrice:
+      value(record, "finalPrice", "FinalPrice") === undefined
+        ? undefined
+        : numberValue(record, "finalPrice", "FinalPrice"),
     currency: text(record, "currency", "Currency") || undefined,
     title: text(record, "title", "Title", "name", "Name"),
     description: text(record, "description", "Description"),
