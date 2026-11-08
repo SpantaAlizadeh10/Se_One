@@ -125,7 +125,7 @@ export async function completeLesson(lessonId: string): Promise<LessonProgress> 
 }
 
 export async function getLessonProgress(lessonId: string): Promise<LessonProgress> {
-  const data = await apiFetch<any>(`api/lessons/${lessonId}/progress`);
+  const data = await apiFetch<any>(`/api/lessons/${lessonId}/progress`);
   return normalizeLessonProgress(data);
 }
 
