@@ -17,6 +17,7 @@ export type UserProfile = {
     score: number;
     maxScore: number;
     completedAt: string;
+    assessmentVersion?: string;
   };
   phoneNumber?: string;
   country?: string;
@@ -122,6 +123,8 @@ function normalizeProfile(raw: unknown): UserProfile {
         score,
         maxScore,
         completedAt: text(result, "completedAt", "CompletedAt"),
+        assessmentVersion:
+          text(result, "assessmentVersion", "AssessmentVersion") || undefined,
       };
     })(),
     phoneNumber: text(record, "phoneNumber", "PhoneNumber", "phone", "Phone") || undefined,

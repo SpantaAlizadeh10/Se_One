@@ -16,9 +16,10 @@ Return the current authenticated user's profile, including:
   "bio": "A short introduction",
   "level": "B1",
   "placementTestResult": {
-    "score": 6,
-    "maxScore": 10,
-    "completedAt": "2025-01-15T12:00:00Z"
+    "score": 18,
+    "maxScore": 25,
+    "completedAt": "2026-11-09T00:00:00Z",
+    "assessmentVersion": "cefr-written-v2"
   }
 }
 ```
@@ -35,16 +36,17 @@ Accept and persist profile fields, including:
   "bio": "A short introduction",
   "level": "B1",
   "placementTestResult": {
-    "score": 6,
-    "maxScore": 10,
-    "completedAt": "2025-01-15T12:00:00Z"
+    "score": 18,
+    "maxScore": 25,
+    "completedAt": "2026-11-09T00:00:00Z",
+    "assessmentVersion": "cefr-written-v2"
   }
 }
 ```
 
-Return the updated profile (preferably with the same shape as `GET /api/user/profile`). The endpoint must authenticate the user and only update that user's own profile. The placement-test result and level must be stored together so the dashboard and profile display the same result.
+Return the updated profile (preferably with the same shape as `GET /api/user/profile`). The endpoint must authenticate the user and only update that user's own profile. The placement-test result and level must be stored together so the dashboard and profile display the same result. Preserve `assessmentVersion` with the result.
 
-The frontend assigns levels using this score mapping for its 10-question test: 0–2 `A1`, 3–4 `A2`, 5–6 `B1`, 7–8 `B2`, 9–10 `C1`. Validate score and max score server-side rather than trusting client input.
+The current frontend test version, `cefr-written-v2`, has 25 questions: five questions at each CEFR band from A1 through C1, covering grammar, vocabulary, and reading. A band is passed at 3/5 correct; recommend the highest consecutive band passed. Validate that `0 <= score <= maxScore` and that the version/max score are supported server-side rather than trusting client input. This is a written placement estimate, not a certified assessment of speaking or listening.
 
 ## `POST /api/user/profile/avatar`
 

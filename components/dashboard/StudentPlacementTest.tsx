@@ -14,6 +14,8 @@ import {
   placementQuestions,
 } from "@/lib/placement-test";
 
+const ASSESSMENT_VERSION = "cefr-written-v2";
+
 export default function StudentPlacementTest() {
   const { lang } = useLanguage();
   const fa = lang === "fa";
@@ -72,19 +74,26 @@ export default function StudentPlacementTest() {
 
   const submitTest = async (nextAnswers: number[]) => {
     const score = getPlacementScore(nextAnswers);
-    const level = getPlacementLevel(score);
+    const level = getPlacementLevel(nextAnswers);
+    const placementTestResult = {
+      score,
+      maxScore: placementQuestions.length,
+      completedAt: new Date().toISOString(),
+      assessmentVersion: ASSESSMENT_VERSION,
+    };
     setSaving(true);
     setError("");
     try {
       const saved = await updateUserProfile({
         level,
-        placementTestResult: {
-          score,
-          maxScore: placementQuestions.length,
-          completedAt: new Date().toISOString(),
-        },
+        placementTestResult,
       });
-      setProfile(saved);
+      setProfile({
+        ...profile,
+        ...saved,
+        level,
+        placementTestResult,
+      });
       setOpen(false);
     } catch (reason) {
       setError(
@@ -117,22 +126,26 @@ export default function StudentPlacementTest() {
           </span>
           <div>
             <h2 className="mb-1 mt-0 text-[14px] font-semibold">
-              {profile.level
+              {profile.placementTestResult
                 ? fa
-                  ? `سطح زبان شما: ${profile.level}`
-                  : `Your English level: ${profile.level}`
-                : fa
-                  ? "سطح زبان انگلیسی‌ات را پیدا کن"
-                  : "Find your English level"}
+                  ? `سطح پیشنهادی شما: ${profile.level}`
+                  : `Your recommended level: ${profile.level}`
+                : profile.level
+                  ? fa
+                    ? `سطح ثبت‌شده شما: ${profile.level}`
+                    : `Your recorded level: ${profile.level}`
+                  : fa
+                    ? "سطح زبان انگلیسی‌ات را پیدا کن"
+                    : "Find your English level"}
             </h2>
             <p className="m-0 text-[11px] leading-5 text-muted">
               {profile.placementTestResult
                 ? fa
-                  ? `نتیجه آزمون: ${profile.placementTestResult.score} از ${profile.placementTestResult.maxScore}`
-                  : `Placement result: ${profile.placementTestResult.score} of ${profile.placementTestResult.maxScore}`
+                  ? `نتیجه: ${profile.placementTestResult.score} از ${profile.placementTestResult.maxScore} پاسخ درست · سنجش نوشتاری`
+                  : `Result: ${profile.placementTestResult.score}/${profile.placementTestResult.maxScore} correct · written assessment`
                 : fa
-                  ? "در یک آزمون کوتاه شرکت کن تا سطح مناسب در پروفایلت ثبت شود."
-                  : "Take a short test to save your recommended level to your profile."}
+                  ? "در یک آزمون چندبخشی شرکت کن تا سطح پیشنهادی در پروفایلت ذخیره شود."
+                  : "Take a multi-skill test to save your recommended level to your profile."}
             </p>
           </div>
         </div>
@@ -174,6 +187,11 @@ export default function StudentPlacementTest() {
                     ? `پرسش ${questionIndex + 1} از ${placementQuestions.length}`
                     : `Question ${questionIndex + 1} of ${placementQuestions.length}`}
                 </p>
+                <p className="mb-0 mt-1 text-[10px] text-muted">
+                  {fa
+                    ? "حدود ۶ تا ۸ دقیقه · دستور زبان، واژگان و درک مطلب"
+                    : "About 6–8 minutes · grammar, vocabulary, and reading"}
+                </p>
               </div>
               <button
                 type="button"
@@ -195,6 +213,15 @@ export default function StudentPlacementTest() {
             </div>
             <p className="mb-4 text-[15px] font-semibold leading-6" dir="ltr">
               {placementQuestions[questionIndex].prompt}
+            </p>
+            <p className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-blue">
+              {fa
+                ? placementQuestions[questionIndex].skill === "grammar"
+                  ? "دستور زبان"
+                  : placementQuestions[questionIndex].skill === "vocabulary"
+                    ? "واژگان"
+                    : "درک مطلب"
+                : placementQuestions[questionIndex].skill}
             </p>
             <div className="space-y-2">
               {placementQuestions[questionIndex].options.map((option, index) => (

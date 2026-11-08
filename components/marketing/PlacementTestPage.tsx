@@ -6,6 +6,7 @@ import { ArrowRight, CheckCircle2, RotateCcw, Sparkles } from "lucide-react";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 import {
   getPlacementLevel,
+  getPlacementSkillSummary,
   getPlacementScore,
   placementQuestions,
 } from "@/lib/placement-test";
@@ -16,9 +17,11 @@ export default function PlacementTestPage() {
   const [questionIndex, setQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<number[]>([]);
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
-  const [result, setResult] = useState<{ score: number; level: string } | null>(
-    null,
-  );
+  const [result, setResult] = useState<{
+    score: number;
+    level: string;
+    skills: ReturnType<typeof getPlacementSkillSummary>;
+  } | null>(null);
   const question = placementQuestions[questionIndex];
 
   const continueTest = () => {
@@ -29,7 +32,11 @@ export default function PlacementTestPage() {
 
     if (questionIndex === placementQuestions.length - 1) {
       const score = getPlacementScore(nextAnswers);
-      setResult({ score, level: getPlacementLevel(score) });
+      setResult({
+        score,
+        level: getPlacementLevel(nextAnswers),
+        skills: getPlacementSkillSummary(nextAnswers),
+      });
       return;
     }
 
@@ -59,9 +66,34 @@ export default function PlacementTestPage() {
             </h1>
             <p className="mb-7 text-sm text-ink70">
               {fa
-                ? `شما ${result.score} پاسخ درست از ${placementQuestions.length} پرسش داشتید. برای دیدن دوره‌های این سطح، فهرست دوره‌ها را ببینید.`
-                : `You answered ${result.score} of ${placementQuestions.length} questions correctly. Explore courses at this level.`}
+                ? `شما ${result.score} پاسخ درست از ${placementQuestions.length} پرسش داشتید. این نتیجه یک تخمین نوشتاری است و مهارت گفتاری و شنیداری را نمی‌سنجد.`
+                : `You answered ${result.score} of ${placementQuestions.length} questions correctly. This is a written estimate and does not assess speaking or listening.`}
             </p>
+            <div className="mx-auto mb-7 grid max-w-lg grid-cols-3 gap-2">
+              {result.skills.map(({ skill, correct, total }) => (
+                <div
+                  key={skill}
+                  className="rounded-xl bg-cream px-3 py-3 text-center"
+                >
+                  <p className="mb-1 text-[11px] font-medium text-muted">
+                    {fa
+                      ? skill === "grammar"
+                        ? "دستور زبان"
+                        : skill === "vocabulary"
+                          ? "واژگان"
+                          : "درک مطلب"
+                      : skill === "grammar"
+                        ? "Grammar"
+                        : skill === "vocabulary"
+                          ? "Vocabulary"
+                          : "Reading"}
+                  </p>
+                  <p className="m-0 text-sm font-bold">
+                    {correct}/{total}
+                  </p>
+                </div>
+              ))}
+            </div>
             <div className="flex flex-wrap justify-center gap-3">
               <Link
                 href={href(`/courses?search=${result.level}`)}
@@ -92,8 +124,8 @@ export default function PlacementTestPage() {
                 </h1>
                 <p className="m-0 text-sm leading-6 text-ink70">
                   {fa
-                    ? "به ۱۰ پرسش کوتاه پاسخ دهید تا سطح پیشنهادی‌تان را ببینید."
-                    : "Answer 10 short questions to get a recommended English level."}
+                    ? "به ۲۵ پرسش در دستور زبان، واژگان و درک مطلب پاسخ دهید. آزمون حدود ۶ تا ۸ دقیقه طول می‌کشد."
+                    : "Answer 25 grammar, vocabulary, and reading questions. The test takes about 6–8 minutes."}
                 </p>
               </div>
             </div>
@@ -117,6 +149,15 @@ export default function PlacementTestPage() {
               {fa
                 ? `پرسش ${questionIndex + 1} از ${placementQuestions.length}`
                 : `Question ${questionIndex + 1} of ${placementQuestions.length}`}
+            </p>
+            <p className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-blue">
+              {fa
+                ? question.skill === "grammar"
+                  ? "دستور زبان"
+                  : question.skill === "vocabulary"
+                    ? "واژگان"
+                    : "درک مطلب"
+                : question.skill}
             </p>
             <h2 className="mb-5 text-lg font-semibold" dir="ltr">
               {question.prompt}
