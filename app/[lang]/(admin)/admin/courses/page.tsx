@@ -42,6 +42,8 @@ import {
   createAdminClassSlot,
   assignTeacherToClassSlot,
   replaceAdminClassTeacher,
+  listAvailableTeachersForClass,
+  type AdminAssignableTeacher,
   updateAdminClassSlot,
   toDateTimeLocalValue,
   listAdminClassSlots,
@@ -130,6 +132,12 @@ export default function AdminCoursesPage() {
   const [searchingCourseStudents, setSearchingCourseStudents] = useState(false);
   const [updatingEnrollmentId, setUpdatingEnrollmentId] = useState("");
   const courseEnrollmentLoadRequest = useRef(0);
+  const [availableCourseTeachers, setAvailableCourseTeachers] = useState<
+    AdminAssignableTeacher[]
+  >([]);
+  const [loadingCourseTeachers, setLoadingCourseTeachers] = useState(false);
+  const [assigningCourseTeacherId, setAssigningCourseTeacherId] = useState("");
+  const [teacherAssignmentMessage, setTeacherAssignmentMessage] = useState("");
 
   useEffect(() => {
     if (!isApiConfigured()) {
@@ -157,7 +165,7 @@ export default function AdminCoursesPage() {
   }, []);
 
   useEffect(() => {
-    if (showCreateModal && isApiConfigured()) {
+    if (showCreateModal && !editingCourseId && isApiConfigured()) {
       listAdminTeachers()
         .then((result) =>
           setTeachers(result.items.filter((teacher) => teacher.status === "active")),
@@ -168,7 +176,7 @@ export default function AdminCoursesPage() {
           ),
         );
     }
-  }, [showCreateModal]);
+  }, [showCreateModal, editingCourseId]);
 
   const setDraft = (id: string, value: string) =>
     setDrafts((prev) => ({ ...prev, [id]: value }));
@@ -277,6 +285,8 @@ export default function AdminCoursesPage() {
     setCourseEnrollments([]);
     setCourseStudentCandidates([]);
     setCourseStudentSearch("");
+    setAvailableCourseTeachers([]);
+    setTeacherAssignmentMessage("");
     setApiError(null);
     setShowCreateModal(true);
     const requestId = ++courseEnrollmentLoadRequest.current;
@@ -303,6 +313,130 @@ export default function AdminCoursesPage() {
           setLoadingCourseEnrollments(false);
         }
       });
+  };
+
+  const findAvailableCourseTeachers = async () => {
+    if (!editingCourseId) return;
+    const linkedClass = classSlots.find(
+      (slot) => slot.courseId === editingCourseId,
+    );
+    if (!linkedClass) {
+      setApiError(
+        lang === "fa"
+          ? "ابتدا برنامهٔ کلاس را ذخیره کنید تا معلم‌های آزاد در آن زمان بررسی شوند."
+          : "Save the class schedule first to check teacher availability for that time.",
+      );
+      return;
+    }
+
+    const scheduleIsSaved =
+      new Date(newCourse.startsAt).getTime() ===
+        new Date(linkedClass.startsAt).getTime() &&
+      new Date(newCourse.endsAt).getTime() ===
+        new Date(linkedClass.endsAt).getTime();
+    if (!scheduleIsSaved) {
+      setApiError(
+        lang === "fa"
+          ? "زمان کلاس تغییر کرده است؛ ابتدا تغییرات دوره را ذخیره کنید."
+          : "The class time has changed. Save the course before checking availability.",
+      );
+      return;
+    }
+
+    setLoadingCourseTeachers(true);
+    setApiError(null);
+    setTeacherAssignmentMessage("");
+    try {
+      const teachers = await listAvailableTeachersForClass(linkedClass.id);
+      setAvailableCourseTeachers(teachers);
+      if (teachers.length === 0) {
+        setTeacherAssignmentMessage(
+          lang === "fa"
+            ? "برای این زمان و سطح، معلم تأییدشدهٔ آزادی پیدا نشد."
+            : "No approved teacher is available for this time and level.",
+        );
+      }
+    } catch (error) {
+      setApiError(
+        error instanceof Error
+          ? error.message
+          : lang === "fa"
+            ? "بررسی زمان‌های آزاد معلمان انجام نشد."
+            : "Could not check teacher availability.",
+      );
+    } finally {
+      setLoadingCourseTeachers(false);
+    }
+  };
+
+  const assignAvailableCourseTeacher = async (
+    teacher: AdminAssignableTeacher,
+  ) => {
+    if (!editingCourseId) return;
+    const linkedClass = classSlots.find(
+      (slot) => slot.courseId === editingCourseId,
+    );
+    if (!linkedClass) return;
+
+    setAssigningCourseTeacherId(teacher.id);
+    setApiError(null);
+    setTeacherAssignmentMessage("");
+    try {
+      const currentAssignment = linkedClass.teacherAssignments?.find(
+        (assignment) => assignment.status === "confirmed",
+      );
+      if (currentAssignment) {
+        await replaceAdminClassTeacher(linkedClass.id, teacher.id);
+      } else {
+        await assignTeacherToClassSlot(linkedClass.id, teacher.id);
+      }
+
+      let updatedCourse: AdminCourse;
+      try {
+        updatedCourse = await updateAdminCourse(editingCourseId, {
+          teacherId: teacher.id,
+        });
+      } catch (error) {
+        throw new Error(
+          lang === "fa"
+            ? `مدرس به کلاس اختصاص یافت، اما ذخیرهٔ مدرس در مشخصات دوره انجام نشد: ${error instanceof Error ? error.message : "خطای نامشخص"}`
+            : `The teacher was assigned to the class, but the course record could not be updated: ${error instanceof Error ? error.message : "Unknown error"}`,
+        );
+      }
+      setApiCourses((current) =>
+        current.map((course) =>
+          course.id === updatedCourse.id ? updatedCourse : course,
+        ),
+      );
+      setNewCourse((current) => ({ ...current, teacherId: teacher.id }));
+      let refreshedSlots: AdminClassSlot[];
+      try {
+        refreshedSlots = await listAdminClassSlots();
+      } catch (error) {
+        throw new Error(
+          lang === "fa"
+            ? `معلم اختصاص یافت، اما تازه‌سازی برنامهٔ کلاس ناموفق بود: ${error instanceof Error ? error.message : "خطای نامشخص"}`
+            : `The teacher was assigned, but the class schedule could not be refreshed: ${error instanceof Error ? error.message : "Unknown error"}`,
+        );
+      }
+      setClassSlots(refreshedSlots);
+      setTeacherAssignmentMessage(
+        lang === "fa"
+          ? `معلم ${teacher.name} با موفقیت به دوره اختصاص یافت.`
+          : `${teacher.name} was assigned to the course.`,
+      );
+      setAvailableCourseTeachers([]);
+    } catch (error) {
+      setApiError(
+        error instanceof Error
+          ? error.message
+          : lang === "fa"
+            ? "اختصاص معلم انجام نشد."
+            : "Could not assign the teacher.",
+      );
+    } finally {
+      setAssigningCourseTeacherId("");
+    }
   };
 
   const searchCourseStudents = async () => {
@@ -597,6 +731,20 @@ export default function AdminCoursesPage() {
       setCreating(false);
     }
   };
+
+  const currentEditingClass = editingCourseId
+    ? classSlots.find((slot) => slot.courseId === editingCourseId)
+    : undefined;
+  const currentClassTeacher = currentEditingClass?.teacherAssignments?.find(
+    (assignment) => assignment.status === "confirmed",
+  );
+  const isEditingScheduleSaved = Boolean(
+    currentEditingClass &&
+      new Date(newCourse.startsAt).getTime() ===
+        new Date(currentEditingClass.startsAt).getTime() &&
+      new Date(newCourse.endsAt).getTime() ===
+        new Date(currentEditingClass.endsAt).getTime(),
+  );
 
   return (
     <div>
@@ -1260,6 +1408,140 @@ export default function AdminCoursesPage() {
                   </label>
                 </div>
               </section>
+              {editingCourseId && (
+                <section className="space-y-4 rounded-xl border border-blue/20 bg-blue/5 p-4">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex items-start gap-3">
+                      <div className="rounded-lg bg-white p-2 text-blue">
+                        <CalendarDays size={17} />
+                      </div>
+                      <div>
+                        <h4 className="text-[13.5px] font-semibold text-ink">
+                          {lang === "fa"
+                            ? "اختصاص معلم بر اساس زمان آزاد"
+                            : "Assign by teacher availability"}
+                        </h4>
+                        <p className="mt-1 text-[12px] leading-relaxed text-ink70">
+                          {lang === "fa"
+                            ? "فقط معلم‌های تأییدشده‌ای نمایش داده می‌شوند که زمان آزادشان با برنامهٔ این کلاس هماهنگ است."
+                            : "Only approved teachers whose availability matches this class schedule will be shown."}
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => void findAvailableCourseTeachers()}
+                      disabled={
+                        loadingCourseTeachers ||
+                        Boolean(assigningCourseTeacherId) ||
+                        !isEditingScheduleSaved
+                      }
+                      className="inline-flex shrink-0 items-center justify-center gap-2 rounded-full bg-blue px-4 py-2.5 text-[12px] font-semibold text-white transition-colors hover:bg-blueDeep disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      <Search size={14} />
+                      {loadingCourseTeachers
+                        ? lang === "fa"
+                          ? "در حال بررسی..."
+                          : "Checking..."
+                        : lang === "fa"
+                          ? "بررسی معلم‌های آزاد"
+                          : "Find available teachers"}
+                    </button>
+                  </div>
+
+                  {!classSlots.some(
+                    (slot) => slot.courseId === editingCourseId,
+                  ) && (
+                    <p className="rounded-lg bg-white/80 px-3 py-2 text-[12px] text-muted">
+                      {lang === "fa"
+                        ? "برای این دوره هنوز کلاس زمان‌بندی‌شده‌ای ثبت نشده است. ابتدا تاریخ و ساعت را وارد و دوره را ذخیره کنید."
+                        : "This course has no scheduled class yet. Set the class date and time, then save the course first."}
+                    </p>
+                  )}
+
+                  {currentEditingClass && !isEditingScheduleSaved && (
+                    <p className="rounded-lg bg-white/80 px-3 py-2 text-[12px] text-muted">
+                      {lang === "fa"
+                        ? "برای تطبیق زمان آزاد معلم‌ها، تغییرات زمان‌بندی کلاس را ابتدا ذخیره کنید."
+                        : "Save the changed class schedule before matching teacher availability."}
+                    </p>
+                  )}
+
+                  {currentClassTeacher && (
+                    <div className="flex items-center gap-3 rounded-xl border border-sage/30 bg-white p-3">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-sage text-sageDeep">
+                        <Check size={16} />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[11px] text-muted">
+                          {lang === "fa"
+                            ? "معلم فعلی دوره"
+                            : "Currently assigned"}
+                        </p>
+                        <p className="truncate text-[12.5px] font-semibold text-ink">
+                          {currentClassTeacher.teacherName ||
+                            currentClassTeacher.teacherId}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {teacherAssignmentMessage && (
+                    <p
+                      role="status"
+                      className="rounded-lg bg-white px-3 py-2 text-[12px] font-medium text-sageDeep"
+                    >
+                      {teacherAssignmentMessage}
+                    </p>
+                  )}
+
+                  {availableCourseTeachers.length > 0 && (
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      {availableCourseTeachers.map((teacher) => (
+                        <div
+                          key={teacher.id}
+                          className="flex min-w-0 items-center gap-3 rounded-xl border border-line bg-white p-3"
+                        >
+                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue/10 text-blue">
+                            <UserPlus size={17} />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-[12.5px] font-semibold text-ink">
+                              {teacher.name}
+                            </p>
+                            <p className="truncate text-[11px] text-muted">
+                              {[teacher.subject, teacher.teachingLanguage]
+                                .filter(Boolean)
+                                .join(" · ")}
+                            </p>
+                            {teacher.matchedAvailability && (
+                              <p className="mt-1 truncate text-[11px] font-medium text-sageDeep">
+                                {teacher.matchedAvailability}
+                              </p>
+                            )}
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              void assignAvailableCourseTeacher(teacher)
+                            }
+                            disabled={Boolean(assigningCourseTeacherId)}
+                            className="shrink-0 rounded-full border border-blue/20 bg-blue/5 px-3 py-1.5 text-[11px] font-semibold text-blue hover:bg-blue hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
+                          >
+                            {assigningCourseTeacherId === teacher.id
+                              ? lang === "fa"
+                                ? "در حال اختصاص..."
+                                : "Assigning..."
+                              : lang === "fa"
+                                ? "اختصاص"
+                                : "Assign"}
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </section>
+              )}
               <div>
                 <label className="block text-[12.5px] font-semibold text-ink70 mb-2">
                   Discount Percent
@@ -1282,36 +1564,27 @@ export default function AdminCoursesPage() {
                   <span className="text-[12px] text-muted">%</span>
                 </div>
               </div>
-              <div>
-                <label className="block text-[12.5px] font-semibold text-ink70 mb-2">
-                  Teacher
-                </label>
-                <select
-                  value={newCourse.teacherId}
-                  onChange={(e) =>
-                    setNewCourse({ ...newCourse, teacherId: e.target.value })
-                  }
-                  className="w-full border border-line rounded-lg px-3.5 py-2.5 text-[13.5px] outline-none focus:border-blue"
-                >
-                  <option value="">Select a teacher (optional)</option>
-                  {teachers.map((teacher) => (
-                    <option key={teacher.id} value={teacher.id}>
-                      {teacher.fullName}
-                    </option>
-                  ))}
-                  {newCourse.teacherId &&
-                    !teachers.some(
-                      (teacher) =>
-                        teacher.id === newCourse.teacherId,
-                    ) && (
-                      <option value={newCourse.teacherId}>
-                        {lang === "fa"
-                          ? "مدرس فعلی"
-                          : "Current teacher"}
+              {!editingCourseId && (
+                <div>
+                  <label className="block text-[12.5px] font-semibold text-ink70 mb-2">
+                    Teacher
+                  </label>
+                  <select
+                    value={newCourse.teacherId}
+                    onChange={(e) =>
+                      setNewCourse({ ...newCourse, teacherId: e.target.value })
+                    }
+                    className="w-full border border-line rounded-lg px-3.5 py-2.5 text-[13.5px] outline-none focus:border-blue"
+                  >
+                    <option value="">Select a teacher (optional)</option>
+                    {teachers.map((teacher) => (
+                      <option key={teacher.id} value={teacher.id}>
+                        {teacher.fullName}
                       </option>
-                    )}
-                </select>
-              </div>
+                    ))}
+                  </select>
+                </div>
+              )}
               <div className="flex items-center gap-2">
                 <input
                   type="checkbox"
