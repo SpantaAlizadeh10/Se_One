@@ -71,12 +71,21 @@ export default function LatestCourses({
   } = useCourses(lang);
 
   const q = filterQuery?.trim().toLowerCase() ?? "";
+  const categoryAliases: Record<string, string[]> = {
+    "free discussion": ["free discussion", "فری دیسکاشن"],
+    private: ["private", "خصوصی"],
+    kids: ["kids", "children", "کودکان", "کودک"],
+    general: ["general", "عمومی"],
+  };
   const courses = q
     ? allCourses.filter(
         (c) =>
           c.title.toLowerCase().includes(q) ||
           c.level.toLowerCase().includes(q) ||
           c.desc.toLowerCase().includes(q) ||
+          categoryAliases[q]?.some((alias) =>
+            c.category?.toLowerCase().includes(alias),
+          ) ||
           c.category?.toLowerCase().includes(q),
       )
     : allCourses;

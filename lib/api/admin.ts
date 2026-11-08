@@ -635,7 +635,7 @@ export type CreateCourseInput = {
   currency?: string;
   duration?: string;
   imageUrl?: string;
-  category?: string;
+  category: string;
   language?: string;
   teacherId?: string;
   discountPercent?: number;

@@ -152,7 +152,7 @@ Update course metadata and all editable fields from the admin course form
   "currency": "IRR",
   "discountPercent": 20,
   "duration": "8 weeks",
-  "category": "Conversation",
+  "category": "IELTS",
   "language": "english",
   "imageUrl": "https://cdn.example.com/course.jpg",
   "teacherId": "teacher-id",
@@ -160,6 +160,9 @@ Update course metadata and all editable fields from the admin course form
   "isPublished": true
 }
 ```
+
+For course categories, use one of: `Free Discussion`, `Private`, `IELTS`,
+`Kids`, `PTE`, or `General`.
 
 The endpoint accepts any subset of these fields and returns the complete
 updated course. The admin frontend edits the matching scheduled class via
