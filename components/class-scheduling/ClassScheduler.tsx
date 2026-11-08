@@ -223,7 +223,7 @@ export default function ClassScheduler() {
       teacherRole: slotItem.teacherRole,
       startsAt: toDateTimeLocalValue(slotItem.startsAt),
       endsAt: toDateTimeLocalValue(slotItem.endsAt),
-      basePrice: slotItem.basePrice,
+      basePrice: slotItem.basePrice ?? 0,
       currency: slotItem.currency || "IRR",
     });
     const activeTeacher = slotItem.teacherAssignments?.find(
@@ -343,7 +343,9 @@ export default function ClassScheduler() {
         [slotItem.id]: enrollments,
       }));
       const students = await listAdminStudents({ page: 1, pageSize: 20 });
-      setStudentCandidates(students.items);
+      setStudentCandidates(
+        students.items.filter((student) => student.status === "active"),
+      );
       setSelectedStudentId("");
     } catch (reason) {
       setError(
@@ -367,7 +369,9 @@ export default function ClassScheduler() {
         pageSize: 20,
         search: studentSearch.trim() || undefined,
       });
-      setStudentCandidates(result.items);
+      setStudentCandidates(
+        result.items.filter((student) => student.status === "active"),
+      );
       setSelectedStudentId("");
     } catch (reason) {
       setError(
@@ -1146,7 +1150,8 @@ export default function ClassScheduler() {
                                           (target) =>
                                             target.id !== slotItem.id &&
                                             !target.isDemo &&
-                                            target.status === "active",
+                                            target.status === "active" &&
+                                            target.remainingSeats > 0,
                                         )
                                         .map((target) => (
                                           <option
