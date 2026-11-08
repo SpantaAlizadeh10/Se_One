@@ -3,16 +3,51 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
-import { Mic, BookOpen, PenLine, Clock, LoaderCircle } from "lucide-react";
+import {
+  Mic,
+  BookOpen,
+  PenLine,
+  Clock,
+  LoaderCircle,
+  Headphones,
+  BookOpenCheck,
+  SpellCheck,
+  Volume2,
+} from "lucide-react";
 import { getPracticeContent, type PracticeContent } from "@/lib/api/practice";
+import type { PracticeSkill } from "./SkillGrid";
 
 const kindStyles = {
   speak: { bg: "bg-[#E4ECFF]", text: "text-blue", Icon: Mic },
+  listen: { bg: "bg-sage", text: "text-sageDeep", Icon: Headphones },
+  read: { bg: "bg-[#F1EAFE]", text: "text-[#7653B5]", Icon: BookOpenCheck },
   grammar: { bg: "bg-sage", text: "text-sageDeep", Icon: BookOpen },
+  vocabulary: { bg: "bg-[#FFF4D9]", text: "text-[#9A6A09]", Icon: Volume2 },
   write: { bg: "bg-goldSoft", text: "text-goldDeep", Icon: PenLine },
 } as const;
 
-export default function PracticeList() {
+function getPracticeSkill(item: PracticeContent): Exclude<PracticeSkill, "all"> | null {
+  const text = `${item.category} ${item.title} ${item.description}`.toLowerCase();
+  if (/vocab|word bank|flashcard|واژگان|لغت/.test(text)) return "vocabulary";
+  if (/grammar|tense|sentence structure|گرامر|دستور زبان/.test(text))
+    return "grammar";
+  if (
+    item.questions.some((question) => question.type === "listening") ||
+    /listen|audio|listening|شنیداری|شنیدن/.test(text)
+  )
+    return "listening";
+  if (
+    /speak|speaking|pronunciation|conversation|مکالمه|گفتار/.test(text)
+  )
+    return "speaking";
+  if (/read|reading|comprehension|درک مطلب|خواندن/.test(text))
+    return "reading";
+  if (/write|writing|written|essay|paragraph|نوشتن/.test(text))
+    return "writing";
+  return null;
+}
+
+export default function PracticeList({ skill }: { skill: PracticeSkill }) {
   const { href, lang } = useLanguage();
   const fa = lang === "fa";
   const [practiceItems, setPracticeItems] = useState<PracticeContent[]>([]);
@@ -36,6 +71,11 @@ export default function PracticeList() {
     };
   }, []);
 
+  const visibleItems =
+    skill === "all"
+      ? practiceItems
+      : practiceItems.filter((item) => getPracticeSkill(item) === skill);
+
   return (
     <div
       id="recommended-exercises"
@@ -54,19 +94,25 @@ export default function PracticeList() {
             : "Could not load exercises. Please try again."}
         </p>
       )}
-      {practiceItems.map((item, i) => {
-        const category = `${item.category} ${item.title}`.toLowerCase();
+      {visibleItems.map((item, i) => {
+        const skill = getPracticeSkill(item);
         const kind =
-          category.includes("speak") || category.includes("listen")
+          skill === "speaking"
             ? "speak"
-            : category.includes("grammar")
-              ? "grammar"
-              : "write";
+            : skill === "listening"
+              ? "listen"
+              : skill === "reading"
+                ? "read"
+                : skill === "grammar"
+                  ? "grammar"
+                  : skill === "vocabulary"
+                    ? "vocabulary"
+                    : "write";
         const { bg, text, Icon } = kindStyles[kind];
         return (
           <div
             key={item.id}
-            className={`flex items-center gap-3 py-3.5 ${i !== practiceItems.length - 1 ? "border-b border-line" : ""}`}
+            className={`flex items-center gap-3 py-3.5 ${i !== visibleItems.length - 1 ? "border-b border-line" : ""}`}
           >
             <div
               className={`w-[42px] h-[42px] rounded-[10px] flex items-center justify-center shrink-0 ${bg} ${text}`}
@@ -94,11 +140,15 @@ export default function PracticeList() {
           </div>
         );
       })}
-      {!loading && !error && practiceItems.length === 0 && (
+      {!loading && !error && visibleItems.length === 0 && (
         <p className="py-7 text-center text-[12px] text-muted">
-          {fa
-            ? "فعلاً تمرین تازه‌ای در دسترس نیست."
-            : "No practice exercises are available yet."}
+          {skill !== "all"
+            ? fa
+              ? "فعلاً تمرینی در این مهارت ثبت نشده است."
+              : "No exercises are available for this skill yet."
+            : fa
+              ? "فعلاً تمرین تازه‌ای در دسترس نیست."
+              : "No practice exercises are available yet."}
         </p>
       )}
     </div>
