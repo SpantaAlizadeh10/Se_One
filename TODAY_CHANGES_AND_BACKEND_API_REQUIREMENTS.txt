@@ -1,0 +1,180 @@
+گزارش تغییرات امروز و نیازمندی‌های بک‌اند
+تاریخ: 2026-11-01
+
+این فایل خلاصه تغییرات رابط کاربری و قراردادهای بک‌اند موردنیاز برای کامل‌شدن جریان‌های امروز است. سورس بک‌اند .NET/Supabase در workspace فعلی وجود ندارد؛ بنابراین APIهای جدید در کلاینت و مشخصات مستند شده‌اند، اما پیاده‌سازی سمت سرور هنوز باید انجام شود.
+
+======================================================================
+۱) تغییرات انجام‌شده در فرانت‌اند
+======================================================================
+
+الف) دوره‌ها و کلاس‌های ادمین
+- فرم ایجاد دوره اطلاعات کلاس را هم می‌گیرد: عمومی/خصوصی، ظرفیت، زمان شروع و پایان و گروه معلم.
+- ظرفیت عمومی ۱۰ نفر و ظرفیت خصوصی ۱ یا ۲ نفر است.
+- کلاس برنامه‌ریزی‌شده با شناسه دوره به دوره متصل می‌شود.
+- تاریخ‌انتخاب‌کن‌ها در زبان فارسی از تقویم شمسی استفاده می‌کنند.
+- در صفحه زمان‌بندی کلاس ادمین، درخواست‌های معلم برای هر کلاس نمایش داده می‌شوند و ادمین می‌تواند درخواست را تأیید یا رد کند.
+- برای پیش‌نمایش، چند کلاس نمونه وجود دارد. درخواست‌ها و تأییدهای نمونه در localStorage مرورگر ذخیره می‌شوند و رزرو/پرداخت آزمایشی‌اند.
+
+فایل‌های اصلی:
+- app/[lang]/(admin)/admin/courses/page.tsx
+- components/class-scheduling/ClassScheduler.tsx
+- lib/api/class-scheduling.ts
+- lib/demo-class-scheduling.ts
+
+ب) معلم و کلاس‌های قابل‌تدریس
+- معلم کلاس‌های فعال ساخته‌شده توسط ادمین را می‌بیند و برای تدریس آن‌ها درخواست می‌فرستد.
+- درخواست تا تأیید ادمین در وضعیت pending می‌ماند؛ کلاس پیش از تأیید نباید برای دانش‌آموز قابل رزرو باشد.
+- وضعیت‌های available، pending، confirmed و cancelled نمایش داده می‌شوند.
+- کلاس‌های تأییدشده در برنامه تدریس معلم قرار می‌گیرند.
+
+فایل اصلی:
+- components/class-scheduling/TeacherClassPicker.tsx
+
+ج) رزرو دانش‌آموز و پرداخت
+- فهرست دانش‌آموز از endpoint کلاس‌های تأییدشده می‌آید و امکان فیلتر بر اساس معلم را دارد.
+- ظرفیت کلاس با دایره‌های پر/خالی نمایش داده می‌شود.
+- با ادامه رزرو، enrollment موقت ساخته می‌شود و شناسه آن به صفحه پرداخت جداگانه ارسال می‌شود.
+- صفحه پرداخت دو روش دارد:
+  1. کارت‌به‌کارت: در حالت واقعی اطلاعات دریافت‌شده از API و ارسال فیش؛ در حالت دمو شماره نمایشی 6037-0000-0000-0000 نمایش داده می‌شود و تراکنش واقعی نیست.
+  2. پرداخت از طریق لینک: کلاینت فقط لینک HTTPS برگشتی از API را باز می‌کند. تا وقتی درگاه متصل نشده باشد، گزینه غیرفعال و پیام اطلاع‌رسانی نمایش داده می‌شود.
+- رزرو واقعی بعد از ارسال فیش در انتظار بررسی پرداخت می‌ماند و تأیید نهایی باید سمت ادمین/بک‌اند انجام شود.
+- اطلاعات کارت و حساب ارائه‌شده توسط کاربر داخل کد فرانت‌اند hardcode نشده‌اند؛ فرم از GET /api/payment/settings می‌خواند.
+
+فایل‌های اصلی:
+- components/class-selection/ClassSelectionPage.tsx
+- components/class-scheduling/ClassPaymentPage.tsx
+- app/[lang]/(app)/dashboard/classes/payment/page.tsx
+- lib/api/payments.ts
+- lib/api/class-scheduling.ts
+
+د) فهرست معلم‌ها در ادمین
+- کلاینت AdminTeacher برای envelopeهای تو‌در‌تو و نام‌فیلدهای متداول snake_case نیز مقاوم‌تر شد.
+- صفحه فعلی از GET /api/admin/teachers می‌خواند، نه مستقیماً از Supabase.
+- در مخزن، جدول TeacherProfiles یا کد بک‌اند مربوطه پیدا نشد؛ اتصال API به جدول Supabase باید سمت سرور انجام شود.
+
+فایل‌های اصلی:
+- app/[lang]/(admin)/admin/teachers/page.tsx
+- lib/api/admin.ts
+
+هـ) تمرین معلم برای دانش‌آموز
+- در صفحه برنامه هفتگی معلم فرمی اضافه شد تا معلم دانش‌آموزی از فهرست دانش‌آموزان کلاس‌های خودش انتخاب کند، عنوان/شرح/مهلت تمرین را وارد کند و ارسال کند.
+- تمرین‌های فرم جدید از نوع check هستند؛ دانش‌آموز آن‌ها را در داشبورد تمرین‌ها می‌بیند و با دکمه «انجام دادم» وضعیت را completed می‌کند.
+- تمرین‌های عادی از نوع submission همچنان فرایند پاسخ نوشتاری/فایل و ارسال قبلی را حفظ می‌کنند.
+
+فایل‌های اصلی:
+- app/[lang]/(teacher)/teacher/schedule/page.tsx
+- components/teacher-dashboard/TeacherAssignmentForm.tsx
+- components/assignments/AssignmentsCenter.tsx
+- lib/api/assignments.ts
+
+======================================================================
+۲) APIهای لازم برای جریان کلاس و رزرو
+======================================================================
+
+۱. GET /api/admin/class-slots
+دسترسی: Admin
+- فهرست کلاس‌های تعریف‌شده توسط ادمین را برگرداند.
+- برای هر کلاس: id، courseId، courseTitle، title، description، classType، capacity، startsAt، endsAt، status، enrolledCount، remainingSeats، basePrice، finalPrice، currency.
+- teacherAssignments شامل assignmentId، teacherId، teacherName، status و selectedAt باشد.
+
+۲. POST /api/admin/class-slots
+دسترسی: Admin
+- ایجاد کلاس و پذیرش courseId اختیاری.
+- classType یکی از public/private.
+- public ظرفیت دقیقاً ۱۰؛ private ظرفیت ۱ یا ۲.
+- startsAt/endsAt باید ISO-8601 و شروع قبل از پایان باشد.
+
+۳. GET /api/teacher/class-slots
+دسترسی: Teacher
+- کلاس‌های فعال ادمین را برای انتخاب و وضعیت درخواست همین معلم برگرداند.
+- شناسه معلم فقط از session/token استخراج شود.
+
+۴. POST /api/teacher/class-slots/{slotId}/request
+دسترسی: Teacher
+- درخواست تدریس ایجاد کند؛ وضعیت اولیه pending.
+- ارسال تکراری idempotent باشد.
+- تداخل زمانی برنامه معلم بررسی شود.
+
+۵. PATCH /api/admin/class-slot-assignments/{assignmentId}
+دسترسی: Admin
+- بدنه: { status: "confirmed" | "cancelled" }.
+- در تأیید، تداخل زمانی و فعال‌بودن کلاس دوباره سمت سرور بررسی شود.
+
+۶. GET /api/student/class-slots?teacherId={id}
+دسترسی: Student
+- فقط کلاس‌هایی را برگرداند که assignment معلم آن‌ها توسط ادمین confirmed شده است.
+- فیلتر teacherId اختیاری.
+- شامل assignmentId، teacherId، teacherName، enrolled، ظرفیت، تعداد ثبت‌نام، صندلی خالی و اطلاعات قیمت باشد.
+- داده pending یا ردشده هرگز به دانش‌آموز نمایش داده نشود.
+
+۷. POST /api/student/class-slots/{assignmentId}/enroll
+دسترسی: Student
+- رزرو موقت در وضعیت pending ایجاد کند.
+- پاسخ شامل id (شناسه enrollment)، assignmentId، finalPrice، currency و status باشد.
+- ظرفیت را اتمیک نگه دارد؛ تکرار رزرو/تداخل/ظرفیت پر با 409 رد شود.
+- درخواست تکراری همان دانش‌آموز برای همان assignment idempotent باشد.
+- رزرو پرداخت‌نشده پس از مهلت مشخص آزاد شود.
+
+======================================================================
+۳) APIهای لازم برای پرداخت
+======================================================================
+
+۱. GET /api/payment/settings
+دسترسی: Student/Teacher/Admin
+- تنظیمات مقصد دریافت وجه را برگرداند: cardNumber، accountNumber (اختیاری)، cardHolderName، bankName و whatsappNumber.
+- این فیلدها اطلاعات مقصد دریافت وجه هستند؛ اطلاعات کارت/حساب دانش‌آموز یا داده احراز هویت هرگز برگردانده نشود.
+- مقادیر واقعی که کاربر ارائه کرده باید در تنظیمات امن بک‌اند ذخیره شوند، نه در source code فرانت‌اند.
+
+۲. POST /api/payments
+دسترسی: Student
+- درخواست: { enrollmentId, paymentMethod: "card-transfer" | "payment-link" }.
+- مبلغ و ارز فقط از enrollment سمت سرور تعیین شود.
+- پاسخ شامل id، enrollmentId، amount، currency، status، paymentMethod و paymentUrl اختیاری باشد.
+- برای payment-link، فقط لینک HTTPS درگاه برگردد.
+- ایجاد مجدد درخواست برای enrollment و روش پرداخت، پرداخت pending موجود را بازیابی کند و پرداخت تکراری نسازد.
+
+۳. POST /api/payments/{paymentId}/receipt
+دسترسی: Student
+- multipart/form-data با فیلد receipt.
+- فایل برای بررسی ادمین ثبت شود و وضعیت پرداخت pending بماند.
+- enrollment فقط پس از تأیید پرداخت نهایی شود.
+
+۴. Callback/Webhook درگاه بانکی (برای اتصال آینده)
+- callback مرورگر به‌تنهایی معتبر نیست.
+- سرور باید نتیجه درگاه را با امضا/اعتبارسنجی ارائه‌دهنده بررسی کند و سپس payment/enrollment را نهایی کند.
+
+======================================================================
+۴) APIهای لازم برای تمرین معلم
+======================================================================
+
+۱. GET /api/teacher/dashboard/students
+دسترسی: Teacher
+- فقط دانش‌آموزانی که به کلاس‌های معلم جاری مرتبط هستند برگردانده شوند.
+- teacherId از token/session استخراج شود، نه از query/body.
+
+۲. POST /api/teacher/assignments
+دسترسی: Teacher
+- بدنه شامل courseId، targetStudentId، completionType، title، description، instructions، dueDate، maxPoints و isPublished.
+- completionType: check یا submission.
+- بک‌اند بررسی کند targetStudentId در کلاس/دوره‌ای متعلق به معلم ثبت‌نام یا ارتباط فعال دارد.
+- تمرین فقط برای دانش‌آموز هدف از GET /api/student/assignments قابل مشاهده باشد.
+
+۳. GET /api/student/assignments
+دسترسی: Student
+- فقط تمرین‌های عمومی مجاز و تمرین‌هایی که targetStudentId آن‌ها دانش‌آموز جاری است.
+
+۴. POST /api/student/assignments/{assignmentId}/complete
+دسترسی: Student
+- فقط برای completionType=check.
+- دسترسی دانش‌آموز به assignment بررسی شود.
+- وضعیت completed را به‌صورت اتمیک ایجاد/ثبت کند؛ درخواست تکراری idempotent باشد.
+- معلم این وضعیت را از GET /api/teacher/assignments/{assignmentId}/submissions مشاهده کند.
+
+======================================================================
+۵) وضعیت پیاده‌سازی
+======================================================================
+
+- رابط کاربری، کلاینت‌های API و قراردادهای اصلی در فرانت‌اند آماده شده‌اند.
+- فایل‌های API specification به‌روزرسانی شده‌اند.
+- سورس بک‌اند در این workspace نیست؛ بنابراین موارد بالا باید در سرویس بک‌اند اجرا شوند تا داده واقعی پایدار شود.
+- Build فعلی پروژه Next.js در پایان تغییرات موفق بود.

@@ -1,9 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { User, Bell, Lock } from "lucide-react";
+import { User, Bell, Lock, Upload, LoaderCircle } from "lucide-react";
 import Toggle from "@/components/settings/Toggle";
+import {
+  getUserProfile,
+  updateUserProfile,
+  uploadAvatar,
+  type UserProfile,
+} from "@/lib/api/settings";
 
 const tabs = [
   { id: "profile", label: "Profile", Icon: User },
@@ -19,6 +25,111 @@ const labelClass = "text-[12.5px] font-semibold text-ink70";
 
 export default function SettingsView() {
   const [tab, setTab] = useState<TabId>("profile");
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [fullName, setFullName] = useState("");
+  const [bio, setBio] = useState("");
+  const [profileLoading, setProfileLoading] = useState(true);
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [profileError, setProfileError] = useState("");
+  const [profileNotice, setProfileNotice] = useState("");
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    let active = true;
+    getUserProfile()
+      .then((loaded) => {
+        if (!active) return;
+        setProfile(loaded);
+        setFullName(loaded.fullName);
+        setBio(loaded.bio ?? "");
+      })
+      .catch((error) => {
+        if (active)
+          setProfileError(
+            error instanceof Error ? error.message : "Could not load profile.",
+          );
+      })
+      .finally(() => {
+        if (active) setProfileLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const age = (() => {
+    if (!profile?.dateOfBirth) return null;
+    const [year, month, day] = profile.dateOfBirth
+      .slice(0, 10)
+      .split("-")
+      .map(Number);
+    if (!year || !month || !day) return null;
+    const today = new Date();
+    return (
+      today.getFullYear() -
+      year -
+      (today.getMonth() + 1 < month ||
+      (today.getMonth() + 1 === month && today.getDate() < day)
+        ? 1
+        : 0)
+    );
+  })();
+
+  const saveProfile = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setSavingProfile(true);
+    setProfileError("");
+    setProfileNotice("");
+    try {
+      const saved = await updateUserProfile({
+        fullName: fullName.trim(),
+        bio: bio.trim(),
+      });
+      setProfile(saved);
+      setFullName(saved.fullName);
+      setBio(saved.bio ?? "");
+      setProfileNotice("Profile changes saved.");
+      window.dispatchEvent(new Event("se-one-profile-updated"));
+    } catch (error) {
+      setProfileError(
+        error instanceof Error ? error.message : "Could not save profile.",
+      );
+    } finally {
+      setSavingProfile(false);
+    }
+  };
+
+  const changeAvatar = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setProfileError("Choose an image file.");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setProfileError("The image must be 5 MB or smaller.");
+      return;
+    }
+    setUploadingAvatar(true);
+    setProfileError("");
+    setProfileNotice("");
+    try {
+      const uploaded = await uploadAvatar(file);
+      setProfile((current) =>
+        current ? { ...current, avatarUrl: uploaded.avatarUrl } : current,
+      );
+      setProfileNotice("Profile photo updated.");
+      window.dispatchEvent(new Event("se-one-profile-updated"));
+    } catch (error) {
+      setProfileError(
+        error instanceof Error ? error.message : "Could not upload photo.",
+      );
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[220px_1fr] gap-4 lg:gap-6 items-start">
@@ -42,78 +153,131 @@ export default function SettingsView() {
           <div className="bg-white border border-line rounded-lg shadow-card p-5 sm:p-7">
             <h3 className="text-[18px] font-semibold mb-1">Profile</h3>
             <p className="text-muted text-[13px] mb-6">
-              This information is visible to your teachers and study group.
+              Your profile details and learning level.
             </p>
 
-            <div className="flex items-center gap-4 mb-6.5 pb-6.5 border-b border-line" style={{ marginBottom: 26, paddingBottom: 26 }}>
-              <Image
-                src="https://i.pravatar.cc/120?img=13"
-                alt="Sepanta"
-                width={66}
-                height={66}
-                className="rounded-full object-cover"
-              />
-              <div className="flex gap-2.5">
-                <button className="bg-white border border-line text-ink px-3.5 py-2.5 rounded-[9px] text-[12.5px] font-semibold hover:border-ink transition-colors">
-                  Upload new photo
-                </button>
-                <button className="bg-white border border-danger/30 text-danger px-3.5 py-2.5 rounded-[9px] text-[12.5px] font-semibold">
-                  Remove
-                </button>
-              </div>
-            </div>
+            {profileError && (
+              <p role="alert" className="mb-4 rounded-lg bg-danger/10 p-3 text-[12px] text-danger">
+                {profileError}
+              </p>
+            )}
+            {profileNotice && (
+              <p role="status" className="mb-4 rounded-lg bg-sage/30 p-3 text-[12px] text-sageDeep">
+                {profileNotice}
+              </p>
+            )}
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4.5 mb-4.5" style={{ gap: 18 }}>
-              <div className="flex flex-col gap-1.5">
-                <label className={labelClass}>First name</label>
-                <input defaultValue="Sepanta" className={fieldClass} />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <label className={labelClass}>Last name</label>
-                <input defaultValue="Rostami" className={fieldClass} />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <label className={labelClass}>Email address</label>
-                <input type="email" dir="ltr" defaultValue="sepanta@example.com" className={fieldClass} />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <label className={labelClass}>Phone number</label>
-                <input type="tel" defaultValue="+49 151 000 0000" className={fieldClass} />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <label className={labelClass}>Current level</label>
-                <select className={fieldClass} defaultValue="B1">
-                  <option value="A1">A1 — Beginner</option>
-                  <option value="B1">B1 — Intermediate</option>
-                  <option value="C1">C1 — Advanced</option>
-                </select>
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <label className={labelClass}>Time zone</label>
-                <select className={fieldClass} defaultValue="CET">
-                  <option value="CET">Central European Time (CET)</option>
-                  <option value="GMT">Greenwich Mean Time (GMT)</option>
-                  <option value="ET">Eastern Time (ET)</option>
-                </select>
-              </div>
-              <div className="flex flex-col gap-1.5 sm:col-span-2">
-                <label className={labelClass}>Bio</label>
-                <textarea
-                  className={fieldClass}
-                  rows={3}
-                  defaultValue="Learning English for work and travel. Aiming for a B2 certificate by the end of the year."
-                />
-              </div>
-            </div>
+            {profileLoading ? (
+              <p className="text-[13px] text-muted">Loading profile…</p>
+            ) : profile ? (
+              <>
+                <div className="mb-6 flex flex-wrap items-center gap-4 border-b border-line pb-6">
+                  <Image
+                    src={profile.avatarUrl || "/images/Teacher.jpeg"}
+                    alt={profile.fullName || "Profile photo"}
+                    width={72}
+                    height={72}
+                    unoptimized
+                    className="h-[72px] w-[72px] rounded-full object-cover"
+                  />
+                  <div>
+                    <input
+                      ref={avatarInputRef}
+                      type="file"
+                      accept="image/*"
+                      className="sr-only"
+                      onChange={(event) => void changeAvatar(event)}
+                    />
+                    <button
+                      type="button"
+                      disabled={uploadingAvatar}
+                      onClick={() => avatarInputRef.current?.click()}
+                      className="inline-flex items-center gap-2 rounded-lg border border-line px-3.5 py-2.5 text-[12px] font-semibold hover:border-ink disabled:opacity-60"
+                    >
+                      {uploadingAvatar ? (
+                        <LoaderCircle size={15} className="animate-spin" />
+                      ) : (
+                        <Upload size={15} />
+                      )}
+                      {uploadingAvatar ? "Uploading…" : "Change photo"}
+                    </button>
+                    <p className="mb-0 mt-1.5 text-[10px] text-muted">
+                      PNG, JPG or WebP · up to 5 MB
+                    </p>
+                  </div>
+                </div>
 
-            <div className="flex justify-end gap-2.5">
-              <button className="bg-white border border-line text-ink px-3.5 py-2.5 rounded-[9px] text-[12.5px] font-semibold">
-                Cancel
-              </button>
-              <button className="bg-ink text-white px-5 py-3 rounded-[11px] text-[13.5px] font-semibold hover:bg-blueDeep transition-colors">
-                Save changes
-              </button>
-            </div>
+                <form onSubmit={(event) => void saveProfile(event)}>
+                  <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <label className="flex flex-col gap-1.5">
+                      <span className={labelClass}>Full name</span>
+                      <input
+                        value={fullName}
+                        onChange={(event) => setFullName(event.target.value)}
+                        className={fieldClass}
+                        required
+                      />
+                    </label>
+                    <label className="flex flex-col gap-1.5">
+                      <span className={labelClass}>Email address</span>
+                      <input
+                        type="email"
+                        dir="ltr"
+                        value={profile.email}
+                        readOnly
+                        className={`${fieldClass} opacity-70`}
+                      />
+                    </label>
+                    <label className="flex flex-col gap-1.5">
+                      <span className={labelClass}>Age</span>
+                      <input
+                        value={age === null ? "Not provided" : `${age}`}
+                        readOnly
+                        className={`${fieldClass} opacity-70`}
+                      />
+                    </label>
+                    <label className="flex flex-col gap-1.5">
+                      <span className={labelClass}>Current English level</span>
+                      <input
+                        value={profile.level || "Not assessed"}
+                        readOnly
+                        className={`${fieldClass} opacity-70`}
+                      />
+                    </label>
+                    <label className="flex flex-col gap-1.5">
+                      <span className={labelClass}>Placement test result</span>
+                      <input
+                        value={
+                          profile.placementTestResult
+                            ? `${profile.placementTestResult.score}/${profile.placementTestResult.maxScore}`
+                            : "Not completed"
+                        }
+                        readOnly
+                        className={`${fieldClass} opacity-70`}
+                      />
+                    </label>
+                    <label className="flex flex-col gap-1.5 sm:col-span-2">
+                      <span className={labelClass}>Bio</span>
+                      <textarea
+                        value={bio}
+                        onChange={(event) => setBio(event.target.value)}
+                        className={fieldClass}
+                        rows={4}
+                      />
+                    </label>
+                  </div>
+                  <div className="flex justify-end">
+                    <button
+                      type="submit"
+                      disabled={savingProfile}
+                      className="rounded-[11px] bg-ink px-5 py-3 text-[13px] font-semibold text-white hover:bg-blueDeep disabled:opacity-60"
+                    >
+                      {savingProfile ? "Saving…" : "Save changes"}
+                    </button>
+                  </div>
+                </form>
+              </>
+            ) : null}
           </div>
         )}
 

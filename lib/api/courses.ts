@@ -4,6 +4,8 @@ export type Course = {
   id: string;
   title: string;
   level: string;
+  term?: string;
+  language?: string;
   desc: string;
   lessons: number;
   students: number;
@@ -64,6 +66,15 @@ function normalizeCourse(raw: unknown, index: number): Course | null {
     id,
     title,
     level: text(record, "level", "Level", "levelName", "LevelName"),
+    term: text(record, "term", "Term", "termName", "TermName") || undefined,
+    language:
+      text(
+        record,
+        "language",
+        "Language",
+        "courseLanguage",
+        "CourseLanguage",
+      ) || undefined,
     desc: text(
       record,
       "desc",

@@ -58,7 +58,12 @@ export default function LatestCourses({
     }
   };
 
-  const { courses: allCourses } = useCourses(lang);
+  const {
+    courses: allCourses,
+    loading,
+    error: coursesError,
+    reload: reloadCourses,
+  } = useCourses(lang);
 
   const q = filterQuery?.trim().toLowerCase() ?? "";
   const courses = q
@@ -107,7 +112,34 @@ export default function LatestCourses({
         )}
       </div>
 
-      {courses.length === 0 ? (
+      {loading ? (
+        <p className="py-10 text-center text-[14px] text-ink70">
+          {lang === "fa" ? "در حال دریافت دوره‌ها..." : "Loading courses..."}
+        </p>
+      ) : coursesError ? (
+        <div role="alert" className="py-10 text-center">
+          <p className="mb-2 text-[14px] text-danger">
+            {lang === "fa"
+              ? "ارتباط با API دوره‌ها برقرار نشد."
+              : "Could not connect to the courses API."}
+          </p>
+          <p className="mb-4 text-xs text-muted" dir="ltr">
+            {coursesError}
+          </p>
+          <p className="mb-4 text-xs text-muted">
+            {lang === "fa"
+              ? "آدرس NEXT_PUBLIC_API_BASE_URL باید آدرس فعال بک‌اند باشد، نه آدرس سایت فرانت‌اند."
+              : "NEXT_PUBLIC_API_BASE_URL must point to the active backend API, not the frontend website."}
+          </p>
+          <button
+            type="button"
+            onClick={reloadCourses}
+            className="rounded-full border border-line px-4 py-2 text-sm font-semibold text-ink70 hover:bg-surface"
+          >
+            {lang === "fa" ? "تلاش دوباره" : "Try again"}
+          </button>
+        </div>
+      ) : displayedCourses.length === 0 ? (
         <p className="text-center text-ink70 text-[14px] py-10">
           {t("common.noCoursesFound")}
         </p>

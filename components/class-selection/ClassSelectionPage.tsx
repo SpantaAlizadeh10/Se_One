@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import {
   CalendarDays,
@@ -124,6 +124,8 @@ function studentSlotsToBookingClasses(
       title: item.title,
       description: item.description,
       level: item.level || course?.level || "",
+      term: item.term || course?.term,
+      language: item.language || course?.language,
       subject: item.teacherRole,
       type: item.classType,
       maxCapacity: item.capacity,
@@ -191,6 +193,8 @@ export default function ClassSelectionPage() {
   const [availableOnly, setAvailableOnly] = useState(false);
   const [levelFilter, setLevelFilter] = useState("");
   const [subjectFilter, setSubjectFilter] = useState("");
+  const [termFilter, setTermFilter] = useState("");
+  const [languageFilter, setLanguageFilter] = useState("");
 
   // Modal state
   const [selectedClass, setSelectedClass] = useState<BookingClass | null>(null);
@@ -198,7 +202,7 @@ export default function ClassSelectionPage() {
   const [inviteCode, setInviteCode] = useState("");
   const [copied, setCopied] = useState(false);
 
-  const loadClasses = async () => {
+  const loadClasses = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
@@ -239,20 +243,13 @@ export default function ClassSelectionPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [lang]);
 
   useEffect(() => {
-    loadClasses();
+    void loadClasses();
     const unsubscribe = onDemoClassSchedulingChange(() => void loadClasses());
     return unsubscribe;
-  }, [
-    teacherFilter,
-    typeFilter,
-    availableOnly,
-    levelFilter,
-    subjectFilter,
-    lang,
-  ]);
+  }, [loadClasses]);
 
   const teachers = useMemo(
     () =>
@@ -272,6 +269,8 @@ export default function ClassSelectionPage() {
         (typeFilter === "all" || item.type === typeFilter) &&
         (!availableOnly || item.remainingCapacity > 0) &&
         (!levelFilter || item.level === levelFilter) &&
+        (!termFilter || item.term === termFilter) &&
+        (!languageFilter || item.language === languageFilter) &&
         (!subjectFilter || item.subject === subjectFilter),
     );
   }, [
@@ -280,6 +279,8 @@ export default function ClassSelectionPage() {
     typeFilter,
     availableOnly,
     levelFilter,
+    termFilter,
+    languageFilter,
     subjectFilter,
   ]);
 
@@ -292,6 +293,16 @@ export default function ClassSelectionPage() {
     const unique = new Set(classes.map((c) => c.subject));
     return [...unique].filter(Boolean);
   }, [classes]);
+  const terms = useMemo(
+    () =>
+      [...new Set(classes.map((item) => item.term).filter(Boolean))] as string[],
+    [classes],
+  );
+  const languages = useMemo(
+    () =>
+      [...new Set(classes.map((item) => item.language).filter(Boolean))] as string[],
+    [classes],
+  );
 
   const handleEnroll = async (classItem: BookingClass) => {
     if (classItem.remainingCapacity <= 0) {
@@ -383,8 +394,8 @@ export default function ClassSelectionPage() {
         </h2>
         <p className="text-muted text-[13px] max-w-2xl">
           {fa
-            ? "کلاس‌ها را بر اساس معلم، نوع و ظرفیت فیلتر کنید و در کلاس‌های با ظرفیت خالی ثبت‌نام کنید."
-            : "Filter classes by teacher, type, and capacity, and enroll in classes with available seats."}
+            ? "کلاس‌ها را بر اساس نوع، ترم، سطح، زبان، معلم و ظرفیت فیلتر کنید و صندلی‌های پر و خالی را ببینید."
+            : "Filter by class type, term, level, language, teacher, and available seats."}
         </p>
       </div>
 
@@ -397,7 +408,7 @@ export default function ClassSelectionPage() {
           </span>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-3">
           {/* Teacher Filter */}
           <label className="text-[12px] font-semibold text-muted">
             <span className="mb-1 block">{fa ? "معلم" : "Teacher"}</span>
@@ -410,6 +421,38 @@ export default function ClassSelectionPage() {
               {teachers.map((teacher) => (
                 <option key={teacher.id} value={teacher.id}>
                   {teacher.name}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="text-[12px] font-semibold text-muted">
+            <span className="mb-1 block">{fa ? "ترم" : "Term"}</span>
+            <select
+              value={termFilter}
+              onChange={(event) => setTermFilter(event.target.value)}
+              className="w-full rounded-xl border border-line bg-white px-3 py-2.5 text-[13px] outline-none focus:border-blue"
+            >
+              <option value="">{fa ? "همه ترم‌ها" : "All terms"}</option>
+              {terms.map((term) => (
+                <option key={term} value={term}>
+                  {term}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="text-[12px] font-semibold text-muted">
+            <span className="mb-1 block">{fa ? "زبان" : "Language"}</span>
+            <select
+              value={languageFilter}
+              onChange={(event) => setLanguageFilter(event.target.value)}
+              className="w-full rounded-xl border border-line bg-white px-3 py-2.5 text-[13px] outline-none focus:border-blue"
+            >
+              <option value="">{fa ? "همه زبان‌ها" : "All languages"}</option>
+              {languages.map((language) => (
+                <option key={language} value={language}>
+                  {language}
                 </option>
               ))}
             </select>

@@ -4,8 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   BookOpen,
+  BrainCircuit,
   CalendarDays,
-  ClipboardList,
   GraduationCap,
   LayoutDashboard,
   MessageSquare,
@@ -42,14 +42,9 @@ const navigation: Record<DashboardRole, MobileNavItem[]> = {
       Icon: CalendarDays,
     },
     {
-      href: "/dashboard/assignments",
-      labelKey: "dashboardMobileNav.student.assignments",
-      Icon: ClipboardList,
-    },
-    {
       href: "/dashboard/practice",
       labelKey: "dashboardMobileNav.student.practice",
-      Icon: BookOpen,
+      Icon: BrainCircuit,
     },
     {
       href: "/dashboard/messages",
@@ -69,13 +64,8 @@ const navigation: Record<DashboardRole, MobileNavItem[]> = {
       Icon: BookOpen,
     },
     {
-      href: "/teacher/students",
-      labelKey: "dashboardMobileNav.teacher.students",
-      Icon: Users,
-    },
-    {
       href: "/teacher/availability",
-      labelKey: "dashboardMobileNav.teacher.availability",
+      labelKey: "dashboardMobileNav.teacher.availableTimes",
       Icon: CalendarDays,
     },
     {
@@ -133,7 +123,7 @@ export default function DashboardMobileNav({ role }: { role: DashboardRole }) {
       className="fixed inset-x-0 bottom-0 z-40 px-3 pb-[max(env(safe-area-inset-bottom),12px)] pt-2 lg:hidden"
     >
       <div
-        className={`mx-auto grid ${role === "student" ? "max-w-xl grid-cols-6" : "max-w-md grid-cols-5"} gap-1 rounded-[24px] border border-white/20 bg-[#182163]/95 p-2 shadow-[0_-8px_24px_rgba(15,23,42,0.08)] backdrop-blur-xl`}
+        className={`mx-auto grid ${role === "student" ? "max-w-lg grid-cols-5" : role === "teacher" ? "max-w-sm grid-cols-4" : "max-w-md grid-cols-5"} gap-1 rounded-[24px] border border-white/20 bg-[#182163]/95 p-2 shadow-[0_-8px_24px_rgba(15,23,42,0.08)] backdrop-blur-xl`}
       >
         {navigation[role].map(({ href: path, labelKey, Icon }) => {
           const active =
@@ -155,9 +145,13 @@ export default function DashboardMobileNav({ role }: { role: DashboardRole }) {
                 <Icon size={14} strokeWidth={active ? 2.3 : 2} />
               </span>
               <span className="w-full truncate leading-none">
-                {role === "student" && isChildMode && childLabels[path]
-                  ? childLabels[path][lang]
-                  : t(labelKey)}
+                {role === "student" && path === "/dashboard/practice"
+                  ? lang === "fa"
+                    ? "هوش مصنوعی"
+                    : "AI"
+                  : role === "student" && isChildMode && childLabels[path]
+                    ? childLabels[path][lang]
+                    : t(labelKey)}
               </span>
             </Link>
           );

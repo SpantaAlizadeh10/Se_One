@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import {
   ArrowRight,
+  BookOpen,
   CalendarClock,
   CheckCircle2,
   Clock3,
@@ -20,6 +21,7 @@ import {
 } from "@/lib/api/student-dashboard";
 import MilestoneBanner from "@/components/dashboard/MilestoneBanner";
 import AnnouncementsFeed from "@/components/dashboard/AnnouncementsFeed";
+import StudentPlacementTest from "@/components/dashboard/StudentPlacementTest";
 
 export const dynamic = "force-dynamic";
 export const fetchCache = "force-no-store";
@@ -191,8 +193,9 @@ export default function DashboardPage() {
         </p>
       </div>
 
-      <MilestoneBanner />
+      {isChildMode && <MilestoneBanner />}
       <AnnouncementsFeed lang={lang} />
+      <StudentPlacementTest />
 
       <section className="mb-6 flex flex-col gap-4 rounded-2xl border border-blue/15 bg-gradient-to-r from-[#EEF3FF] via-white to-[#EAF5F1] p-4 shadow-card sm:flex-row sm:items-center sm:justify-between sm:p-5">
         <div className="flex min-w-0 items-start gap-3">
@@ -343,6 +346,24 @@ export default function DashboardPage() {
             withTabs
             href={href("/dashboard/classes")}
           />
+          <Link
+            href={href("/dashboard/resources")}
+            className="flex items-start gap-3 rounded-lg border border-line bg-white p-4 shadow-card transition-colors hover:border-blue/40"
+          >
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue/10 text-blue">
+              <BookOpen size={17} />
+            </span>
+            <span>
+              <span className="block text-[13px] font-semibold">
+                {lang === "fa" ? "منابع کلاس‌ها" : "Class resources"}
+              </span>
+              <span className="mt-1 block text-[11px] text-muted">
+                {lang === "fa"
+                  ? "ضبط جلسه‌ها و فایل‌های آموزشی"
+                  : "Recordings and lesson files"}
+              </span>
+            </span>
+          </Link>
           <ClassPanel
             title={
               isChildMode

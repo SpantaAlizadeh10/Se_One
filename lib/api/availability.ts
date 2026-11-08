@@ -66,6 +66,7 @@ export async function replaceMyAvailability(
   const response = await apiFetch<unknown>("/api/teacher/availability", {
     method: "PUT",
     body: {
+      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       slots: slots.map((slot) => ({
         ...(slot.id ? { id: slot.id } : {}),
         dayOfWeek: slot.day,

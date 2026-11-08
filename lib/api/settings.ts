@@ -12,6 +12,12 @@ export type UserProfile = {
   avatarUrl?: string;
   bio?: string;
   dateOfBirth?: string;
+  level?: string;
+  placementTestResult?: {
+    score: number;
+    maxScore: number;
+    completedAt: string;
+  };
   phoneNumber?: string;
   country?: string;
   language: string;
@@ -53,9 +59,20 @@ export type TwoFactorStatus = {
   backupCodes?: string[];
 };
 
-export type UpdateProfileInput = Partial<Pick<UserProfile,
-  "fullName" | "bio" | "dateOfBirth" | "phoneNumber" | "country" | "language" | "timezone"
->>;
+export type UpdateProfileInput = Partial<
+  Pick<
+    UserProfile,
+    | "fullName"
+    | "bio"
+    | "dateOfBirth"
+    | "level"
+    | "placementTestResult"
+    | "phoneNumber"
+    | "country"
+    | "language"
+    | "timezone"
+  >
+>;
 
 export type ChangePasswordInput = {
   currentPassword: string;
@@ -90,6 +107,23 @@ function normalizeProfile(raw: unknown): UserProfile {
     avatarUrl: text(record, "avatarUrl", "AvatarUrl", "avatar", "Avatar") || undefined,
     bio: text(record, "bio", "Bio", "about", "About") || undefined,
     dateOfBirth: text(record, "dateOfBirth", "DateOfBirth", "dob", "Dob") || undefined,
+    level: text(record, "level", "Level", "englishLevel", "EnglishLevel") || undefined,
+    placementTestResult: (() => {
+      const result = value(
+        record,
+        "placementTestResult",
+        "PlacementTestResult",
+      ) as ApiRecord | undefined;
+      if (!result) return undefined;
+      const score = Number(value(result, "score", "Score"));
+      const maxScore = Number(value(result, "maxScore", "MaxScore"));
+      if (!Number.isFinite(score) || !Number.isFinite(maxScore)) return undefined;
+      return {
+        score,
+        maxScore,
+        completedAt: text(result, "completedAt", "CompletedAt"),
+      };
+    })(),
     phoneNumber: text(record, "phoneNumber", "PhoneNumber", "phone", "Phone") || undefined,
     country: text(record, "country", "Country") || undefined,
     language: text(record, "language", "Language", "locale", "Locale"),
@@ -162,7 +196,11 @@ export async function updateUserProfile(input: UpdateProfileInput): Promise<User
     method: "PATCH",
     body: input,
   });
-  return normalizeProfile(data);
+  if (!data || typeof data !== "object") return getUserProfile();
+  const record = data as ApiRecord;
+  const profileData = value(record, "profile", "Profile", "data", "Data") ?? data;
+  const updated = normalizeProfile(profileData);
+  return updated.id ? updated : getUserProfile();
 }
 
 /**
@@ -173,12 +211,15 @@ export async function uploadAvatar(file: File): Promise<{ avatarUrl: string }> {
   const formData = new FormData();
   formData.append("avatar", file);
   
-  const data = await apiFetch<{ avatarUrl: string }>("/api/user/profile/avatar", {
+  const data = await apiFetch<unknown>("/api/user/profile/avatar", {
     method: "POST",
     body: formData as any, // FormData needs special handling
     headers: undefined, // Let browser set Content-Type for FormData
   });
-  return data;
+  const record = (data ?? {}) as ApiRecord;
+  const avatarUrl = text(record, "avatarUrl", "AvatarUrl", "url", "Url");
+  if (!avatarUrl) throw new Error("The server did not return the uploaded photo URL.");
+  return { avatarUrl };
 }
 
 /**

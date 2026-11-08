@@ -15,6 +15,9 @@ export type AdminClassSlot = {
   courseId?: string;
   courseTitle?: string;
   level?: string;
+  term?: string;
+  language?: string;
+  classGroupId?: string;
   basePrice?: number;
   finalPrice?: number;
   currency?: string;
@@ -41,6 +44,14 @@ export type TeacherClassAssignment = {
   teacherName?: string;
 };
 
+export type AdminAssignableTeacher = {
+  id: string;
+  name: string;
+  teachingLanguage: string;
+  subject: string;
+  matchedAvailability: string;
+};
+
 export type StudentClassEnrollment = {
   id: string;
   assignmentId: string;
@@ -63,6 +74,7 @@ export type StudentAvailableClass = AdminClassSlot & {
   teacherId: string;
   teacherName: string;
   enrolled: boolean;
+  classGroupId?: string;
 };
 
 type ApiRecord = Record<string, unknown>;
@@ -112,16 +124,20 @@ function normalizeClassSlot(raw: unknown): AdminClassSlot {
   ).toLowerCase();
   const classType: ClassType =
     classTypeRaw === "private" ? "private" : "public";
-  const maxCapacity = classType === "private" ? 2 : 10;
   const requestedCapacity =
-    numberValue(record, "capacity", "Capacity") || maxCapacity;
-  const capacity = Math.min(maxCapacity, Math.max(1, requestedCapacity));
+    numberValue(record, "capacity", "Capacity") || (classType === "private" ? 1 : 10);
+  const capacity = Math.max(1, requestedCapacity);
   const enrolledCount = numberValue(
     record,
     "enrolledCount",
     "EnrolledCount",
     "activeEnrollmentCount",
     "ActiveEnrollmentCount",
+  );
+  const reportedRemainingSeats = value(
+    record,
+    "remainingSeats",
+    "RemainingSeats",
   );
   const assignmentsRaw = value(
     record,
@@ -172,6 +188,13 @@ function normalizeClassSlot(raw: unknown): AdminClassSlot {
     courseId: text(record, "courseId", "CourseId") || undefined,
     courseTitle: text(record, "courseTitle", "CourseTitle") || undefined,
     level: text(record, "level", "Level") || undefined,
+    term: text(record, "term", "Term", "termName", "TermName") || undefined,
+    language:
+      text(record, "language", "Language", "courseLanguage", "CourseLanguage") ||
+      undefined,
+    classGroupId:
+      text(record, "classGroupId", "ClassGroupId", "groupId", "GroupId") ||
+      undefined,
     basePrice: numberValue(record, "basePrice", "BasePrice"),
     finalPrice: numberValue(record, "finalPrice", "FinalPrice"),
     currency: text(record, "currency", "Currency") || undefined,
@@ -188,8 +211,9 @@ function normalizeClassSlot(raw: unknown): AdminClassSlot {
     enrolledCount,
     remainingSeats: Math.max(
       0,
-      numberValue(record, "remainingSeats", "RemainingSeats") ||
-        capacity - enrolledCount,
+      reportedRemainingSeats === undefined
+        ? capacity - enrolledCount
+        : numberValue(record, "remainingSeats", "RemainingSeats"),
     ),
     teacherAssignments,
   };
@@ -213,6 +237,9 @@ function normalizeTeacherClass(raw: unknown): TeacherClassSlot {
         : "available";
   return {
     ...slot,
+    classGroupId:
+      text(record, "classGroupId", "ClassGroupId", "groupId", "GroupId") ||
+      slot.classGroupId,
     assignmentStatus,
     assignmentId:
       text(record, "assignmentId", "AssignmentId", "id", "Id") || undefined,
@@ -232,13 +259,22 @@ function normalizeStudentClass(raw: unknown): StudentAvailableClass {
     enrolled: Boolean(
       value(record, "enrolled", "Enrolled", "isEnrolled", "IsEnrolled"),
     ),
+    classGroupId:
+      text(record, "classGroupId", "ClassGroupId", "groupId", "GroupId") ||
+      slot.classGroupId,
   };
 }
 
 export type CreateClassSlotInput = Pick<
   AdminClassSlot,
-  "title" | "description" | "classType" | "teacherRole" | "startsAt" | "endsAt"
-> & { capacity?: number; courseId?: string };
+  | "title"
+  | "description"
+  | "level"
+  | "classType"
+  | "teacherRole"
+  | "startsAt"
+  | "endsAt"
+> & { capacity?: number; courseId?: string; timeZone?: string };
 
 /** Admin-only list. The API computes seat counts from active enrollments. */
 export async function listAdminClassSlots(): Promise<AdminClassSlot[]> {
@@ -247,19 +283,73 @@ export async function listAdminClassSlots(): Promise<AdminClassSlot[]> {
   ).map(normalizeClassSlot);
 }
 
-/** Admin-only create. Public classes have 10 seats; private classes have 1 or 2. */
+/** Admin-only create using the admin-selected class capacity. */
 export async function createAdminClassSlot(
   input: CreateClassSlotInput,
 ): Promise<AdminClassSlot> {
-  const capacity =
-    input.classType === "private"
-      ? Math.min(2, Math.max(1, input.capacity ?? 1))
-      : 10;
+  const capacity = Math.max(1, Math.floor(input.capacity ?? 10));
   const data = await apiFetch<unknown>("/api/admin/class-slots", {
     method: "POST",
     body: { ...input, capacity },
   });
   return normalizeClassSlot(data);
+}
+
+/** Admin-only list of approved teachers whose saved availability matches a class. */
+export async function listAvailableTeachersForClass(
+  slotId: string,
+): Promise<AdminAssignableTeacher[]> {
+  const data = await apiFetch<unknown>(
+    `/api/admin/class-slots/${encodeURIComponent(slotId)}/available-teachers`,
+    { cache: "no-store" },
+  );
+  return unwrapList(data)
+    .map((item): AdminAssignableTeacher | null => {
+      const record = (item ?? {}) as ApiRecord;
+      const id = text(record, "id", "Id", "teacherId", "TeacherId");
+      const name = text(record, "name", "Name", "fullName", "FullName");
+      if (!id || !name) return null;
+      return {
+        id,
+        name,
+        teachingLanguage: text(
+          record,
+          "teachingLanguage",
+          "TeachingLanguage",
+        ),
+        subject: text(record, "subject", "Subject"),
+        matchedAvailability: text(
+          record,
+          "matchedAvailability",
+          "MatchedAvailability",
+          "availabilityLabel",
+          "AvailabilityLabel",
+        ),
+      };
+    })
+    .filter((teacher): teacher is AdminAssignableTeacher => teacher !== null);
+}
+
+/** Admin-only direct assignment. The server must validate approval and schedule conflicts. */
+export async function assignTeacherToClassSlot(
+  slotId: string,
+  teacherId: string,
+): Promise<TeacherClassAssignment> {
+  const data = await apiFetch<unknown>("/api/admin/class-slot-assignments", {
+    method: "POST",
+    body: { slotId, teacherId },
+  });
+  const record = (data ?? {}) as ApiRecord;
+  const id = text(record, "id", "Id", "assignmentId", "AssignmentId");
+  if (!id) throw new Error("The server returned an invalid class assignment.");
+  return {
+    id,
+    slotId: text(record, "slotId", "SlotId") || slotId,
+    teacherId: text(record, "teacherId", "TeacherId") || teacherId,
+    teacherName: text(record, "teacherName", "TeacherName") || undefined,
+    status: "confirmed",
+    selectedAt: text(record, "selectedAt", "SelectedAt", "createdAt", "CreatedAt"),
+  };
 }
 
 /** Lists admin-created classes and this teacher's assignment state. */

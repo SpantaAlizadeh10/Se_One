@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
+  X,
   User,
   Mail,
   Lock,
@@ -18,6 +19,7 @@ import { ApiError } from "@/lib/api/client";
 import FormField from "@/components/marketing/auth/FormField";
 import ArchFigure from "@/components/marketing/auth/ArchFigure";
 import Image from "next/image";
+import LegalPageContent from "@/components/marketing/legal/LegalPageContent";
 
 export default function SignupPage() {
   const { t, href, lang } = useLanguage();
@@ -34,6 +36,7 @@ export default function SignupPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [legalPanel, setLegalPanel] = useState<"terms" | "privacy" | null>(null);
   const calculateAge = (value: string) => {
     if (!value) return null;
     const [year, month, day] = value.split("-").map(Number);
@@ -52,6 +55,20 @@ export default function SignupPage() {
   const needsGuardianConsent = studentAge !== null && studentAge < 14;
   const today = new Date();
   const maxBirthDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+
+  useEffect(() => {
+    if (!legalPanel) return;
+    const previousOverflow = document.body.style.overflow;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setLegalPanel(null);
+    };
+    document.body.style.overflow = "hidden";
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [legalPanel]);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -122,7 +139,7 @@ export default function SignupPage() {
             </div>
           )}
 
-          <form onSubmit={submit}>
+          <form id="signup-form" onSubmit={submit}>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-5">
               <FormField
                 label={s.firstName}
@@ -159,7 +176,7 @@ export default function SignupPage() {
                     setDateOfBirth(event.target.value);
                     setGuardianConsent(false);
                   }}
-                  className="w-full rounded-xl border border-line bg-white px-4 py-2.5 text-[13px] outline-none focus:border-blue"
+                  className="w-full rounded-xl border border-line bg-white px-4 py-2.5 text-base sm:text-[13px] outline-none focus:border-blue"
                 />
                 <p className="mb-0 mt-1.5 text-[11px] leading-5 text-muted">
                   {s.dateOfBirthHint}
@@ -268,23 +285,21 @@ export default function SignupPage() {
               />
               <span>
                 {s.agree}{" "}
-                <a
-                  href={href("/terms")}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <button
+                  type="button"
+                  onClick={() => setLegalPanel("terms")}
                   className="text-blue font-semibold"
                 >
                   {s.terms}
-                </a>{" "}
+                </button>{" "}
                 {s.and}{" "}
-                <a
-                  href={href("/privacy-policy")}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <button
+                  type="button"
+                  onClick={() => setLegalPanel("privacy")}
                   className="text-blue font-semibold"
                 >
                   {s.privacy}
-                </a>{" "}
+                </button>{" "}
                 {s.agreeEnd}
               </span>
             </label>
@@ -352,6 +367,39 @@ export default function SignupPage() {
           </ArchFigure>
         </div>
       </div>
+      {legalPanel && (
+        <div
+          className="fixed inset-0 z-[100] flex items-end justify-center bg-ink/60 p-0 sm:items-center sm:p-5"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) setLegalPanel(null);
+          }}
+        >
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-label={
+              legalPanel === "terms"
+                ? lang === "fa"
+                  ? "شرایط استفاده"
+                  : "Terms of Service"
+                : lang === "fa"
+                  ? "سیاست حفظ حریم خصوصی"
+                  : "Privacy Policy"
+            }
+            className="relative max-h-[92dvh] w-full max-w-3xl overflow-y-auto rounded-t-2xl bg-white shadow-2xl sm:rounded-2xl"
+          >
+            <button
+              type="button"
+              onClick={() => setLegalPanel(null)}
+              aria-label={lang === "fa" ? "بستن" : "Close"}
+              className="sticky top-3 z-10 ms-auto me-3 mt-3 flex h-9 w-9 items-center justify-center rounded-full border border-line bg-white shadow-sm"
+            >
+              <X size={17} />
+            </button>
+            <LegalPageContent pageKey={legalPanel} />
+          </section>
+        </div>
+      )}
     </main>
   );
 }

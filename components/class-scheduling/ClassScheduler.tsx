@@ -9,9 +9,12 @@ import { useLanguage } from "@/lib/i18n/LanguageProvider";
 import { isApiConfigured } from "@/lib/is-api-configured";
 import {
   createAdminClassSlot,
+  assignTeacherToClassSlot,
+  listAvailableTeachersForClass,
   listAdminClassSlots,
   reviewAdminTeacherClassAssignment,
   type AdminClassSlot,
+  type AdminAssignableTeacher,
   type CreateClassSlotInput,
   type TeacherClassAssignment,
 } from "@/lib/api/class-scheduling";
@@ -24,6 +27,7 @@ import {
 const defaultSlot = {
   title: "",
   description: "",
+  level: "",
   classType: "public" as "public" | "private",
   capacity: 10,
   teacherRole: "all",
@@ -61,6 +65,14 @@ export default function ClassScheduler() {
   const [slot, setSlot] = useState(defaultSlot);
   const [saving, setSaving] = useState(false);
   const [reviewingAssignmentId, setReviewingAssignmentId] = useState("");
+  const [availableTeachers, setAvailableTeachers] = useState<
+    Record<string, AdminAssignableTeacher[]>
+  >({});
+  const [selectedTeachers, setSelectedTeachers] = useState<
+    Record<string, string>
+  >({});
+  const [loadingAvailabilityId, setLoadingAvailabilityId] = useState("");
+  const [assigningSlotId, setAssigningSlotId] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [slots, setSlots] = useState<DisplayClassSlot[]>([]);
@@ -148,14 +160,79 @@ export default function ClassScheduler() {
     setSlot((current) => ({ ...current, [field]: value }));
   };
 
+  const reviewAvailability = async (slotItem: DisplayClassSlot) => {
+    setLoadingAvailabilityId(slotItem.id);
+    setError("");
+    try {
+      const teachers = await listAvailableTeachersForClass(slotItem.id);
+      setAvailableTeachers((current) => ({
+        ...current,
+        [slotItem.id]: teachers,
+      }));
+      setSelectedTeachers((current) => ({
+        ...current,
+        [slotItem.id]: current[slotItem.id] || teachers[0]?.id || "",
+      }));
+      if (teachers.length === 0) {
+        setMessage(
+          fa
+            ? "معلم تأییدشده‌ای با زمان آزاد مناسب پیدا نشد."
+            : "No approved teacher with matching availability was found.",
+        );
+      }
+    } catch (reason) {
+      setError(
+        reason instanceof Error
+          ? reason.message
+          : fa
+            ? "بررسی زمان‌های آزاد معلمان انجام نشد."
+            : "Could not review teacher availability.",
+      );
+    } finally {
+      setLoadingAvailabilityId("");
+    }
+  };
+
+  const assignTeacher = async (slotItem: DisplayClassSlot) => {
+    const teacherId = selectedTeachers[slotItem.id];
+    if (!teacherId) return;
+    setAssigningSlotId(slotItem.id);
+    setError("");
+    setMessage("");
+    try {
+      await assignTeacherToClassSlot(slotItem.id, teacherId);
+      await refresh();
+      setMessage(
+        fa
+          ? "معلم با موفقیت به کلاس اختصاص یافت."
+          : "Teacher assigned to the class.",
+      );
+      setAvailableTeachers((current) => {
+        const next = { ...current };
+        delete next[slotItem.id];
+        return next;
+      });
+    } catch (reason) {
+      setError(
+        reason instanceof Error
+          ? reason.message
+          : fa
+            ? "اختصاص معلم انجام نشد."
+            : "Could not assign the teacher.",
+      );
+    } finally {
+      setAssigningSlotId("");
+    }
+  };
+
   const handleCreate = async () => {
     setSaving(true);
     setMessage("");
     setError("");
 
     try {
-      if (!slot.title || !slot.startsAt || !slot.endsAt) {
-        throw new Error("Title, start time, and end time are required.");
+      if (!slot.title || !slot.level || !slot.startsAt || !slot.endsAt) {
+        throw new Error("Title, English level, start time, and end time are required.");
       }
       if (new Date(slot.startsAt).getTime() <= Date.now()) {
         throw new Error(
@@ -178,6 +255,7 @@ export default function ClassScheduler() {
         ...slot,
         startsAt: new Date(slot.startsAt).toISOString(),
         endsAt: new Date(slot.endsAt).toISOString(),
+        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       };
       const created = await createAdminClassSlot(input);
       await refresh();
@@ -214,8 +292,8 @@ export default function ClassScheduler() {
             </h2>
             <p className="text-[13px] text-muted">
               {fa
-                ? "کلاس عمومی با ظرفیت ۱۰ نفر یا خصوصی با ظرفیت ۱ تا ۲ نفر بسازید؛ معلم‌ها برای تدریس انتخابش می‌کنند."
-                : "Create a public class for 10 students or a private class for 1–2. Teachers can accept it for teaching."}
+                ? "کلاس را با سطح، برنامه و ظرفیت موردنظر تعریف کنید؛ سپس زمان‌های آزاد معلمان را بررسی و معلم مناسب را اختصاص دهید."
+                : "Define the class level, schedule, and capacity, then review teacher availability and assign a suitable teacher."}
             </p>
           </div>
         </div>
@@ -232,25 +310,34 @@ export default function ClassScheduler() {
           </label>
 
           <label className="space-y-2 text-[13px] text-muted">
+            <span>{fa ? "سطح انگلیسی" : "English level"}</span>
+            <select
+              value={slot.level}
+              onChange={(e) => handleChange("level", e.target.value)}
+              required
+              className="w-full rounded-xl border border-line bg-cream px-3.5 py-3 outline-none focus:border-blue"
+            >
+              <option value="">{fa ? "انتخاب سطح" : "Select level"}</option>
+              {["A1", "A2", "B1", "B2", "C1", "C2"].map((level) => (
+                <option key={level} value={level}>
+                  {level}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="space-y-2 text-[13px] text-muted">
             <span>{fa ? "نوع کلاس" : "Class type"}</span>
             <select
               value={slot.classType}
               onChange={(e) => {
                 const classType = e.target.value as "public" | "private";
-                setSlot((current) => ({
-                  ...current,
-                  classType,
-                  capacity: classType === "private" ? 1 : 10,
-                }));
+                setSlot((current) => ({ ...current, classType }));
               }}
               className="w-full rounded-xl border border-line bg-cream px-3.5 py-3 outline-none focus:border-blue"
             >
-              <option value="public">
-                {fa ? "عمومی (۱۰ نفر)" : "Public (10 students)"}
-              </option>
-              <option value="private">
-                {fa ? "خصوصی (۱ تا ۲ نفر)" : "Private (1–2 students)"}
-              </option>
+              <option value="public">{fa ? "عمومی" : "Public"}</option>
+              <option value="private">{fa ? "خصوصی" : "Private"}</option>
             </select>
           </label>
 
@@ -355,25 +442,14 @@ export default function ClassScheduler() {
 
           <label className="space-y-2 text-[13px] text-muted">
             <span>{fa ? "ظرفیت" : "Capacity"}</span>
-            {slot.classType === "private" ? (
-              <select
-                value={slot.capacity}
-                onChange={(e) =>
-                  handleChange("capacity", Number(e.target.value))
-                }
-                className="w-full rounded-xl border border-line bg-cream px-3.5 py-3 outline-none focus:border-blue"
-              >
-                <option value={1}>{fa ? "۱ دانش‌آموز" : "1 student"}</option>
-                <option value={2}>{fa ? "۲ دانش‌آموز" : "2 students"}</option>
-              </select>
-            ) : (
-              <div className="flex items-center gap-2 rounded-xl border border-line bg-cream px-3.5 py-3">
-                <Users size={16} />
-                <strong className="text-ink">
-                  10 {fa ? "نفر" : "students"}
-                </strong>
-              </div>
-            )}
+            <input
+              type="number"
+              min={1}
+              step={1}
+              value={slot.capacity}
+              onChange={(e) => handleChange("capacity", Number(e.target.value))}
+              className="w-full rounded-xl border border-line bg-cream px-3.5 py-3 outline-none focus:border-blue"
+            />
           </label>
         </div>
 
@@ -441,8 +517,8 @@ export default function ClassScheduler() {
                     )}
                     <p className="text-[12px] text-muted">
                       {fa
-                        ? `${slotItem.classType === "private" ? "خصوصی" : "عمومی"} · ظرفیت ${slotItem.capacity} نفر`
-                        : `${slotItem.classType === "private" ? "Private" : "Public"} · Capacity ${slotItem.capacity}`}
+                        ? `${slotItem.classType === "private" ? "خصوصی" : "عمومی"} · ظرفیت ${slotItem.capacity} نفر${slotItem.level ? ` · سطح ${slotItem.level}` : ""}`
+                        : `${slotItem.classType === "private" ? "Private" : "Public"} · Capacity ${slotItem.capacity}${slotItem.level ? ` · ${slotItem.level}` : ""}`}
                     </p>
                   </div>
                   <div className="flex flex-col items-end gap-1.5">
@@ -472,8 +548,8 @@ export default function ClassScheduler() {
                   {(slotItem.teacherAssignments ?? []).length === 0 ? (
                     <p className="text-[11px] text-muted">
                       {fa
-                        ? "هنوز معلمی برای برگزاری این کلاس درخواست نداده است."
-                        : "No teacher has requested this class yet."}
+                        ? "هنوز معلمی برای این کلاس اختصاص نیافته است."
+                        : "No teacher has been assigned to this class yet."}
                     </p>
                   ) : (
                     slotItem.teacherAssignments?.map((assignment) => (
@@ -543,6 +619,72 @@ export default function ClassScheduler() {
                     ))
                   )}
                 </div>
+
+                {!slotItem.isDemo && (
+                  <div className="mb-3 rounded-xl border border-blue/15 bg-white p-3">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        disabled={loadingAvailabilityId === slotItem.id}
+                        onClick={() => void reviewAvailability(slotItem)}
+                        className="rounded-full border border-blue/20 bg-blue/5 px-3 py-1.5 text-[11px] font-semibold text-blue disabled:opacity-60"
+                      >
+                        {loadingAvailabilityId === slotItem.id
+                          ? fa
+                            ? "در حال بررسی…"
+                            : "Checking…"
+                          : fa
+                            ? "بررسی زمان‌های آزاد"
+                            : "Review teacher availability"}
+                      </button>
+                      {availableTeachers[slotItem.id]?.length ? (
+                        <>
+                          <select
+                            value={selectedTeachers[slotItem.id] ?? ""}
+                            onChange={(event) =>
+                              setSelectedTeachers((current) => ({
+                                ...current,
+                                [slotItem.id]: event.target.value,
+                              }))
+                            }
+                            aria-label={fa ? "انتخاب معلم" : "Select teacher"}
+                            className="min-w-0 flex-1 rounded-lg border border-line px-2.5 py-2 text-[11px]"
+                          >
+                            {availableTeachers[slotItem.id].map((teacher) => (
+                              <option key={teacher.id} value={teacher.id}>
+                                {teacher.name}
+                                {teacher.matchedAvailability
+                                  ? ` — ${teacher.matchedAvailability}`
+                                  : ""}
+                              </option>
+                            ))}
+                          </select>
+                          <button
+                            type="button"
+                            disabled={assigningSlotId === slotItem.id}
+                            onClick={() => void assignTeacher(slotItem)}
+                            className="rounded-full bg-blue px-3 py-1.5 text-[11px] font-semibold text-white disabled:opacity-60"
+                          >
+                            {assigningSlotId === slotItem.id
+                              ? fa
+                                ? "در حال اختصاص…"
+                                : "Assigning…"
+                              : fa
+                                ? "اختصاص معلم"
+                                : "Assign teacher"}
+                          </button>
+                        </>
+                      ) : null}
+                    </div>
+                    {availableTeachers[slotItem.id]?.length === 0 && (
+                      <p className="mb-0 mt-2 text-[10px] text-muted">
+                        {fa
+                          ? "برای این زمان معلمی در دسترس نیست."
+                          : "No matching teachers are available for this time."}
+                      </p>
+                    )}
+                  </div>
+                )}
 
                 <div className="space-y-2 text-[12.5px] text-muted">
                   <div className="flex items-center gap-2">

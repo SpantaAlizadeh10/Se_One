@@ -198,10 +198,10 @@ export default function StudentClassBrowser() {
             >
               <option value="all">{fa ? "همه کلاس‌ها" : "All classes"}</option>
               <option value="public">
-                {fa ? "عمومی · ۱۰ نفره" : "Public · 10 seats"}
+                {fa ? "کلاس عمومی" : "Public class"}
               </option>
               <option value="private">
-                {fa ? "خصوصی · ۱ تا ۲ نفره" : "Private · 1–2 seats"}
+                {fa ? "کلاس خصوصی" : "Private class"}
               </option>
             </select>
           </label>
@@ -287,8 +287,8 @@ export default function StudentClassBrowser() {
                           ? `خصوصی · ظرفیت ${item.capacity}`
                           : `Private · ${item.capacity} seat${item.capacity === 1 ? "" : "s"}`
                         : fa
-                          ? "عمومی · ظرفیت ۱۰ نفر"
-                          : "Public · 10 seats"}
+                          ? `عمومی · ظرفیت ${item.capacity}`
+                          : `Public · ${item.capacity} seats`}
                     </span>
                   </div>
                   <span
@@ -367,8 +367,8 @@ export default function StudentClassBrowser() {
           <CheckCircle2 size={16} />
           <BookOpen size={15} />
           {fa
-            ? "ظرفیت کلاس عمومی ۱۰ نفر و کلاس خصوصی ۱ یا ۲ نفر است؛ سرور ظرفیت را هنگام ثبت‌نام دوباره بررسی می‌کند."
-            : "Public classes hold 10 students; private classes hold 1–2. The server rechecks capacity at enrollment."}
+            ? "ظرفیت هر کلاس توسط مدیر تعیین می‌شود و سرور هنگام ثبت‌نام دوباره آن را بررسی می‌کند."
+            : "The admin sets each class capacity, and the server rechecks it at enrollment."}
         </div>
       </div>
     </div>

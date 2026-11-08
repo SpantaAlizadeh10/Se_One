@@ -43,6 +43,12 @@ export const adminNavItems: AdminNavItem[] = [
     group: "dashboard",
   },
   {
+    href: "/admin/messages",
+    labelKey: "adminNav.messages",
+    titleKey: "adminNav.titles.messages",
+    group: "dashboard",
+  },
+  {
     href: "/admin/blog",
     labelKey: "adminNav.blog",
     titleKey: "adminNav.titles.blog",

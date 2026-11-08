@@ -1,8 +1,8 @@
-import ClassSelectionPage from "@/components/class-selection/ClassSelectionPage";
+import StudentClassesHub from "@/components/dashboard/StudentClassesHub";
 
 export const dynamic = "force-dynamic";
 export const fetchCache = "force-no-store";
 
 export default function StudentClassesPage() {
-  return <ClassSelectionPage />;
+  return <StudentClassesHub />;
 }

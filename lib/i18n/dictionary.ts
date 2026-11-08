@@ -58,7 +58,7 @@ export const dictionary = {
         dashboard: "داشبورد",
         classes: "کلاس‌ها",
         students: "دانشجویان",
-        availability: "دسترسی",
+        availableTimes: "زمان‌های در دسترس",
         messages: "پیام‌ها",
       },
       admin: {
@@ -646,7 +646,7 @@ export const dictionary = {
         enterCode: "کد ارسال‌شده را وارد کنید",
         email: "ایمیل",
         emailPh: "ایمیل خود را وارد کنید",
-        dateOfBirth: "تاریخ تولد دانش‌آموز",
+        dateOfBirth: "سن",
         dateOfBirthHint:
           "برای نمایش مناسب سن و کمک به ایمنی حساب، سن را می‌پرسیم.",
         guardianConsent:
@@ -699,6 +699,7 @@ export const dictionary = {
       section1: "داشبورد",
       myCourses: "دوره‌های من",
       classes: "کلاس‌های آنلاین",
+      resources: "منابع کلاس‌ها",
       practice: "تمرین",
       assignments: "تکالیف",
       findClass: "رزرو کلاس",
@@ -714,6 +715,7 @@ export const dictionary = {
       titles: {
         dashboard: "داشبورد",
         classes: "کلاس‌های آنلاین",
+        resources: "منابع کلاس‌ها",
         practice: "تمرین",
         assignments: "تکالیف",
         findClass: "رزرو کلاس",
@@ -1121,6 +1123,7 @@ export const dictionary = {
       courses: "دوره‌ها",
       classScheduling: "برنامه‌ریزی کلاس‌ها",
       tickets: "تیکت‌های پشتیبانی",
+      messages: "گروه معلمان",
       blog: "وبلاگ",
       section2: "پروفایل",
       settings: "تنظیمات",
@@ -1134,6 +1137,7 @@ export const dictionary = {
         courses: "دوره‌ها",
         classScheduling: "برنامه‌ریزی کلاس‌ها",
         tickets: "تیکت‌های پشتیبانی",
+        messages: "گروه معلمان",
         blog: "وبلاگ",
         settings: "تنظیمات",
       },
@@ -1387,7 +1391,7 @@ export const dictionary = {
         dashboard: "Dashboard",
         classes: "Classes",
         students: "Students",
-        availability: "Availability",
+        availableTimes: "Available Times",
         messages: "Messages",
       },
       admin: {
@@ -1932,7 +1936,7 @@ export const dictionary = {
         lastNamePh: "Enter your last name",
         email: "Email Address",
         emailPh: "Enter your email",
-        dateOfBirth: "Student’s date of birth",
+        dateOfBirth: "Age",
         dateOfBirthHint:
           "We use age to show an age-appropriate dashboard and support account safety.",
         guardianConsent:
@@ -1961,6 +1965,7 @@ export const dictionary = {
       section1: "Dashboard",
       myCourses: "My Courses",
       classes: "Online Classes",
+      resources: "Class Resources",
       practice: "Practice",
       assignments: "Assignments",
       findClass: "Book a Class",
@@ -1976,6 +1981,7 @@ export const dictionary = {
       titles: {
         dashboard: "Dashboard",
         classes: "Online Classes",
+        resources: "Class Resources",
         practice: "Practice",
         assignments: "Assignments",
         findClass: "Book a Class",
@@ -2383,6 +2389,7 @@ export const dictionary = {
       courses: "Courses",
       classScheduling: "Class scheduling",
       tickets: "Support Tickets",
+      messages: "Teacher Group Chat",
       blog: "Blog",
       section2: "Profile",
       settings: "Settings",
@@ -2396,6 +2403,7 @@ export const dictionary = {
         courses: "Courses",
         classScheduling: "Class scheduling",
         tickets: "Support Tickets",
+        messages: "Teacher Group Chat",
         blog: "Blog",
         settings: "Settings",
       },

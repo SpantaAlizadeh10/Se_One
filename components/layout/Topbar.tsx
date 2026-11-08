@@ -67,18 +67,22 @@ export default function Topbar({
     setStudentEmail(getEmail() || "");
     if (!isApiConfigured()) return;
     let active = true;
-    getUserProfile()
+    const refreshProfile = () =>
+      getUserProfile()
       .then((profile) => {
         if (!active) return;
         if (profile.fullName) setStudentName(profile.fullName);
         if (profile.email) setStudentEmail(profile.email);
         if (profile.avatarUrl) setAvatarUrl(profile.avatarUrl);
       })
-      .catch(() => {
-        // Keep the signed-in name and email if profile API is unavailable.
+      .catch((error) => {
+        console.error("Failed to refresh the student profile:", error);
       });
+    void refreshProfile();
+    window.addEventListener("se-one-profile-updated", refreshProfile);
     return () => {
       active = false;
+      window.removeEventListener("se-one-profile-updated", refreshProfile);
     };
   }, []);
 

@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { CalendarDays, Clock3, Sparkles, Users } from "lucide-react";
+import Link from "next/link";
+import { CalendarDays, Clock3, MessageCircle, Sparkles, Users } from "lucide-react";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 import { isApiConfigured } from "@/lib/is-api-configured";
 import {
@@ -49,7 +50,7 @@ function timeLabel(value: string, locale: string) {
 }
 
 export default function TeacherClassPicker() {
-  const { lang } = useLanguage();
+  const { lang, href } = useLanguage();
   const fa = lang === "fa";
   const locale = fa ? "fa-IR" : "en-US";
   const [slots, setSlots] = useState<DisplayTeacherClassSlot[]>([]);
@@ -236,6 +237,17 @@ export default function TeacherClassPicker() {
                   {timeLabel(item.startsAt, locale)}–
                   {timeLabel(item.endsAt, locale)}
                 </span>
+                {item.classGroupId && (
+                  <Link
+                    href={href(
+                      `/teacher/classes/group/${encodeURIComponent(item.classGroupId)}`,
+                    )}
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-blue px-3 py-2 text-[11px] font-semibold text-white"
+                  >
+                    <MessageCircle size={13} />
+                    {fa ? "گفت‌وگوی کلاس" : "Class chat"}
+                  </Link>
+                )}
               </div>
             ))}
           </div>
@@ -285,9 +297,14 @@ export default function TeacherClassPicker() {
                           ? `خصوصی · ظرفیت ${item.capacity}`
                           : `Private · ${item.capacity} seat${item.capacity === 1 ? "" : "s"}`
                         : fa
-                          ? "عمومی · ظرفیت ۱۰ نفر"
-                          : "Public · 10 seats"}
+                          ? `عمومی · ظرفیت ${item.capacity}`
+                          : `Public · ${item.capacity} seats`}
                     </span>
+                    {item.level && (
+                      <span className="mt-1 inline-block rounded-full bg-sage/30 px-2 py-0.5 text-[10px] font-semibold text-sageDeep">
+                        {fa ? `سطح ${item.level}` : `Level ${item.level}`}
+                      </span>
+                    )}
                   </div>
                   <div className="flex flex-col items-end gap-1.5">
                     {item.isDemo && (

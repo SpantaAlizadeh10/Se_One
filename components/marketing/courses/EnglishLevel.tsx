@@ -19,7 +19,7 @@ export default function EnglishLevel() {
           <h3 className="text-[22px] font-semibold mb-3.5">{lv.title}</h3>
           <p className="text-ink70 text-[13.5px] leading-relaxed max-w-[340px] mb-5">{lv.lead}</p>
           <Link
-            href={href("/contact")}
+            href={href("/level-test")}
             className="inline-flex items-center gap-2 bg-blue text-white px-6 py-3.5 rounded-full text-[14px] font-semibold hover:bg-blueDeep transition-colors"
           >
             {lv.cta} <ArrowRight size={15} className="rtl:rotate-180" />

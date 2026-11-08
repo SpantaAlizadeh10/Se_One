@@ -167,6 +167,87 @@ export default function TeacherOverviewPage() {
 
       <AnnouncementsFeed lang={lang} />
 
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-[18px] font-semibold m-0">
+          {lang === "fa" ? "کلاس‌های پیش رو" : "Upcoming classes"}
+        </h3>
+        <Link
+          href={href("/teacher/schedule")}
+          className="text-[13px] font-semibold text-blue flex items-center gap-1"
+        >
+          {d.seeSchedule} <ArrowRight size={13} className="rtl:rotate-180" />
+        </Link>
+      </div>
+
+      <div className="bg-white border border-line rounded-lg shadow-card divide-y divide-line mb-7">
+        {upcomingClasses.map(({ item: c, startsAt }) => (
+          <div key={c.id} className="flex flex-wrap items-center gap-4 p-4">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#CFE7E4] to-[#9FCFC9] flex items-center justify-center shrink-0 text-white">
+              <CalendarDays size={18} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-[14px] font-semibold truncate">
+                {c.courseTitle}
+              </div>
+              <div className="text-[12px] text-muted">
+                {c.subject} · {c.studentName}
+              </div>
+            </div>
+            <div className="text-end shrink-0">
+              <div className="text-[13px] font-bold">{c.startTime}</div>
+              <div className="text-[11px] text-muted">
+                {c.scheduledDate
+                  ? startsAt.toLocaleDateString(
+                      lang === "fa" ? "fa-IR" : "en-US",
+                    )
+                  : ""}
+              </div>
+            </div>
+            <div className="flex w-full gap-2 sm:w-auto">
+              {c.meetingUrl && /^https:\/\//i.test(c.meetingUrl) ? (
+                <a
+                  href={c.meetingUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-blue px-3 py-2 text-[11px] font-semibold text-white hover:bg-blueDeep sm:flex-none"
+                >
+                  <Video size={14} />
+                  {lang === "fa" ? "ورود به کلاس" : "Join class"}
+                </a>
+              ) : null}
+              <Link
+                href={href("/teacher/messages")}
+                className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-line px-3 py-2 text-[11px] font-semibold text-ink70 hover:bg-cream sm:flex-none"
+              >
+                <MessageSquare size={14} />
+                {lang === "fa" ? "پیام‌ها" : "Messages"}
+              </Link>
+            </div>
+          </div>
+        ))}
+        {upcomingClasses.length === 0 && (
+          <div className="p-6 text-center">
+            <CalendarDays size={22} className="mx-auto mb-2 text-muted" />
+            <p className="m-0 text-[12px] font-semibold">
+              {lang === "fa"
+                ? "کلاس برنامه‌ریزی‌شده‌ای نداری."
+                : "No upcoming classes yet."}
+            </p>
+            <p className="mb-3 mt-1 text-[11px] text-muted">
+              {lang === "fa"
+                ? "زمان‌بندی‌ات را تنظیم کن تا زبان‌آموزها بتوانند کلاس رزرو کنند."
+                : "Set your availability so students can book a class."}
+            </p>
+            <Link
+              href={href("/teacher/availability")}
+              className="inline-flex items-center rounded-lg bg-blue px-3 py-2 text-[11px] font-semibold text-white"
+            >
+              {lang === "fa" ? "تنظیم زمان‌های آزاد" : "Set availability"}
+            </Link>
+          </div>
+        )}
+      </div>
+
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-7">
         {stats.map((s) => (
           <div
@@ -187,8 +268,6 @@ export default function TeacherOverviewPage() {
           </div>
         ))}
       </div>
-
-      <TeacherGrowthTrack analytics={analytics} />
 
       <section className="grid lg:grid-cols-[0.85fr_1.15fr] gap-4 mb-8">
         <div className="rounded-xl bg-ink text-white p-5 sm:p-6 shadow-card flex flex-col justify-between">
@@ -311,89 +390,12 @@ export default function TeacherOverviewPage() {
         </div>
       </section>
 
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-[18px] font-semibold m-0">
-          {lang === "fa" ? "کلاس‌های پیش رو" : "Upcoming classes"}
-        </h3>
-        <Link
-          href={href("/teacher/schedule")}
-          className="text-[13px] font-semibold text-blue flex items-center gap-1"
-        >
-          {d.seeSchedule} <ArrowRight size={13} className="rtl:rotate-180" />
-        </Link>
-      </div>
-
-      <div className="bg-white border border-line rounded-lg shadow-card divide-y divide-line">
-        {upcomingClasses.map(({ item: c, startsAt }) => (
-          <div key={c.id} className="flex flex-wrap items-center gap-4 p-4">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#CFE7E4] to-[#9FCFC9] flex items-center justify-center shrink-0 text-white">
-              <CalendarDays size={18} />
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="text-[14px] font-semibold truncate">
-                {c.courseTitle}
-              </div>
-              <div className="text-[12px] text-muted">
-                {c.subject} · {c.studentName}
-              </div>
-            </div>
-            <div className="text-end shrink-0">
-              <div className="text-[13px] font-bold">{c.startTime}</div>
-              <div className="text-[11px] text-muted">
-                {c.scheduledDate
-                  ? startsAt.toLocaleDateString(
-                      lang === "fa" ? "fa-IR" : "en-US",
-                    )
-                  : ""}
-              </div>
-            </div>
-            <div className="flex w-full gap-2 sm:w-auto">
-              {c.meetingUrl && /^https:\/\//i.test(c.meetingUrl) ? (
-                <a
-                  href={c.meetingUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-blue px-3 py-2 text-[11px] font-semibold text-white hover:bg-blueDeep sm:flex-none"
-                >
-                  <Video size={14} />
-                  {lang === "fa" ? "ورود به کلاس" : "Join class"}
-                </a>
-              ) : null}
-              <Link
-                href={href("/teacher/messages")}
-                className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-line px-3 py-2 text-[11px] font-semibold text-ink70 hover:bg-cream sm:flex-none"
-              >
-                <MessageSquare size={14} />
-                {lang === "fa" ? "پیام‌ها" : "Messages"}
-              </Link>
-            </div>
-          </div>
-        ))}
-        {upcomingClasses.length === 0 && (
-          <div className="p-6 text-center">
-            <CalendarDays size={22} className="mx-auto mb-2 text-muted" />
-            <p className="m-0 text-[12px] font-semibold">
-              {lang === "fa"
-                ? "کلاس برنامه‌ریزی‌شده‌ای نداری."
-                : "No upcoming classes yet."}
-            </p>
-            <p className="mb-3 mt-1 text-[11px] text-muted">
-              {lang === "fa"
-                ? "زمان‌بندی‌ات را تنظیم کن تا زبان‌آموزها بتوانند کلاس رزرو کنند."
-                : "Set your availability so students can book a class."}
-            </p>
-            <Link
-              href={href("/teacher/availability")}
-              className="inline-flex items-center rounded-lg bg-blue px-3 py-2 text-[11px] font-semibold text-white"
-            >
-              {lang === "fa" ? "تنظیم زمان‌های آزاد" : "Set availability"}
-            </Link>
-          </div>
-        )}
+      <div className="mt-6">
+        <LiveDashboardCalendar audience="teacher" />
       </div>
 
       <div className="mt-6">
-        <LiveDashboardCalendar audience="teacher" />
+        <TeacherGrowthTrack analytics={analytics} />
       </div>
     </div>
   );

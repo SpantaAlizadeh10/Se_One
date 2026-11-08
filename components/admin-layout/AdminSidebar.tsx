@@ -16,6 +16,7 @@ import {
   ShieldCheck,
   Ticket,
   Wallet,
+  MessageSquare,
 } from "lucide-react";
 import { adminNavItems } from "@/lib/admin-nav";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
@@ -32,6 +33,7 @@ const icons: Record<string, React.ElementType> = {
   "/admin/courses": Tag,
   "/admin/blog": FileText,
   "/admin/tickets": Ticket,
+  "/admin/messages": MessageSquare,
   "/admin/settings": SettingsIcon,
 };
 

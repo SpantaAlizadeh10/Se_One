@@ -7,6 +7,7 @@ import {
   ExternalLink,
   FileText,
   Link2,
+  Save,
   Upload,
 } from "lucide-react";
 import { getCourses, type Course } from "@/lib/api/courses";
@@ -15,6 +16,7 @@ import {
   getClassroomSessions,
   isSafeClassroomUrl,
   joinClassroomSession,
+  updateClassroomSession,
   uploadClassroomFile,
   type ClassroomFileCategory,
   type ClassroomMaterial,
@@ -110,8 +112,10 @@ const inputClass =
 
 export default function ClassroomSessions({
   audience,
+  allowScheduling = true,
 }: {
   audience: Audience;
+  allowScheduling?: boolean;
 }) {
   const { lang } = useLanguage();
   const copy = words[lang === "fa" ? "fa" : "en"];
@@ -127,6 +131,10 @@ export default function ClassroomSessions({
   const [meetingUrl, setMeetingUrl] = useState("");
   const [notes, setNotes] = useState("");
   const [pendingJoin, setPendingJoin] = useState("");
+  const [recordingDrafts, setRecordingDrafts] = useState<Record<string, string>>(
+    {},
+  );
+  const [savingRecordingId, setSavingRecordingId] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const uploadTargetRef = useRef<{
     sessionId: string;
@@ -136,17 +144,29 @@ export default function ClassroomSessions({
   const refresh = useCallback(async () => {
     const next = await getClassroomSessions();
     setSessions(next);
+    setRecordingDrafts(
+      Object.fromEntries(
+        next.map((session) => [session.id, session.recordingUrl ?? ""]),
+      ),
+    );
   }, []);
 
   useEffect(() => {
     let active = true;
     Promise.all([
       getClassroomSessions(),
-      audience === "teacher" ? getCourses(lang) : Promise.resolve([]),
+      audience === "teacher" && allowScheduling
+        ? getCourses(lang)
+        : Promise.resolve([]),
     ])
       .then(([items, catalog]) => {
         if (!active) return;
         setSessions(items);
+        setRecordingDrafts(
+          Object.fromEntries(
+            items.map((session) => [session.id, session.recordingUrl ?? ""]),
+          ),
+        );
         setCourses(catalog);
         setCourseId(catalog[0]?.id ?? "");
       })
@@ -160,7 +180,7 @@ export default function ClassroomSessions({
     return () => {
       active = false;
     };
-  }, [audience, copy.error, lang]);
+  }, [allowScheduling, audience, copy.error, lang]);
 
   const schedule = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -212,6 +232,44 @@ export default function ClassroomSessions({
     fileInputRef.current?.click();
   };
 
+  const saveRecording = async (session: ClassroomSession) => {
+    const url = (recordingDrafts[session.id] ?? "").trim();
+    if (url && !isSafeClassroomUrl(url)) {
+      setError(
+        lang === "fa"
+          ? "لطفاً یک پیوند ضبط معتبر با HTTPS وارد کنید."
+          : "Please enter a valid HTTPS recording URL.",
+      );
+      return;
+    }
+    setSavingRecordingId(session.id);
+    setError("");
+    try {
+      const updated = await updateClassroomSession(session.id, {
+        recordingUrl: url,
+      });
+      setSessions((current) =>
+        current.map((item) =>
+          item.id === session.id
+            ? {
+                ...item,
+                ...updated,
+                recordingUrl: updated.recordingUrl ?? (url || undefined),
+              }
+            : item,
+        ),
+      );
+      setRecordingDrafts((current) => ({
+        ...current,
+        [session.id]: updated.recordingUrl ?? url,
+      }));
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : copy.error);
+    } finally {
+      setSavingRecordingId("");
+    }
+  };
+
   const upload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     const target = uploadTargetRef.current;
@@ -245,7 +303,13 @@ export default function ClassroomSessions({
         <h2 className="mb-1 font-serif text-[23px] font-semibold">
           {copy.title}
         </h2>
-        <p className="m-0 text-[13.5px] text-muted">{copy.description}</p>
+        <p className="m-0 text-[13.5px] text-muted">
+          {audience === "teacher" && !allowScheduling
+            ? lang === "fa"
+              ? "لینک جلسه Adobe Connect، ضبط و فایل‌های کلاس‌های تخصیص‌یافته را مدیریت کنید."
+              : "Manage Adobe Connect links, recordings, and files for your assigned classes."
+            : copy.description}
+        </p>
       </div>
 
       {error && (
@@ -257,7 +321,7 @@ export default function ClassroomSessions({
         </p>
       )}
 
-      {audience === "teacher" && (
+      {audience === "teacher" && allowScheduling && (
         <form
           onSubmit={schedule}
           className="grid gap-3 rounded-2xl border border-line bg-white p-4 shadow-card sm:grid-cols-2 sm:p-5"
@@ -394,6 +458,38 @@ export default function ClassroomSessions({
                   <p className="mb-0 mt-3 whitespace-pre-wrap text-[12.5px] leading-5 text-ink70">
                     {session.notes}
                   </p>
+                )}
+                {audience === "teacher" && (
+                  <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+                    <label className="min-w-0 flex-1 text-[11px] font-semibold text-muted">
+                      {lang === "fa" ? "پیوند ضبط Adobe Connect" : "Adobe Connect recording URL"}
+                      <input
+                        type="url"
+                        value={recordingDrafts[session.id] ?? ""}
+                        onChange={(event) =>
+                          setRecordingDrafts((current) => ({
+                            ...current,
+                            [session.id]: event.target.value,
+                          }))
+                        }
+                        placeholder="https://…"
+                        className={`${inputClass} mt-1`}
+                      />
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => void saveRecording(session)}
+                      disabled={savingRecordingId === session.id}
+                      className="inline-flex items-center justify-center gap-2 self-end rounded-xl border border-line px-3.5 py-2.5 text-[11px] font-semibold text-blue disabled:opacity-50"
+                    >
+                      <Save size={13} />
+                      {savingRecordingId === session.id
+                        ? copy.creating
+                        : lang === "fa"
+                          ? "ذخیره لینک ضبط"
+                          : "Save recording"}
+                    </button>
+                  </div>
                 )}
                 <div className="mt-4 flex flex-wrap items-center gap-2">
                   {session.meetingUrl ? (

@@ -7,7 +7,6 @@ import {
   Eye,
   EyeOff,
   Plus,
-  Users,
   X,
   Star,
   Upload,
@@ -118,7 +117,9 @@ export default function AdminCoursesPage() {
   useEffect(() => {
     if (showCreateModal && isApiConfigured()) {
       listAdminTeachers()
-        .then((result) => setTeachers(result.items))
+        .then((result) =>
+          setTeachers(result.items.filter((teacher) => teacher.status === "active")),
+        )
         .catch((error) =>
           setApiError(
             error instanceof Error ? error.message : "Could not load teachers",
@@ -252,10 +253,12 @@ export default function AdminCoursesPage() {
           title: created.title,
           description: created.description ?? "",
           classType,
-          capacity: classType === "public" ? 10 : capacity,
+          capacity,
+          level: created.level,
           teacherRole,
           startsAt: start.toISOString(),
           endsAt: end.toISOString(),
+          timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
         });
         setClassSlots((prev) => [scheduledClass, ...prev]);
       } catch (scheduleError) {
@@ -501,20 +504,19 @@ export default function AdminCoursesPage() {
                         setNewCourse((current) => ({
                           ...current,
                           classType,
-                          capacity: classType === "public" ? 10 : 1,
                         }));
                       }}
                       className="w-full rounded-lg border border-line bg-white px-3.5 py-2.5 text-[13px] outline-none focus:border-blue"
                     >
                       <option value="public">
                         {lang === "fa"
-                          ? "عمومی (۱۰ نفر)"
-                          : "Public (10 students)"}
+                          ? "عمومی"
+                          : "Public"}
                       </option>
                       <option value="private">
                         {lang === "fa"
-                          ? "خصوصی (۱ تا ۲ نفر)"
-                          : "Private (1–2 students)"}
+                          ? "خصوصی"
+                          : "Private"}
                       </option>
                     </select>
                   </label>
@@ -659,30 +661,20 @@ export default function AdminCoursesPage() {
                   </label>
                   <label className="space-y-2 text-[12.5px] font-semibold text-ink70 sm:col-span-2">
                     <span>{lang === "fa" ? "ظرفیت" : "Capacity"}</span>
-                    {newCourse.classType === "public" ? (
-                      <div className="flex items-center gap-2 rounded-lg border border-line bg-white px-3.5 py-2.5 text-[13px]">
-                        <Users size={15} />
-                        {lang === "fa" ? "۱۰ دانش‌آموز" : "10 students"}
-                      </div>
-                    ) : (
-                      <select
-                        value={newCourse.capacity}
-                        onChange={(e) =>
-                          setNewCourse((current) => ({
-                            ...current,
-                            capacity: Number(e.target.value),
-                          }))
-                        }
-                        className="w-full rounded-lg border border-line bg-white px-3.5 py-2.5 text-[13px] outline-none focus:border-blue"
-                      >
-                        <option value={1}>
-                          {lang === "fa" ? "۱ دانش‌آموز" : "1 student"}
-                        </option>
-                        <option value={2}>
-                          {lang === "fa" ? "۲ دانش‌آموز" : "2 students"}
-                        </option>
-                      </select>
-                    )}
+                    <input
+                      type="number"
+                      min={1}
+                      step={1}
+                      value={newCourse.capacity}
+                      onChange={(e) =>
+                        setNewCourse((current) => ({
+                          ...current,
+                          capacity: Number(e.target.value),
+                        }))
+                      }
+                      className="w-full rounded-lg border border-line bg-white px-3.5 py-2.5 text-[13px] outline-none focus:border-blue"
+                      required
+                    />
                   </label>
                 </div>
               </section>

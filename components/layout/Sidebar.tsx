@@ -6,6 +6,7 @@ import { useCallback, useEffect, useState } from "react";
 import {
   LayoutDashboard,
   Dumbbell,
+  BookOpen,
   ClipboardCheck,
   GraduationCap,
   Heart,
@@ -31,6 +32,7 @@ import { useStudentExperience } from "@/components/shared/StudentExperienceProvi
 const icons: Record<string, React.ElementType> = {
   "/dashboard": LayoutDashboard,
   "/dashboard/classes": GraduationCap,
+  "/dashboard/resources": BookOpen,
   "/dashboard/practice": Dumbbell,
   "/dashboard/assignments": ClipboardCheck,
   "/dashboard/bookClass": Search,
@@ -59,6 +61,7 @@ export default function Sidebar({
   const childLabels: Record<string, { fa: string; en: string }> = {
     "/dashboard": { fa: "یادگیری من", en: "My learning" },
     "/dashboard/classes": { fa: "کلاس‌های من", en: "My classes" },
+    "/dashboard/resources": { fa: "منابع کلاس‌ها", en: "Class resources" },
     "/dashboard/practice": { fa: "تمرین‌های کوتاه", en: "Quick practice" },
     "/dashboard/assignments": { fa: "کارهای من", en: "My assignments" },
     "/dashboard/bookClass": { fa: "رزرو کلاس", en: "Book a Class" },
@@ -103,7 +106,8 @@ export default function Sidebar({
 
   const renderItem = (item: (typeof navItems)[number]) => {
     const Icon = icons[item.href];
-    const active = currentPath === item.href;
+    const active =
+      currentPath === item.href || currentPath.startsWith(`${item.href}/`);
     return (
       <Link
         key={item.href}

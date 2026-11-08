@@ -27,6 +27,8 @@ export interface CourseClass {
   title: string;
   description: string;
   level: string;
+  term?: string;
+  language?: string;
   subject: string;
   type: ClassType;
   maxCapacity: number;
@@ -161,6 +163,10 @@ function normalizeCourseClass(raw: unknown, index: number): CourseClass | null {
     title: text(record, "title", "Title"),
     description: text(record, "description", "Description"),
     level: text(record, "level", "Level"),
+    term: text(record, "term", "Term", "termName", "TermName") || undefined,
+    language:
+      text(record, "language", "Language", "courseLanguage", "CourseLanguage") ||
+      undefined,
     subject: text(record, "subject", "Subject"),
     type: normalizeClassType(value(record, "type", "Type")),
     maxCapacity: numberValue(record, "maxCapacity", "MaxCapacity"),

@@ -51,6 +51,7 @@ export default function TeacherTopbar({
   const [showAccountMenu, setShowAccountMenu] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
   const accountMenuRef = useRef<HTMLDivElement>(null);
+  const notificationsMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const n = getName();
@@ -96,6 +97,23 @@ export default function TeacherTopbar({
       document.removeEventListener("keydown", closeOnEscape);
     };
   }, [showAccountMenu]);
+
+  useEffect(() => {
+    if (!showNotifications) return;
+    const closeOnOutsideClick = (event: PointerEvent) => {
+      if (!notificationsMenuRef.current?.contains(event.target as Node))
+        setShowNotifications(false);
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setShowNotifications(false);
+    };
+    document.addEventListener("pointerdown", closeOnOutsideClick);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("pointerdown", closeOnOutsideClick);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [showNotifications]);
 
   useEffect(() => {
     if (!isApiConfigured()) return;
@@ -173,7 +191,7 @@ export default function TeacherTopbar({
       </div>
 
       <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-        <div className="relative">
+        <div className="relative" ref={notificationsMenuRef}>
           <button
             onClick={() => {
               setShowAccountMenu(false);
@@ -189,7 +207,7 @@ export default function TeacherTopbar({
             )}
           </button>
           {showNotifications && (
-            <div className="absolute top-full right-0 mt-2 w-80 max-w-[calc(100vw-1.5rem)] bg-white border border-line rounded-lg shadow-card z-50">
+            <div className="absolute top-full end-0 mt-2 w-80 max-w-[calc(100vw-2rem)] overflow-hidden bg-white border border-line rounded-lg shadow-card z-50">
               <div className="p-4 border-b border-line flex items-center justify-between">
                 <h3 className="text-[13.5px] font-semibold">
                   {t("teacherNotifications.title")}
@@ -220,11 +238,11 @@ export default function TeacherTopbar({
                         <span
                           className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${notification.isRead ? "bg-transparent" : "bg-blue"}`}
                         />
-                        <span className="min-w-0">
-                          <span className="block text-[12.5px] font-semibold text-ink">
+                        <span className="min-w-0 break-words">
+                          <span className="block break-words text-[12.5px] font-semibold text-ink">
                             {notification.title}
                           </span>
-                          <span className="mt-0.5 block text-[11.5px] leading-relaxed text-muted">
+                          <span className="mt-0.5 block break-words text-[11.5px] leading-relaxed text-muted">
                             {notification.message}
                           </span>
                         </span>

@@ -1,9 +1,9 @@
-import MessagesHub from "@/components/messages/MessagesHub";
+import TeacherGroupChat from "@/components/messages/TeacherGroupChat";
 
 export default function TeacherMessagesPage() {
   return (
     <div>
-      <MessagesHub />
+      <TeacherGroupChat />
     </div>
   );
 }

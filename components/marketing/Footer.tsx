@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import {
   Facebook,
@@ -14,6 +15,7 @@ import {
   MessageSquareText,
 } from "lucide-react";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
+import { stripLocale } from "@/lib/i18n/paths";
 
 export default function Footer() {
   const { t, href } = useLanguage();
@@ -50,6 +52,33 @@ export default function Footer() {
   ];
 
   const pathname = usePathname();
+  const [signupFormFocused, setSignupFormFocused] = useState(false);
+
+  useEffect(() => {
+    if (stripLocale(pathname || "/") !== "/signup") {
+      setSignupFormFocused(false);
+      return;
+    }
+
+    let focusCheck = 0;
+    const updateFocus = () => {
+      window.cancelAnimationFrame(focusCheck);
+      focusCheck = window.requestAnimationFrame(() => {
+        const activeElement = document.activeElement;
+        setSignupFormFocused(
+          activeElement instanceof HTMLElement &&
+            activeElement.closest("#signup-form") !== null,
+        );
+      });
+    };
+    document.addEventListener("focusin", updateFocus);
+    document.addEventListener("focusout", updateFocus);
+    return () => {
+      window.cancelAnimationFrame(focusCheck);
+      document.removeEventListener("focusin", updateFocus);
+      document.removeEventListener("focusout", updateFocus);
+    };
+  }, [pathname]);
 
   const columns = [
     {
@@ -77,7 +106,7 @@ export default function Footer() {
 
   return (
     <>
-      <nav className="fixed inset-x-0 bottom-0 z-50 px-3 pb-[max(env(safe-area-inset-bottom),12px)] pt-2 lg:hidden">
+      <nav className={`fixed inset-x-0 bottom-0 z-50 px-3 pb-[max(env(safe-area-inset-bottom),12px)] pt-2 lg:hidden ${signupFormFocused ? "hidden" : ""}`}>
         <div className="mx-auto max-w-md rounded-[24px] border border-white/20 bg-[#182163]/95 p-2 shadow-[0_-8px_24px_rgba(15,23,42,0.08)] backdrop-blur-xl">
           <div className="grid grid-cols-5 gap-1">
             {mobileNavItems.map(({ label, href: itemHref, icon: Icon }) => {

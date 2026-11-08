@@ -30,7 +30,7 @@ export default function FormField({
           type={isPassword ? (show ? "text" : "password") : type}
           placeholder={placeholder}
           dir={isPassword || type === "email" ? "ltr" : undefined}
-          className="flex-1 min-w-0 outline-none text-[15px] bg-transparent placeholder:text-muted"
+          className="flex-1 min-w-0 outline-none text-base sm:text-[15px] bg-transparent placeholder:text-muted"
           {...rest}
         />
         {isPassword && (
