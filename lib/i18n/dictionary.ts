@@ -192,11 +192,12 @@ export const dictionary = {
         placeholder: "جستجوی آیلتس، PTE، کودکان، فری دیسکاشن...",
         search: "جستجوی کلاس",
         categories: [
-          { label: "آیلتس", query: "آیلتس" },
+          { label: "آیلتس", query: "IELTS" },
           { label: "دوره PTE", query: "PTE" },
-          { label: "خصوصی", query: "private", contact: true },
-          { label: "کودکان", query: "کودک" },
-          { label: "فری دیسکاشن", query: "فری دیسکاشن" },
+          { label: "خصوصی", query: "Private" },
+          { label: "کودکان", query: "Kids" },
+          { label: "فری دیسکاشن", query: "Free Discussion" },
+          { label: "عمومی", query: "General" },
         ],
       },
       levelTest: {
@@ -1458,9 +1459,10 @@ export const dictionary = {
         categories: [
           { label: "IELTS", query: "IELTS" },
           { label: "PTE", query: "PTE" },
-          { label: "Private", query: "private", contact: true },
-          { label: "Kids", query: "children" },
+          { label: "Private", query: "Private" },
+          { label: "Kids", query: "Kids" },
           { label: "Free discussion", query: "Free Discussion" },
+          { label: "General", query: "General" },
         ],
       },
       levelTest: {

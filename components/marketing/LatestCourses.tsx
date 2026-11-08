@@ -76,7 +76,8 @@ export default function LatestCourses({
         (c) =>
           c.title.toLowerCase().includes(q) ||
           c.level.toLowerCase().includes(q) ||
-          c.desc.toLowerCase().includes(q),
+          c.desc.toLowerCase().includes(q) ||
+          c.category?.toLowerCase().includes(q),
       )
     : allCourses;
   const displayedCourses = variant === "latest" ? courses.slice(0, 4) : courses;

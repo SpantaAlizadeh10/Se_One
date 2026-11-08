@@ -200,6 +200,7 @@ export default function Hero() {
               UserRound,
               Baby,
               MessageCircle,
+              GraduationCap,
             ][index];
             const destination = category.contact
               ? href("/contact")

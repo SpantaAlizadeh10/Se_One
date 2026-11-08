@@ -68,6 +68,15 @@ const emptyCourseDraft: CourseDraft = {
   teacherRole: "english",
 };
 
+const courseCategories = [
+  { value: "Free Discussion", fa: "فری دیسکاشن", en: "Free Discussion" },
+  { value: "Private", fa: "خصوصی", en: "Private" },
+  { value: "IELTS", fa: "آیلتس", en: "IELTS" },
+  { value: "Kids", fa: "کودکان", en: "Kids" },
+  { value: "PTE", fa: "PTE", en: "PTE" },
+  { value: "General", fa: "عمومی", en: "General" },
+] as const;
+
 function setLocalDate(date: Date, time: string) {
   const [hours, minutes] = time.split(":").map(Number);
   date.setHours(hours || 0, minutes || 0, 0, 0);
@@ -650,16 +659,38 @@ export default function AdminCoursesPage() {
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
                   <label className="block text-[12.5px] font-semibold text-ink70 mb-2">
-                    Category
+                    {lang === "fa" ? "دسته‌بندی دوره *" : "Course category *"}
                   </label>
-                  <input
-                    type="text"
+                  <select
                     value={newCourse.category}
                     onChange={(e) =>
-                      setNewCourse({ ...newCourse, category: e.target.value })
+                      setNewCourse((current) => ({
+                        ...current,
+                        category: e.target.value,
+                      }))
                     }
                     className="w-full border border-line rounded-lg px-3.5 py-2.5 text-[13.5px] outline-none focus:border-blue"
-                  />
+                    required
+                  >
+                    <option value="">
+                      {lang === "fa"
+                        ? "دسته‌بندی را انتخاب کنید"
+                        : "Select a category"}
+                    </option>
+                    {newCourse.category &&
+                      !courseCategories.some(
+                        (category) => category.value === newCourse.category,
+                      ) && (
+                        <option value={newCourse.category}>
+                          {newCourse.category}
+                        </option>
+                      )}
+                    {courseCategories.map((category) => (
+                      <option key={category.value} value={category.value}>
+                        {lang === "fa" ? category.fa : category.en}
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <div>
                   <label className="block text-[12.5px] font-semibold text-ink70 mb-2">
