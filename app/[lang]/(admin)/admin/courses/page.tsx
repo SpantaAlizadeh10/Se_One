@@ -218,24 +218,8 @@ export default function AdminCoursesPage() {
     }
   };
 
-  const openEditCourse = async (course: AdminCourse) => {
-    let availableClassSlots = classSlots;
-    try {
-      availableClassSlots = await listAdminClassSlots();
-      setClassSlots(availableClassSlots);
-    } catch (error) {
-      setApiError(
-        error instanceof Error
-          ? error.message
-          : lang === "fa"
-            ? "برنامهٔ کلاس دریافت نشد؛ ویرایش دوره انجام نشد."
-            : "Could not load the class schedule, so the course was not opened for editing.",
-      );
-      return;
-    }
-    const linkedClass = availableClassSlots.find(
-      (slot) => slot.courseId === course.id,
-    );
+  const openEditCourse = (course: AdminCourse) => {
+    const linkedClass = classSlots.find((slot) => slot.courseId === course.id);
     const currentTeacher = linkedClass?.teacherAssignments?.find(
       (assignment) => assignment.status === "confirmed",
     );
@@ -277,24 +261,43 @@ export default function AdminCoursesPage() {
     setApiError(null);
 
     try {
-      const start = new Date(newCourse.startsAt);
-      const end = new Date(newCourse.endsAt);
-      if (!newCourse.startsAt || !newCourse.endsAt) {
+      const currentLinkedClass = editingCourseId
+        ? classSlots.find((slot) => slot.courseId === editingCourseId)
+        : undefined;
+      const hasClassSchedule =
+        !editingCourseId ||
+        Boolean(currentLinkedClass) ||
+        Boolean(newCourse.startsAt || newCourse.endsAt);
+      if (hasClassSchedule && (!newCourse.startsAt || !newCourse.endsAt)) {
         throw new Error(
           lang === "fa"
             ? "زمان شروع و پایان کلاس الزامی است."
             : "Class start and end times are required.",
         );
       }
-      const currentLinkedClass = editingCourseId
-        ? classSlots.find((slot) => slot.courseId === editingCourseId)
-        : undefined;
+      const start = newCourse.startsAt ? new Date(newCourse.startsAt) : null;
+      const end = newCourse.endsAt ? new Date(newCourse.endsAt) : null;
+      if (
+        hasClassSchedule &&
+        (!start ||
+          !end ||
+          !Number.isFinite(start.getTime()) ||
+          !Number.isFinite(end.getTime()))
+      ) {
+        throw new Error(
+          lang === "fa"
+            ? "تاریخ و زمان کلاس معتبر نیست."
+            : "The class date and time are invalid.",
+        );
+      }
       const scheduleChanged =
         !currentLinkedClass ||
+        !start ||
+        !end ||
         start.getTime() !== new Date(currentLinkedClass.startsAt).getTime() ||
         end.getTime() !== new Date(currentLinkedClass.endsAt).getTime();
-      if (!editingCourseId || scheduleChanged) {
-        if (start.getTime() <= Date.now()) {
+      if (hasClassSchedule && (!editingCourseId || scheduleChanged)) {
+        if (start && start.getTime() <= Date.now()) {
           throw new Error(
             lang === "fa"
               ? "زمان شروع باید در آینده باشد."
@@ -302,7 +305,7 @@ export default function AdminCoursesPage() {
           );
         }
       }
-      if (end.getTime() <= start.getTime()) {
+      if (hasClassSchedule && start && end && end.getTime() <= start.getTime()) {
         throw new Error(
           lang === "fa"
             ? "زمان پایان باید بعد از زمان شروع باشد."
@@ -318,25 +321,28 @@ export default function AdminCoursesPage() {
         teacherRole,
         ...courseDetails
       } = newCourse;
-      const classDetails = {
-        courseId: editingCourseId ?? undefined,
-        title: courseDetails.title,
-        description: courseDetails.description,
-        classType,
-        capacity,
-        level: courseDetails.level,
-        teacherRole,
-        language: courseDetails.language,
-        basePrice: courseDetails.basePrice,
-        finalPrice: getDiscountedPrice(
-          courseDetails.basePrice,
-          courseDetails.discountPercent ?? 0,
-        ),
-        currency: courseDetails.currency,
-        startsAt: start.toISOString(),
-        endsAt: end.toISOString(),
-        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-      } as const;
+      const classDetails =
+        hasClassSchedule && start && end
+          ? {
+              courseId: editingCourseId ?? undefined,
+              title: courseDetails.title,
+              description: courseDetails.description,
+              classType,
+              capacity,
+              level: courseDetails.level,
+              teacherRole,
+              language: courseDetails.language,
+              basePrice: courseDetails.basePrice,
+              finalPrice: getDiscountedPrice(
+                courseDetails.basePrice,
+                courseDetails.discountPercent ?? 0,
+              ),
+              currency: courseDetails.currency,
+              startsAt: start.toISOString(),
+              endsAt: end.toISOString(),
+              timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+            }
+          : null;
 
       if (editingCourseId) {
         const updatedCourse = await updateAdminCourse(
@@ -349,45 +355,55 @@ export default function AdminCoursesPage() {
           ),
         );
 
-        try {
-          const updatedClass = currentLinkedClass
-            ? await updateAdminClassSlot(currentLinkedClass.id, classDetails)
-            : await createAdminClassSlot(classDetails);
-          setClassSlots((prev) =>
-            currentLinkedClass
-              ? prev.map((slot) =>
-                  slot.id === currentLinkedClass.id ? updatedClass : slot,
-                )
-              : [updatedClass, ...prev],
-          );
-          const assignedTeacher = currentLinkedClass?.teacherAssignments?.find(
-            (assignment) => assignment.status === "confirmed",
-          );
-          if (courseDetails.teacherId !== (assignedTeacher?.teacherId ?? "")) {
-            if (assignedTeacher) {
-              await replaceAdminClassTeacher(
-                updatedClass.id,
-                courseDetails.teacherId || null,
+        if (classDetails) {
+          try {
+            const updatedClass = currentLinkedClass
+              ? await updateAdminClassSlot(currentLinkedClass.id, classDetails)
+              : await createAdminClassSlot(classDetails);
+            setClassSlots((prev) =>
+              currentLinkedClass
+                ? prev.map((slot) =>
+                    slot.id === currentLinkedClass.id ? updatedClass : slot,
+                  )
+                : [updatedClass, ...prev],
+            );
+            const assignedTeacher =
+              currentLinkedClass?.teacherAssignments?.find(
+                (assignment) => assignment.status === "confirmed",
               );
-            } else if (courseDetails.teacherId) {
-              await assignTeacherToClassSlot(
-                updatedClass.id,
-                courseDetails.teacherId,
-              );
+            if (courseDetails.teacherId !== (assignedTeacher?.teacherId ?? "")) {
+              if (assignedTeacher) {
+                await replaceAdminClassTeacher(
+                  updatedClass.id,
+                  courseDetails.teacherId || null,
+                );
+              } else if (courseDetails.teacherId) {
+                await assignTeacherToClassSlot(
+                  updatedClass.id,
+                  courseDetails.teacherId,
+                );
+              }
+              const refreshedSlots = await listAdminClassSlots();
+              setClassSlots(refreshedSlots);
             }
-            const refreshedSlots = await listAdminClassSlots();
-            setClassSlots(refreshedSlots);
+          } catch (classUpdateError) {
+            throw new Error(
+              lang === "fa"
+                ? `اطلاعات دوره ذخیره شد اما تغییرات کلاس کامل نشد: ${classUpdateError instanceof Error ? classUpdateError.message : "خطای نامشخص"}`
+                : `Course details were saved, but its scheduled class was not fully updated: ${classUpdateError instanceof Error ? classUpdateError.message : "Unknown error"}`,
+            );
           }
-        } catch (classUpdateError) {
-          throw new Error(
-            lang === "fa"
-              ? `اطلاعات دوره ذخیره شد اما تغییرات کلاس کامل نشد: ${classUpdateError instanceof Error ? classUpdateError.message : "خطای نامشخص"}`
-              : `Course details were saved, but its scheduled class was not fully updated: ${classUpdateError instanceof Error ? classUpdateError.message : "Unknown error"}`,
-          );
         }
       } else {
         const created = await createAdminCourse(courseDetails);
         setApiCourses((prev) => [created, ...prev]);
+        if (!classDetails) {
+          throw new Error(
+            lang === "fa"
+              ? "زمان‌بندی کلاس برای ایجاد دوره الزامی است."
+              : "A class schedule is required when creating a course.",
+          );
+        }
 
         try {
           const scheduledClass = await createAdminClassSlot({
@@ -733,7 +749,12 @@ export default function AdminCoursesPage() {
                   </label>
                   <label className="space-y-2 text-[12.5px] font-semibold text-ink70">
                     <span>
-                      {lang === "fa" ? "زمان شروع" : "Start date & time"} *
+                      {lang === "fa" ? "زمان شروع" : "Start date & time"}
+                      {(!editingCourseId ||
+                        classSlots.some(
+                          (slot) => slot.courseId === editingCourseId,
+                        )) &&
+                        " *"}
                     </span>
                     <div className="grid grid-cols-[minmax(0,1fr)_112px] gap-2">
                       <DatePicker
@@ -748,9 +769,16 @@ export default function AdminCoursesPage() {
                         calendar={lang === "fa" ? persian : undefined}
                         locale={lang === "fa" ? persian_fa : undefined}
                         placeholder={
-                          lang === "fa"
-                            ? "تاریخ شمسی را انتخاب کنید"
-                            : "Select a date"
+                          !editingCourseId ||
+                          classSlots.some(
+                            (slot) => slot.courseId === editingCourseId,
+                          )
+                            ? lang === "fa"
+                              ? "تاریخ شمسی را انتخاب کنید"
+                              : "Select a date"
+                            : lang === "fa"
+                              ? "اختیاری؛ برای افزودن کلاس برنامه‌ریزی کنید"
+                              : "Optional; set a date to schedule a class"
                         }
                         format={lang === "fa" ? "YYYY/MM/DD" : "MMM DD, YYYY"}
                         calendarPosition={
@@ -785,14 +813,25 @@ export default function AdminCoursesPage() {
                             ),
                           }))
                         }
-                        required
+                        required={
+                          !editingCourseId ||
+                          classSlots.some(
+                            (slot) => slot.courseId === editingCourseId,
+                          ) ||
+                          Boolean(newCourse.endsAt)
+                        }
                         className="w-full rounded-lg border border-line bg-white px-2 py-2.5 text-[13px] outline-none focus:border-blue"
                       />
                     </div>
                   </label>
                   <label className="space-y-2 text-[12.5px] font-semibold text-ink70">
                     <span>
-                      {lang === "fa" ? "زمان پایان" : "End date & time"} *
+                      {lang === "fa" ? "زمان پایان" : "End date & time"}
+                      {(!editingCourseId ||
+                        classSlots.some(
+                          (slot) => slot.courseId === editingCourseId,
+                        )) &&
+                        " *"}
                     </span>
                     <div className="grid grid-cols-[minmax(0,1fr)_112px] gap-2">
                       <DatePicker
@@ -807,9 +846,16 @@ export default function AdminCoursesPage() {
                         calendar={lang === "fa" ? persian : undefined}
                         locale={lang === "fa" ? persian_fa : undefined}
                         placeholder={
-                          lang === "fa"
-                            ? "تاریخ شمسی را انتخاب کنید"
-                            : "Select a date"
+                          !editingCourseId ||
+                          classSlots.some(
+                            (slot) => slot.courseId === editingCourseId,
+                          )
+                            ? lang === "fa"
+                              ? "تاریخ شمسی را انتخاب کنید"
+                              : "Select a date"
+                            : lang === "fa"
+                              ? "اختیاری؛ برای افزودن کلاس برنامه‌ریزی کنید"
+                              : "Optional; set a date to schedule a class"
                         }
                         format={lang === "fa" ? "YYYY/MM/DD" : "MMM DD, YYYY"}
                         calendarPosition={
@@ -844,7 +890,13 @@ export default function AdminCoursesPage() {
                             ),
                           }))
                         }
-                        required
+                        required={
+                          !editingCourseId ||
+                          classSlots.some(
+                            (slot) => slot.courseId === editingCourseId,
+                          ) ||
+                          Boolean(newCourse.startsAt)
+                        }
                         className="w-full rounded-lg border border-line bg-white px-2 py-2.5 text-[13px] outline-none focus:border-blue"
                       />
                     </div>
