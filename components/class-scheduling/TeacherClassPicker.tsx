@@ -1,35 +1,33 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { CalendarDays, Clock3, MessageCircle, Sparkles, Users } from "lucide-react";
+import {
+  BookOpen,
+  CalendarDays,
+  Clock3,
+  MessageCircle,
+  Users,
+} from "lucide-react";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 import { isApiConfigured } from "@/lib/is-api-configured";
 import {
-  requestTeacherClassSlot,
   listTeacherClassSlots,
-  overlaps,
   type TeacherClassSlot,
 } from "@/lib/api/class-scheduling";
 import {
   getCurrentDemoTeacherIdentity,
   getDemoTeacherClassSlots,
   onDemoClassSchedulingChange,
-  requestDemoTeacherClass,
 } from "@/lib/demo-class-scheduling";
 
-type DisplayTeacherClassSlot = TeacherClassSlot & {
-  courseTitle?: string;
-  isDemo?: boolean;
-};
+type DisplayTeacherClassSlot = TeacherClassSlot & { isDemo?: boolean };
 
 function demoTeacherSlots(): DisplayTeacherClassSlot[] {
   const identity = getCurrentDemoTeacherIdentity();
-  return getDemoTeacherClassSlots(identity.teacherId).map((slot) => ({
-    ...slot,
-    courseTitle: slot.courseId?.replace("mock-course-", "") ?? "",
-    isDemo: true,
-  }));
+  return getDemoTeacherClassSlots(identity.teacherId)
+    .filter((slot) => slot.assignmentStatus === "confirmed")
+    .map((slot) => ({ ...slot, isDemo: true }));
 }
 
 function dateLabel(value: string, locale: string) {
@@ -55,14 +53,7 @@ export default function TeacherClassPicker() {
   const locale = fa ? "fa-IR" : "en-US";
   const [slots, setSlots] = useState<DisplayTeacherClassSlot[]>([]);
   const [loading, setLoading] = useState(true);
-  const [savingId, setSavingId] = useState("");
   const [error, setError] = useState("");
-  const [notice, setNotice] = useState("");
-
-  const refresh = async () => {
-    const remoteSlots = isApiConfigured() ? await listTeacherClassSlots() : [];
-    setSlots([...remoteSlots, ...demoTeacherSlots()]);
-  };
 
   useEffect(() => {
     let active = true;
@@ -71,20 +62,31 @@ export default function TeacherClassPicker() {
         const remoteSlots = isApiConfigured()
           ? await listTeacherClassSlots()
           : [];
-        if (active) setSlots([...remoteSlots, ...demoTeacherSlots()]);
+        if (active) {
+          setSlots([
+            ...remoteSlots.filter(
+              (slot) => slot.assignmentStatus === "confirmed",
+            ),
+            ...demoTeacherSlots(),
+          ]);
+          setError("");
+        }
       } catch (reason) {
         if (active) {
           setSlots(demoTeacherSlots());
           setError(
             reason instanceof Error
               ? reason.message
-              : "Could not load classes.",
+              : fa
+                ? "کلاس‌های تخصیص‌یافته بارگذاری نشدند."
+                : "Could not load assigned classes.",
           );
         }
       } finally {
         if (active) setLoading(false);
       }
     };
+
     void load();
     const unsubscribe = onDemoClassSchedulingChange(() => void load());
     return () => {
@@ -93,296 +95,157 @@ export default function TeacherClassPicker() {
     };
   }, [fa]);
 
-  const acceptedSlots = useMemo(
-    () => slots.filter((item) => item.assignmentStatus === "confirmed"),
-    [slots],
+  const now = Date.now();
+  const assignedSlots = slots.filter(
+    (slot) =>
+      slot.assignmentStatus === "confirmed" &&
+      slot.status !== "cancelled" &&
+      slot.status !== "draft",
   );
-  const pendingSlots = useMemo(
-    () => slots.filter((item) => item.assignmentStatus === "pending"),
-    [slots],
-  );
-
-  const conflictsWithSchedule = (candidate: TeacherClassSlot) =>
-    acceptedSlots.some(
-      (accepted) =>
-        accepted.id !== candidate.id &&
-        overlaps(
-          candidate.startsAt,
-          candidate.endsAt,
-          accepted.startsAt,
-          accepted.endsAt,
-        ),
+  const upcomingSlots = assignedSlots
+    .filter((slot) => !slot.endsAt || new Date(slot.endsAt).getTime() >= now)
+    .sort(
+      (left, right) =>
+        new Date(left.startsAt).getTime() - new Date(right.startsAt).getTime(),
+    );
+  const completedSlots = assignedSlots
+    .filter((slot) => Boolean(slot.endsAt) && new Date(slot.endsAt).getTime() < now)
+    .sort(
+      (left, right) =>
+        new Date(right.startsAt).getTime() - new Date(left.startsAt).getTime(),
     );
 
-  const requestClass = async (item: DisplayTeacherClassSlot) => {
-    if (item.assignmentStatus !== "available" || conflictsWithSchedule(item))
-      return;
-    setSavingId(item.id);
-    setError("");
-    setNotice("");
-    try {
-      if (item.isDemo) {
-        const identity = getCurrentDemoTeacherIdentity();
-        requestDemoTeacherClass(
-          item.id,
-          identity.teacherId,
-          identity.teacherName,
-        );
-        setSlots((current) =>
-          current.map((slot) =>
-            slot.id === item.id
-              ? { ...slot, assignmentStatus: "pending" }
-              : slot,
-          ),
-        );
-        setNotice(
-          fa
-            ? "درخواست کلاس نمونه برای تأیید ادمین ارسال شد."
-            : "Demo class request sent for admin approval.",
-        );
-        return;
-      }
-      await requestTeacherClassSlot(item.id);
-      await refresh();
-      setNotice(
-        fa
-          ? "درخواست تدریس ارسال شد و پس از تأیید ادمین در فهرست دانش‌آموزان قرار می‌گیرد."
-          : "Teaching request sent. The class becomes bookable after admin approval.",
-      );
-    } catch (reason) {
-      setError(
-        reason instanceof Error
-          ? reason.message
-          : fa
-            ? "درخواست کلاس انجام نشد؛ برنامه زمانی را بررسی کنید."
-            : "Could not request this class. Check your schedule.",
-      );
-    } finally {
-      setSavingId("");
-    }
-  };
+  const renderClass = (item: DisplayTeacherClassSlot, completed = false) => (
+    <article
+      key={`${item.id}-${item.assignmentId ?? "assigned"}`}
+      className="flex flex-col gap-4 rounded-2xl border border-line bg-white p-4 shadow-card sm:flex-row sm:items-center"
+    >
+      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#E8EEFF] text-blue">
+        <BookOpen size={21} />
+      </span>
+      <div className="min-w-0 flex-1">
+        <div className="mb-1 flex flex-wrap items-center gap-2">
+          <h3 className="m-0 truncate text-[14px] font-semibold">{item.title}</h3>
+          <span
+            className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+              completed
+                ? "bg-sage/50 text-sageDeep"
+                : "bg-blue/10 text-blue"
+            }`}
+          >
+            {completed
+              ? fa
+                ? "تکمیل‌شده"
+                : "Completed"
+              : fa
+                ? "تخصیص‌یافته"
+                : "Assigned"}
+          </span>
+          {item.isDemo && (
+            <span className="rounded-full bg-cream px-2 py-0.5 text-[10px] font-semibold text-muted">
+              {fa ? "نمونه" : "Demo"}
+            </span>
+          )}
+        </div>
+        <p className="mb-2 mt-1 text-[12px] text-muted">
+          {item.courseTitle || item.description || item.teacherRole}
+          {item.level ? ` · ${fa ? "سطح" : "Level"} ${item.level}` : ""}
+        </p>
+        <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-muted">
+          <span className="inline-flex items-center gap-1">
+            <CalendarDays size={12} />
+            {dateLabel(item.startsAt, locale)}
+          </span>
+          <span className="inline-flex items-center gap-1">
+            <Clock3 size={12} />
+            {timeLabel(item.startsAt, locale)}–{timeLabel(item.endsAt, locale)}
+          </span>
+          <span className="inline-flex items-center gap-1">
+            <Users size={12} />
+            {fa
+              ? `${item.enrolledCount} از ${item.capacity} دانش‌آموز`
+              : `${item.enrolledCount} of ${item.capacity} students`}
+          </span>
+          <span>
+            {fa
+              ? `${item.remainingSeats} جای خالی`
+              : `${item.remainingSeats} seats left`}
+          </span>
+        </div>
+      </div>
+      {item.classGroupId && (
+        <Link
+          href={href(
+            `/teacher/classes/group/${encodeURIComponent(item.classGroupId)}`,
+          )}
+          className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-blue px-4 py-2.5 text-[12px] font-semibold text-white hover:bg-blueDeep"
+        >
+          <MessageCircle size={15} />
+          {fa ? "گفت‌وگوی کلاس" : "Class chat"}
+        </Link>
+      )}
+    </article>
+  );
 
   return (
-    <div className="space-y-5">
-      <div>
+    <div className="space-y-6">
+      <header>
         <h2 className="mb-1 font-serif text-[23px] font-semibold">
-          {fa ? "انتخاب کلاس برای تدریس" : "Choose classes to teach"}
+          {fa ? "کلاس‌های من" : "My Classes"}
         </h2>
         <p className="m-0 text-[13px] text-muted">
           {fa
-            ? "فقط کلاس‌های بدون تداخل با برنامه فعلی‌تان را می‌توانید بپذیرید. بررسی نهایی تداخل در سرور انجام می‌شود."
-            : "Accept classes that fit your schedule. The server also enforces overlap checks."}
+            ? "در این بخش فقط کلاس‌هایی نمایش داده می‌شوند که ادمین به شما تخصیص داده است."
+            : "Only classes assigned to you by an admin appear here."}
         </p>
-      </div>
-
-      <div className="rounded-xl border border-blue/20 bg-blue/5 px-3 py-2 text-[12px] text-blue">
-        {fa
-          ? "کلاس‌های نمونه فقط برای پیش‌نمایش هستند. کلاس‌های واقعی با انتخاب، در برنامه معلم ذخیره می‌شوند."
-          : "Demo classes are for preview only. Accepting a real class saves it to your teaching schedule."}
-      </div>
+      </header>
 
       {error && (
-        <p
-          role="alert"
-          className="rounded-xl bg-danger/10 p-3 text-[13px] text-danger"
-        >
+        <p role="alert" className="rounded-xl bg-danger/10 p-3 text-[13px] text-danger">
           {error}
         </p>
       )}
-      {notice && (
-        <p
-          role="status"
-          className="rounded-xl bg-sage/40 p-3 text-[13px] text-sageDeep"
-        >
-          {notice}
-        </p>
-      )}
-
-      {pendingSlots.length > 0 && (
-        <section className="rounded-2xl border border-gold/40 bg-gold/10 p-4">
-          <h3 className="mb-3 text-[14px] font-semibold">
-            {fa ? "در انتظار تأیید ادمین" : "Pending admin approval"}
-          </h3>
-          <div className="space-y-2">
-            {pendingSlots.map((item) => (
-              <div
-                key={item.assignmentId ?? item.id}
-                className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-white px-3 py-2 text-[12px]"
-              >
-                <span className="font-semibold">{item.title}</span>
-                <span className="text-muted">
-                  {dateLabel(item.startsAt, locale)} ·{" "}
-                  {timeLabel(item.startsAt, locale)}
-                </span>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {acceptedSlots.length > 0 && (
-        <section className="rounded-2xl border border-sage/60 bg-sage/20 p-4">
-          <h3 className="mb-3 text-[14px] font-semibold">
-            {fa ? "برنامه تدریس پذیرفته‌شده" : "Your accepted schedule"}
-          </h3>
-          <div className="space-y-2">
-            {acceptedSlots.map((item) => (
-              <div
-                key={item.id}
-                className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-white px-3 py-2 text-[12px]"
-              >
-                <span className="font-semibold">{item.title}</span>
-                <span className="text-muted">
-                  {dateLabel(item.startsAt, locale)} ·{" "}
-                  {timeLabel(item.startsAt, locale)}–
-                  {timeLabel(item.endsAt, locale)}
-                </span>
-                {item.classGroupId && (
-                  <Link
-                    href={href(
-                      `/teacher/classes/group/${encodeURIComponent(item.classGroupId)}`,
-                    )}
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-blue px-3 py-2 text-[11px] font-semibold text-white"
-                  >
-                    <MessageCircle size={13} />
-                    {fa ? "گفت‌وگوی کلاس" : "Class chat"}
-                  </Link>
-                )}
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
 
       {loading ? (
-        <p className="rounded-2xl border border-line bg-white p-5 text-[13px] text-muted">
-          {fa ? "در حال بارگذاری…" : "Loading classes…"}
+        <p className="rounded-2xl border border-line bg-white p-6 text-center text-[13px] text-muted">
+          {fa ? "در حال بارگذاری کلاس‌ها…" : "Loading your classes…"}
         </p>
-      ) : slots.length === 0 ? (
-        <p className="rounded-2xl border border-line bg-white p-5 text-[13px] text-muted">
-          {fa
-            ? "کلاس فعالی برای انتخاب وجود ندارد."
-            : "No active classes are available to accept."}
-        </p>
+      ) : assignedSlots.length === 0 ? (
+        <div className="rounded-2xl border border-dashed border-line bg-white p-7 text-center">
+          <CalendarDays size={25} className="mx-auto mb-2 text-muted" />
+          <p className="mb-2 mt-0 text-[14px] font-semibold">
+            {fa ? "هنوز کلاسی به شما تخصیص داده نشده است." : "No classes assigned yet."}
+          </p>
+          <p className="mx-auto mb-4 mt-0 max-w-lg text-[12px] leading-6 text-muted">
+            {fa
+              ? "زمان‌های آزاد خود را ثبت کنید. ادمین پس از بررسی، کلاس مناسب را به شما تخصیص می‌دهد."
+              : "Submit your available times. An admin will review them and assign a suitable class."}
+          </p>
+          <Link
+            href={href("/teacher/availability")}
+            className="inline-flex items-center justify-center rounded-full bg-blue px-4 py-2.5 text-[12px] font-semibold text-white hover:bg-blueDeep"
+          >
+            {fa ? "ثبت زمان‌های آزاد" : "Set available times"}
+          </Link>
+        </div>
       ) : (
-        <div className="grid gap-4 lg:grid-cols-2">
-          {slots.map((item) => {
-            const accepted = item.assignmentStatus === "confirmed";
-            const pending = item.assignmentStatus === "pending";
-            const rejected = item.assignmentStatus === "cancelled";
-            const conflict =
-              item.assignmentStatus === "available" &&
-              conflictsWithSchedule(item);
-            const canRequest =
-              item.assignmentStatus === "available" && !conflict;
-            return (
-              <article
-                key={item.id}
-                className="rounded-2xl border border-line bg-white p-4 shadow-card"
-              >
-                <div className="mb-3 flex items-start justify-between gap-3">
-                  <div>
-                    <div className="mb-1 inline-flex items-center gap-2 rounded-full bg-cream px-2.5 py-1 text-[11px] font-medium text-muted">
-                      <Sparkles size={12} /> {item.teacherRole}
-                    </div>
-                    <h3 className="font-semibold text-ink">{item.title}</h3>
-                    {item.courseTitle && (
-                      <p className="mt-1 text-[11px] font-medium text-blue">
-                        {fa ? "دوره:" : "Course:"} {item.courseTitle}
-                      </p>
-                    )}
-                    <span className="mt-1 inline-block rounded-full bg-blue/5 px-2 py-0.5 text-[10px] font-semibold text-blue">
-                      {item.classType === "private"
-                        ? fa
-                          ? `خصوصی · ظرفیت ${item.capacity}`
-                          : `Private · ${item.capacity} seat${item.capacity === 1 ? "" : "s"}`
-                        : fa
-                          ? `عمومی · ظرفیت ${item.capacity}`
-                          : `Public · ${item.capacity} seats`}
-                    </span>
-                    {item.level && (
-                      <span className="mt-1 inline-block rounded-full bg-sage/30 px-2 py-0.5 text-[10px] font-semibold text-sageDeep">
-                        {fa ? `سطح ${item.level}` : `Level ${item.level}`}
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex flex-col items-end gap-1.5">
-                    {item.isDemo && (
-                      <span className="rounded-full bg-blue/10 px-2 py-0.5 text-[10px] font-semibold text-blue">
-                        {fa ? "نمونه" : "Demo"}
-                      </span>
-                    )}
-                    <span className="rounded-full bg-blue/10 px-2.5 py-1 text-[11px] font-medium text-blue">
-                      {fa
-                        ? `${item.remainingSeats} صندلی خالی`
-                        : `${item.remainingSeats} seats left`}
-                    </span>
-                  </div>
-                </div>
-                <p className="mb-3 text-[12.5px] text-muted">
-                  {item.description}
-                </p>
-                <div className="grid gap-2 text-[12.5px] text-muted sm:grid-cols-2">
-                  <div className="flex items-center gap-2">
-                    <CalendarDays size={14} />
-                    {dateLabel(item.startsAt, locale)}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Clock3 size={14} />
-                    {timeLabel(item.startsAt, locale)} –{" "}
-                    {timeLabel(item.endsAt, locale)}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Users size={14} />
-                    {fa
-                      ? `ظرفیت ${item.capacity} نفر`
-                      : `${item.capacity} student capacity`}
-                  </div>
-                </div>
-                {conflict && (
-                  <p className="mb-0 mt-3 text-[12px] text-danger">
-                    {fa
-                      ? "با کلاس پذیرفته‌شده دیگری تداخل زمانی دارد."
-                      : "Overlaps with another class in your schedule."}
-                  </p>
-                )}
-                <button
-                  type="button"
-                  disabled={!canRequest || savingId === item.id}
-                  onClick={() => void requestClass(item)}
-                  className="mt-4 w-full rounded-xl bg-blue px-4 py-2.5 text-[13px] font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {savingId === item.id
-                    ? fa
-                      ? "در حال ثبت…"
-                      : "Saving…"
-                    : accepted
-                      ? fa
-                        ? "تأیید و قابل رزرو"
-                        : "Approved · Bookable"
-                      : pending
-                        ? fa
-                          ? "در انتظار تأیید ادمین"
-                          : "Waiting for admin approval"
-                        : rejected
-                          ? fa
-                            ? "تأیید نشد"
-                            : "Not approved"
-                          : conflict
-                            ? fa
-                              ? "تداخل زمانی"
-                              : "Schedule conflict"
-                            : item.assignmentStatus !== "available"
-                              ? fa
-                                ? "در دسترس نیست"
-                                : "Unavailable"
-                              : fa
-                                ? "درخواست برگزاری این کلاس"
-                                : "Request to teach this class"}
-                </button>
-              </article>
-            );
-          })}
+        <div className="space-y-7">
+          {upcomingSlots.length > 0 && (
+            <section className="space-y-3">
+              <h3 className="m-0 text-[14px] font-semibold">
+                {fa ? "کلاس‌های پیش‌رو" : "Upcoming classes"}
+              </h3>
+              {upcomingSlots.map((item) => renderClass(item))}
+            </section>
+          )}
+          {completedSlots.length > 0 && (
+            <section className="space-y-3">
+              <h3 className="m-0 text-[14px] font-semibold">
+                {fa ? "کلاس‌های تکمیل‌شده" : "Completed classes"}
+              </h3>
+              {completedSlots.map((item) => renderClass(item, true))}
+            </section>
+          )}
         </div>
       )}
     </div>

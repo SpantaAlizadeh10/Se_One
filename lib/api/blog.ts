@@ -2,8 +2,10 @@ import { apiFetch } from "./client";
 
 export type BlogPost = {
   id: string | number;
+  slug?: string;
   title: string;
   excerpt: string;
+  content?: string;
   author: string;
   date: string;
   readTime: string;
@@ -55,6 +57,7 @@ function normalizePost(raw: unknown, index: number): BlogPost | null {
 
   return {
     id: typeof id === "number" ? id : String(id),
+    slug: text(record, "slug", "Slug", "urlSlug", "UrlSlug") || undefined,
     title,
     excerpt: text(
       record,
@@ -64,6 +67,17 @@ function normalizePost(raw: unknown, index: number): BlogPost | null {
       "Summary",
       "description",
       "Description",
+    ),
+    content: text(
+      record,
+      "content",
+      "Content",
+      "body",
+      "Body",
+      "bodyHtml",
+      "BodyHtml",
+      "bodyMarkdown",
+      "BodyMarkdown",
     ),
     author: text(record, "author", "Author", "authorName", "AuthorName"),
     date: text(
@@ -109,6 +123,18 @@ function normalizePost(raw: unknown, index: number): BlogPost | null {
         ? "cambridge"
         : undefined,
   };
+}
+
+export async function getBlogPost(
+  idOrSlug: string,
+  lang: string,
+): Promise<BlogPost | null> {
+  const response = await apiFetch<unknown>(
+    `/api/blog/${encodeURIComponent(idOrSlug)}?lang=${encodeURIComponent(lang)}`,
+    { cache: "no-store" },
+  );
+  const post = normalizePost(response, 0);
+  return post;
 }
 
 export async function getBlogPosts(lang: string): Promise<BlogPost[]> {

@@ -76,10 +76,16 @@ endpoints below.
 - `GET /api/admin/class-slots` returns the persisted slots, their course/level,
   active enrollment count, remaining seats, and assignment records.
 - `GET /api/teacher/class-slots` returns the authenticated teacher's assigned
-  slots, including confirmed assignments. The teacher Classes page and dashboard
-  upcoming-class card use this persisted data.
+  slots with confirmed admin assignments only. Do not return open class slots,
+  teacher availability, or unassigned courses as teacher classes. The teacher
+  Classes page and dashboard upcoming-class card use this persisted data.
 - `GET /api/teacher/dashboard/overview` must calculate upcoming classes from
   confirmed assignments and persisted class sessions.
+
+Teachers submit availability only; they do not request or accept class slots.
+The admin selects a suitable teacher and creates the confirmed assignment.
+The teacher dashboard must not expose a teacher class-request endpoint or
+"request to teach" action.
 
 ### `GET /api/admin/class-slots/{slotId}/available-teachers`
 

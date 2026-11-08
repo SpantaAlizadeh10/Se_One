@@ -506,6 +506,30 @@ Get blog posts for a language.
 ]
 ```
 
+### GET /api/blog/{postIdOrSlug}?lang={lang}
+Get one published blog post by its stable ID or slug. The response must include
+the full article body, in addition to the public list fields:
+
+```json
+{
+  "id": "post-id",
+  "slug": "how-to-master-english",
+  "title": "Blog Post Title",
+  "excerpt": "Post excerpt",
+  "content": "<p>Full article content...</p>",
+  "author": "Author Name",
+  "publishedAt": "2026-09-15T00:00:00Z",
+  "readTime": "5 min",
+  "category": "Learning Tips",
+  "imageUrl": "https://example.com/image.jpg",
+  "lang": "en"
+}
+```
+
+Only published posts may be returned by this public endpoint. Return 404 for a
+missing, draft, or unpublished post. The frontend blog detail route is
+`/[lang]/blog/[postId]` and accepts the ID or slug used by the post card.
+
 ## Error Handling
 
 All endpoints should return appropriate HTTP status codes:

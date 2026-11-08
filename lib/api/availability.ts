@@ -87,13 +87,3 @@ export async function replaceMyAvailability(
         booked: false,
       }));
 }
-
-export async function bookTeacherSlot(
-  teacherId: string,
-  slotId: string,
-): Promise<void> {
-  await apiFetch("/api/bookings", {
-    method: "POST",
-    body: { teacherId, slotId },
-  });
-}

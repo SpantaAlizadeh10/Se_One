@@ -185,6 +185,8 @@ Alternatively, add `[Authorize(Roles = "Admin")]` to existing module/lesson POST
 ## 3. Site — blog
 
 Public: `GET /api/blog?lang={lang}` (published only).
+Public detail: `GET /api/blog/{postIdOrSlug}?lang={lang}` returns one published
+post, including its full `content` and `slug`; drafts must return 404.
 
 ### GET /api/admin/blog/posts
 

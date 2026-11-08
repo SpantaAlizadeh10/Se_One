@@ -235,8 +235,8 @@ export default function TeacherOverviewPage() {
             </p>
             <p className="mb-3 mt-1 text-[11px] text-muted">
               {lang === "fa"
-                ? "زمان‌بندی‌ات را تنظیم کن تا زبان‌آموزها بتوانند کلاس رزرو کنند."
-                : "Set your availability so students can book a class."}
+                ? "زمان‌های آزاد خود را ثبت کن تا ادمین بررسی کند و کلاس مناسب را به تو تخصیص دهد."
+                : "Submit your availability so an admin can review it and assign a suitable class."}
             </p>
             <Link
               href={href("/teacher/availability")}

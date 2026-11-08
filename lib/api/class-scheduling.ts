@@ -359,16 +359,6 @@ export async function listTeacherClassSlots(): Promise<TeacherClassSlot[]> {
   ).map(normalizeTeacherClass);
 }
 
-/** Creates a pending teacher request; admin approval is required before students can book. */
-export async function requestTeacherClassSlot(slotId: string): Promise<void> {
-  await apiFetch(
-    `/api/teacher/class-slots/${encodeURIComponent(slotId)}/request`,
-    {
-      method: "POST",
-    },
-  );
-}
-
 /** Admin approval/rejection of a teacher's class request. */
 export async function reviewAdminTeacherClassAssignment(
   assignmentId: string,

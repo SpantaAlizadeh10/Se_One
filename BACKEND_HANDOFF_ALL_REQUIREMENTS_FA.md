@@ -116,8 +116,7 @@ Require stack:
 | `GET` | `/api/admin/class-slots/{slotId}/available-teachers` | معلم‌های مناسب برای slot |
 | `POST` | `/api/admin/class-slot-assignments` | تخصیص مستقیم معلم به slot توسط ادمین |
 | `GET` | `/api/teacher/class-slots` | کلاس‌ها و وضعیت تخصیص معلم فعلی |
-| `POST` | `/api/teacher/class-slots/{slotId}/request` | درخواست معلم برای کلاس، در جریان درخواست-تأیید |
-| `PATCH` | `/api/admin/class-slot-assignments/{assignmentId}` | تأیید/رد درخواست معلم |
+| — | — | معلم کلاس درخواست نمی‌کند؛ ادمین بر اساس زمان‌های آزاد، تخصیص قطعی را ثبت می‌کند. |
 | `GET` | `/api/student/class-slots` | کلاس‌های قابل‌رزرو و وضعیت ثبت‌نام دانش‌آموز |
 | `POST` | `/api/student/class-slots/{assignmentId}/enroll` | ایجاد رزرو دانش‌آموز |
 
@@ -203,6 +202,16 @@ Require stack:
 ```
 
 `data` می‌تواند خود آرایه یا در یکی از کلیدهای `items`/`courses` نیز برگردد. بک‌اند باید schema واقعی جدول Supabase را به این DTO نگاشت کند؛ نام جدول و ستون‌ها در مخزن فرانت‌اند تعریف نشده‌اند. فقط دوره‌های مجاز برای نمایش عمومی باید برگردند و دسترسی خواندن عمومی نباید اطلاعات خصوصی دانش‌آموزان یا دوره‌های پیش‌نویس را افشا کند. اگر endpoint داده‌ای برنمی‌گرداند، تیم بک‌اند باید اتصال آن به جدول دوره‌های Supabase و مجوزهای RLS را بررسی کند.
+
+### ۳.۸ جزئیات عمومی مقالهٔ بلاگ
+
+کارت‌های بلاگ به مسیر فرانت‌اند `/[lang]/blog/{postId}` یا slug مقاله لینک می‌شوند. برای بارگذاری بدنهٔ مقاله endpoint عمومی زیر لازم است:
+
+- `GET /api/blog/{postIdOrSlug}?lang={fa|en}`
+- فقط مقالهٔ منتشرشده مجاز است؛ پیش‌نویس یا شناسهٔ ناموجود باید 404 بدهد.
+- خروجی شامل `id`, `slug`, `title`, `excerpt`, `content`, `author`, `publishedAt`, `readTime`, `category`, `imageUrl`, `lang` باشد.
+
+در قرارداد قدیمی فقط `GET /api/blog?lang=...` برای کارت‌های لیست آمده بود و route جزئیات در فرانت‌اند وجود نداشت؛ route صفحهٔ جزئیات اکنون اضافه شده است.
 
 ---
 

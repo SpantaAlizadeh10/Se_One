@@ -12,13 +12,11 @@ import {
 } from "lucide-react";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 import type { AvailabilitySlot } from "@/lib/teachers-directory";
-import { getTeachers } from "@/lib/api/teachers";
 import {
   getMyAvailability,
   replaceMyAvailability,
   type AvailabilityInput,
 } from "@/lib/api/availability";
-import { getName } from "@/lib/auth-client";
 
 const dayOptions = [
   "Monday",
@@ -78,7 +76,6 @@ export default function TeacherAvailabilityPage() {
   const { t } = useLanguage();
   const a = t("teacherAvailabilityPage");
 
-  const [teacherId, setTeacherId] = useState("");
   const [slots, setSlots] = useState<AvailabilitySlot[]>([]);
   const [selectedDays, setSelectedDays] = useState<string[]>([dayOptions[0]]);
   const [startTime, setStartTime] = useState(initialStartTime);
@@ -103,17 +100,6 @@ export default function TeacherAvailabilityPage() {
         if (active) setLoading(false);
       });
 
-    getTeachers()
-      .then((teachers) => {
-        if (!active) return;
-        const currentTeacher = teachers.find(
-          (teacher) => teacher.name === getName(),
-        );
-        setTeacherId(currentTeacher?.id ?? "");
-      })
-      .catch(() => {
-        // The availability editor works even when the public directory is temporarily unavailable.
-      });
     return () => {
       active = false;
     };

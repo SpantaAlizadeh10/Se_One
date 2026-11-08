@@ -78,7 +78,7 @@ export default function BlogGrid() {
         {blogPosts.map((post, index) => (
           <a
             key={post.id}
-            href={post.sourceUrl || href(`/blog/${post.id}`)}
+            href={post.sourceUrl || href(`/blog/${post.slug || post.id}`)}
             target={post.sourceUrl ? "_blank" : undefined}
             rel={post.sourceUrl ? "noreferrer" : undefined}
             className={`group bg-white border border-line rounded-2xl overflow-hidden shadow-card hover:-translate-y-1 hover:shadow-cardHover hover:border-blue/20 transition-all duration-300 ${index === 0 ? "lg:col-span-7 lg:row-span-2" : "lg:col-span-5"}`}
