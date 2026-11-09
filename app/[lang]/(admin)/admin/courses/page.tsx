@@ -66,6 +66,15 @@ type AdditionalOfferingDraft = {
   basePrice: number;
 };
 
+type CourseClassSlotDraft = {
+  startsAt: string;
+  endsAt: string;
+  classType: ClassType;
+  capacity: number;
+  teacherRole: string;
+  basePrice: number;
+};
+
 const emptyOfferingDraft: AdditionalOfferingDraft = {
   startsAt: "",
   endsAt: "",
@@ -132,6 +141,11 @@ export default function AdminCoursesPage() {
   const [creating, setCreating] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [classSlots, setClassSlots] = useState<AdminClassSlot[]>([]);
+  const [classSlotsLoading, setClassSlotsLoading] = useState(true);
+  const [classSlotsLoaded, setClassSlotsLoaded] = useState(false);
+  const [classSlotDrafts, setClassSlotDrafts] = useState<
+    Record<string, CourseClassSlotDraft>
+  >({});
   const [newCourse, setNewCourse] = useState<CourseDraft>(emptyCourseDraft);
   const [courseEnrollments, setCourseEnrollments] = useState<
     AdminCourseEnrollment[]
@@ -160,6 +174,7 @@ export default function AdminCoursesPage() {
       setApiError(
         "Backend API URL is not configured. Course pricing is unavailable.",
       );
+      setClassSlotsLoading(false);
       return;
     }
     listAdminCourses()
@@ -170,14 +185,18 @@ export default function AdminCoursesPage() {
         ),
       );
     listAdminClassSlots()
-      .then(setClassSlots)
+      .then((slots) => {
+        setClassSlots(slots);
+        setClassSlotsLoaded(true);
+      })
       .catch((error) =>
         setApiError(
           error instanceof Error
             ? error.message
             : "Could not load scheduled classes",
         ),
-      );
+      )
+      .finally(() => setClassSlotsLoading(false));
   }, []);
 
   const setDraft = (id: string, value: string) =>
@@ -259,7 +278,30 @@ export default function AdminCoursesPage() {
   };
 
   const openEditCourse = (course: AdminCourse) => {
-    const linkedClass = classSlots.find((slot) => slot.courseId === course.id);
+    if (!classSlotsLoaded) {
+      setApiError(
+        lang === "fa"
+          ? "تا بارگذاری کامل گروه‌های کلاس، امکان ویرایش دوره وجود ندارد."
+          : "Course editing is unavailable until class groups finish loading.",
+      );
+      return;
+    }
+    const courseSlots = classSlots.filter((slot) => slot.courseId === course.id);
+    setClassSlotDrafts(
+      Object.fromEntries(
+        courseSlots.map((slot) => [
+          slot.id,
+          {
+            startsAt: toDateTimeLocalValue(slot.startsAt),
+            endsAt: toDateTimeLocalValue(slot.endsAt),
+            classType: slot.classType,
+            capacity: slot.capacity,
+            teacherRole: slot.teacherRole,
+            basePrice: slot.basePrice ?? course.basePrice,
+          },
+        ]),
+      ),
+    );
     setEditingCourseId(course.id);
     setNewCourse({
       ...emptyCourseDraft,
@@ -274,11 +316,11 @@ export default function AdminCoursesPage() {
       discountPercent: course.discountPercent,
       isFeatured: course.isFeatured ?? false,
       imageUrl: course.imageUrl ?? "",
-      classType: linkedClass?.classType ?? "public",
-      startsAt: linkedClass ? toDateTimeLocalValue(linkedClass.startsAt) : "",
-      endsAt: linkedClass ? toDateTimeLocalValue(linkedClass.endsAt) : "",
-      capacity: linkedClass?.capacity ?? 10,
-      teacherRole: linkedClass?.teacherRole ?? course.language ?? "english",
+      classType: "public",
+      startsAt: "",
+      endsAt: "",
+      capacity: 10,
+      teacherRole: course.language ?? "english",
     });
     setCourseEnrollments([]);
     setCourseStudentCandidates([]);
@@ -286,9 +328,7 @@ export default function AdminCoursesPage() {
     setAvailableCourseTeachers({});
     setAdditionalOffering({
       ...emptyOfferingDraft,
-      classType: linkedClass?.classType ?? "public",
-      capacity: linkedClass?.capacity ?? 10,
-      basePrice: linkedClass?.basePrice ?? course.basePrice,
+      basePrice: course.basePrice,
     });
     setOfferingMessage("");
     setApiError(null);
@@ -464,6 +504,17 @@ export default function AdminCoursesPage() {
         currency: updatedCourse.currency,
       });
       setClassSlots((current) => [newSlot, ...current]);
+      setClassSlotDrafts((current) => ({
+        ...current,
+        [newSlot.id]: {
+          startsAt: toDateTimeLocalValue(newSlot.startsAt),
+          endsAt: toDateTimeLocalValue(newSlot.endsAt),
+          classType: newSlot.classType,
+          capacity: newSlot.capacity,
+          teacherRole: newSlot.teacherRole,
+          basePrice: newSlot.basePrice ?? updatedCourse.basePrice,
+        },
+      }));
 
       try {
         const teachers = await listAvailableTeachersForClass(newSlot.id);
@@ -595,8 +646,28 @@ export default function AdminCoursesPage() {
     setShowCreateModal(false);
     setEditingCourseId(null);
     setNewCourse(emptyCourseDraft);
+    setClassSlotDrafts({});
     setCourseEnrollments([]);
     setCourseStudentCandidates([]);
+  };
+
+  const updateClassSlotDraft = (
+    slot: AdminClassSlot,
+    patch: Partial<CourseClassSlotDraft>,
+  ) => {
+    setClassSlotDrafts((current) => ({
+      ...current,
+      [slot.id]: {
+        startsAt:
+          current[slot.id]?.startsAt ?? toDateTimeLocalValue(slot.startsAt),
+        endsAt: current[slot.id]?.endsAt ?? toDateTimeLocalValue(slot.endsAt),
+        classType: current[slot.id]?.classType ?? slot.classType,
+        capacity: current[slot.id]?.capacity ?? slot.capacity,
+        teacherRole: current[slot.id]?.teacherRole ?? slot.teacherRole,
+        basePrice: current[slot.id]?.basePrice ?? slot.basePrice ?? 0,
+        ...patch,
+      },
+    }));
   };
 
   const handleSaveCourse = async (e: React.FormEvent) => {
@@ -605,6 +676,157 @@ export default function AdminCoursesPage() {
     setApiError(null);
 
     try {
+      if (editingCourseId) {
+        const courseSlots = classSlots.filter(
+          (slot) => slot.courseId === editingCourseId,
+        );
+        const drafts = courseSlots.map((slot) => {
+          const draft =
+            classSlotDrafts[slot.id] ??
+            ({
+              startsAt: toDateTimeLocalValue(slot.startsAt),
+              endsAt: toDateTimeLocalValue(slot.endsAt),
+              classType: slot.classType,
+              capacity: slot.capacity,
+              teacherRole: slot.teacherRole,
+              basePrice: slot.basePrice ?? newCourse.basePrice,
+            } satisfies CourseClassSlotDraft);
+          const start = new Date(draft.startsAt);
+          const end = new Date(draft.endsAt);
+          if (
+            !draft.startsAt ||
+            !draft.endsAt ||
+            !Number.isFinite(start.getTime()) ||
+            !Number.isFinite(end.getTime()) ||
+            !Number.isFinite(draft.capacity) ||
+            !Number.isFinite(draft.basePrice) ||
+            end.getTime() <= start.getTime()
+          ) {
+            throw new Error(
+              lang === "fa"
+                ? `زمان‌بندی گروه «${slot.title}» معتبر نیست.`
+                : `The schedule for "${slot.title}" is invalid.`,
+            );
+          }
+          if (
+            start.getTime() <= Date.now() &&
+            Math.floor(start.getTime() / 60_000) !==
+              Math.floor(new Date(slot.startsAt).getTime() / 60_000)
+          ) {
+            throw new Error(
+              lang === "fa"
+                ? `زمان شروع گروه «${slot.title}» باید در آینده باشد.`
+                : `The start time for "${slot.title}" must be in the future.`,
+            );
+          }
+          return { slot, draft, start, end };
+        });
+        const {
+          classType: _classType,
+          startsAt: _startsAt,
+          endsAt: _endsAt,
+          capacity: _capacity,
+          teacherRole: _teacherRole,
+          ...courseDetails
+        } = newCourse;
+        const updatedCourse = await updateAdminCourse(
+          editingCourseId,
+          courseDetails,
+        );
+        setApiCourses((prev) =>
+          prev.map((course) =>
+            course.id === updatedCourse.id ? updatedCourse : course,
+          ),
+        );
+
+        const slotUpdates = drafts.map(({ slot, draft, start, end }) => {
+          const capacity =
+            draft.classType === "semi_private"
+              ? 4
+              : Math.max(1, Math.floor(draft.capacity));
+          const basePrice = Math.max(0, draft.basePrice);
+          const input = {
+            title: updatedCourse.title,
+            description: updatedCourse.description ?? "",
+            level: updatedCourse.level,
+            classType: draft.classType,
+            capacity,
+            teacherRole: draft.teacherRole,
+            language: updatedCourse.language,
+            startsAt: start.toISOString(),
+            endsAt: end.toISOString(),
+            basePrice,
+            finalPrice: getDiscountedPrice(
+              basePrice,
+              updatedCourse.discountPercent ?? 0,
+            ),
+            currency: updatedCourse.currency,
+          };
+          const changed =
+            slot.title !== input.title ||
+            slot.description !== input.description ||
+            slot.level !== input.level ||
+            slot.classType !== input.classType ||
+            slot.capacity !== input.capacity ||
+            slot.teacherRole !== input.teacherRole ||
+            slot.language !== input.language ||
+            Math.floor(new Date(slot.startsAt).getTime() / 60_000) !==
+              Math.floor(start.getTime() / 60_000) ||
+            Math.floor(new Date(slot.endsAt).getTime() / 60_000) !==
+              Math.floor(end.getTime() / 60_000) ||
+            slot.basePrice !== input.basePrice ||
+            slot.finalPrice !== input.finalPrice ||
+            slot.currency !== input.currency;
+          return { slot, input, changed };
+        });
+
+        const changedSlotUpdates = slotUpdates.filter(
+          ({ changed }) => changed,
+        );
+        const updates = await Promise.allSettled(
+          changedSlotUpdates.map(({ slot, input }) =>
+            updateAdminClassSlot(slot.id, input),
+          ),
+        );
+        const updatedSlots: AdminClassSlot[] = [];
+        const failedSlots: string[] = [];
+        updates.forEach((result, index) => {
+          const target = changedSlotUpdates[index];
+          if (result.status === "fulfilled") {
+            updatedSlots.push(result.value);
+          } else {
+            failedSlots.push(
+              `${target.slot.title}: ${
+                result.reason instanceof Error
+                  ? result.reason.message
+                  : String(result.reason)
+              }`,
+            );
+          }
+        });
+        if (updatedSlots.length) {
+          setClassSlots((current) =>
+            current.map(
+              (slot) =>
+                updatedSlots.find((updated) => updated.id === slot.id) ?? slot,
+            ),
+          );
+        }
+        if (failedSlots.length) {
+          throw new Error(
+            lang === "fa"
+              ? `اطلاعات دوره ذخیره شد، اما ذخیرهٔ این گروه‌ها ناموفق بود: ${failedSlots.join("؛ ")}`
+              : `Course details were saved, but these class groups could not be saved: ${failedSlots.join("; ")}`,
+          );
+        }
+
+        setShowCreateModal(false);
+        setEditingCourseId(null);
+        setNewCourse(emptyCourseDraft);
+        setClassSlotDrafts({});
+        return;
+      }
+
       const currentLinkedClass = editingCourseId
         ? classSlots.find((slot) => slot.courseId === editingCourseId)
         : undefined;
@@ -1178,6 +1400,7 @@ export default function AdminCoursesPage() {
                   </div>
                 </section>
               )}
+              {!editingCourseId && (
               <section className="space-y-4 rounded-xl border border-line bg-cream/60 p-4">
                 <div className="flex items-start gap-2">
                   <CalendarDays size={17} className="mt-0.5 text-blue" />
@@ -1425,6 +1648,7 @@ export default function AdminCoursesPage() {
                   </label>
                 </div>
               </section>
+              )}
               {editingCourseId && (
                 <section className="space-y-4 rounded-xl border border-blue/20 bg-blue/5 p-4">
                   <div className="flex items-start gap-3">
@@ -1446,6 +1670,15 @@ export default function AdminCoursesPage() {
                   </div>
 
                   <div className="space-y-3">
+                    {classSlots.filter(
+                      (slot) => slot.courseId === editingCourseId,
+                    ).length === 0 && (
+                      <p className="rounded-lg bg-white px-3 py-2 text-[12px] text-muted">
+                        {lang === "fa"
+                          ? "برای این دوره هنوز گروهی ساخته نشده است."
+                          : "This course does not have any scheduled groups yet."}
+                      </p>
+                    )}
                     {classSlots
                       .filter((slot) => slot.courseId === editingCourseId)
                       .map((slot) => {
@@ -1453,6 +1686,14 @@ export default function AdminCoursesPage() {
                           (item) => item.status === "confirmed",
                         );
                         const candidates = availableCourseTeachers[slot.id] ?? [];
+                        const draft = classSlotDrafts[slot.id] ?? {
+                          startsAt: toDateTimeLocalValue(slot.startsAt),
+                          endsAt: toDateTimeLocalValue(slot.endsAt),
+                          classType: slot.classType,
+                          capacity: slot.capacity,
+                          teacherRole: slot.teacherRole,
+                          basePrice: slot.basePrice ?? 0,
+                        };
                         return (
                           <article
                             key={slot.id}
@@ -1470,12 +1711,12 @@ export default function AdminCoursesPage() {
                                       dateStyle: "medium",
                                       timeStyle: "short",
                                     },
-                                  ).format(new Date(slot.startsAt))}
+                                  ).format(new Date(draft.startsAt))}
                                   {" · "}
-                                  {slot.capacity}{" "}
+                                  {draft.capacity}{" "}
                                   {lang === "fa" ? "ظرفیت" : "seats"}
                                   {" · "}
-                                  {formatPrice(slot.basePrice ?? 0, lang)}
+                                  {formatPrice(draft.basePrice, lang)}
                                 </p>
                               </div>
                               <button
@@ -1498,6 +1739,111 @@ export default function AdminCoursesPage() {
                                     ? "بررسی معلم آزاد"
                                     : "Find available teacher"}
                               </button>
+                            </div>
+
+                            <div className="grid gap-3 sm:grid-cols-2">
+                              <label className="space-y-1 text-[11px] font-semibold text-muted">
+                                    {lang === "fa" ? "شروع" : "Starts"}
+                                    <input
+                                      type="datetime-local"
+                                      value={draft.startsAt}
+                                      onChange={(event) =>
+                                        updateClassSlotDraft(slot, {
+                                          startsAt: event.target.value,
+                                        })
+                                      }
+                                      className="w-full rounded-lg border border-line bg-white px-2.5 py-2 text-[12px] text-ink"
+                                    />
+                              </label>
+                              <label className="space-y-1 text-[11px] font-semibold text-muted">
+                                    {lang === "fa" ? "پایان" : "Ends"}
+                                    <input
+                                      type="datetime-local"
+                                      value={draft.endsAt}
+                                      onChange={(event) =>
+                                        updateClassSlotDraft(slot, {
+                                          endsAt: event.target.value,
+                                        })
+                                      }
+                                      className="w-full rounded-lg border border-line bg-white px-2.5 py-2 text-[12px] text-ink"
+                                    />
+                              </label>
+                              <label className="space-y-1 text-[11px] font-semibold text-muted">
+                                    {lang === "fa" ? "نوع کلاس" : "Class type"}
+                                    <select
+                                      value={draft.classType}
+                                      onChange={(event) => {
+                                        const classType = event.target.value as ClassType;
+                                        updateClassSlotDraft(slot, {
+                                          classType,
+                                          ...(classType === "semi_private"
+                                            ? { capacity: 4 }
+                                            : {}),
+                                        });
+                                      }}
+                                      className="w-full rounded-lg border border-line bg-white px-2.5 py-2 text-[12px] text-ink"
+                                    >
+                                      <option value="public">
+                                        {lang === "fa" ? "عمومی" : "Public"}
+                                      </option>
+                                      <option value="semi_private">
+                                        {lang === "fa"
+                                          ? "نیمه‌خصوصی"
+                                          : "Semi-private"}
+                                      </option>
+                                      <option value="private">
+                                        {lang === "fa" ? "خصوصی" : "Private"}
+                                      </option>
+                                    </select>
+                              </label>
+                              <label className="space-y-1 text-[11px] font-semibold text-muted">
+                                    {lang === "fa" ? "گروه معلم‌ها" : "Teacher group"}
+                                    <select
+                                      value={draft.teacherRole}
+                                      onChange={(event) =>
+                                        updateClassSlotDraft(slot, {
+                                          teacherRole: event.target.value,
+                                        })
+                                      }
+                                      className="w-full rounded-lg border border-line bg-white px-2.5 py-2 text-[12px] text-ink"
+                                    >
+                                      <option value="all">
+                                        {lang === "fa" ? "همه معلم‌ها" : "All teachers"}
+                                      </option>
+                                      <option value="english">English</option>
+                                      <option value="german">Deutsch / German</option>
+                                    </select>
+                              </label>
+                              <label className="space-y-1 text-[11px] font-semibold text-muted">
+                                    {lang === "fa" ? "ظرفیت" : "Capacity"}
+                                    <input
+                                      type="number"
+                                      min="1"
+                                      step="1"
+                                      value={draft.capacity}
+                                      disabled={draft.classType === "semi_private"}
+                                      onChange={(event) =>
+                                        updateClassSlotDraft(slot, {
+                                          capacity: Number(event.target.value),
+                                        })
+                                      }
+                                      className="w-full rounded-lg border border-line bg-white px-2.5 py-2 text-[12px] text-ink disabled:bg-cream"
+                                    />
+                              </label>
+                              <label className="space-y-1 text-[11px] font-semibold text-muted">
+                                    {lang === "fa" ? "قیمت این گروه" : "Group price"}
+                                    <input
+                                      type="number"
+                                      min="0"
+                                      value={draft.basePrice}
+                                      onChange={(event) =>
+                                        updateClassSlotDraft(slot, {
+                                          basePrice: Number(event.target.value),
+                                        })
+                                      }
+                                      className="w-full rounded-lg border border-line bg-white px-2.5 py-2 text-[12px] text-ink"
+                                    />
+                              </label>
                             </div>
 
                             <div className="flex items-center gap-2 rounded-lg bg-sage/20 px-3 py-2">
@@ -1951,13 +2297,26 @@ export default function AdminCoursesPage() {
                           <button
                             type="button"
                             onClick={() => openEditCourse(fullCourse)}
+                            disabled={classSlotsLoading || !classSlotsLoaded}
                             className="inline-flex items-center gap-1.5 rounded-full border border-line px-3 py-1.5 text-[12px] font-semibold text-ink70 transition-colors hover:border-blue hover:text-blue"
                             title={
-                              lang === "fa" ? "ویرایش کامل دوره" : "Edit course"
+                              classSlotsLoading
+                                ? lang === "fa"
+                                  ? "در حال بارگذاری گروه‌ها..."
+                                  : "Loading class groups..."
+                                : lang === "fa"
+                                  ? "ویرایش کامل دوره"
+                                  : "Edit course"
                             }
                           >
                             <Pencil size={13} />
-                            {lang === "fa" ? "ویرایش" : "Edit"}
+                            {classSlotsLoading
+                              ? lang === "fa"
+                                ? "در حال بارگذاری..."
+                                : "Loading..."
+                              : lang === "fa"
+                                ? "ویرایش"
+                                : "Edit"}
                           </button>
                         )}
                         <button

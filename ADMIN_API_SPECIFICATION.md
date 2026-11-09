@@ -405,6 +405,9 @@ Maps to admin **Teachers** page and teacher dashboard (schedule, classes, studen
 ### GET /api/admin/teachers
 
 Query: `search`, `status` (`pending` | `active` | `suspended`), pagination.
+When `status` is omitted, include teachers in all three workflow states so
+suspended teachers remain available to admins for reactivation. Admin clients
+may also request a specific status to build status-specific views.
 
 **Response item:**
 
@@ -468,6 +471,10 @@ Update profile fields and `rating` if manually curated.
 
 **Request:** `{ "status": "pending" | "active" | "suspended" }`  
 Use for **Approve** / **Suspend** in admin UI.
+
+Suspension is reversible: admins can set a suspended teacher back to `active`
+with this same endpoint. Do not delete the teacher profile or account when
+suspending it.
 
 ### DELETE /api/admin/teachers/{teacherId}
 

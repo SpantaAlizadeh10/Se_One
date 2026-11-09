@@ -42,6 +42,7 @@ export default function AdminTeachersPage() {
   const [selectedTeacher, setSelectedTeacher] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [apiError, setApiError] = useState<string | null>(null);
+  const [updatingTeacherId, setUpdatingTeacherId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isApiConfigured()) {
@@ -52,10 +53,19 @@ export default function AdminTeachersPage() {
       return;
     }
 
-    listAdminTeachers({ pageSize: 100 })
-      .then((result) => {
+    Promise.all(
+      (["pending", "active", "suspended"] as const).map((status) =>
+        listAdminTeachers({ pageSize: 100, status }),
+      ),
+    )
+      .then((results) => {
+        const allTeachers = new Map(
+          results.flatMap((result) =>
+            result.items.map((teacher) => [teacher.id, teacher] as const),
+          ),
+        );
         setTeachers(
-          result.items.map((teacher) => ({
+          Array.from(allTeachers.values()).map((teacher) => ({
             id: teacher.id,
             name: teacher.fullName,
             avatar: teacher.avatarUrl || "/images/Women teacher1.jpeg",
@@ -99,24 +109,30 @@ export default function AdminTeachersPage() {
 
   const setStatus = async (id: string, status: TeacherWithStatus["status"]) => {
     if (!isApiConfigured()) return;
+    setUpdatingTeacherId(id);
+    setApiError(null);
     try {
-      await setAdminTeacherStatus(id, status);
+      const updated = await setAdminTeacherStatus(id, status);
+      setTeachers((prev) =>
+        prev.map((teacher) =>
+          teacher.id === id ? { ...teacher, status: updated.status } : teacher,
+        ),
+      );
     } catch (error) {
       setApiError(
         error instanceof Error
           ? error.message
           : "Could not update teacher status",
       );
-      return;
+    } finally {
+      setUpdatingTeacherId(null);
     }
-    setTeachers((prev) =>
-      prev.map((tc) => (tc.id === id ? { ...tc, status } : tc)),
-    );
   };
 
   const approveTeacher = (id: string) => setStatus(id, "active");
 
   const suspendTeacher = (id: string) => setStatus(id, "suspended");
+  const reactivateTeacher = (id: string) => setStatus(id, "active");
 
   const addTeacher = async (teacher: Omit<TeacherWithStatus, "id">) => {
     if (!isApiConfigured()) return;
@@ -293,6 +309,7 @@ export default function AdminTeachersPage() {
                     {tc.status === "pending" && (
                       <button
                         onClick={() => approveTeacher(tc.id)}
+                        disabled={updatingTeacherId === tc.id}
                         className="inline-flex items-center gap-1 text-[12px] font-bold text-sageDeep bg-sage hover:bg-sage/80 px-3 py-1.5 rounded-full transition-colors"
                       >
                         <Check size={13} />
@@ -302,10 +319,21 @@ export default function AdminTeachersPage() {
                     {tc.status === "active" && (
                       <button
                         onClick={() => suspendTeacher(tc.id)}
+                        disabled={updatingTeacherId === tc.id}
                         className="inline-flex items-center gap-1 text-[12px] font-bold text-danger bg-danger/10 hover:bg-danger/15 px-3 py-1.5 rounded-full transition-colors"
                       >
                         <X size={13} />
                         Suspend
+                      </button>
+                    )}
+                    {tc.status === "suspended" && (
+                      <button
+                        onClick={() => reactivateTeacher(tc.id)}
+                        disabled={updatingTeacherId === tc.id}
+                        className="inline-flex items-center gap-1 text-[12px] font-bold text-sageDeep bg-sage hover:bg-sage/80 px-3 py-1.5 rounded-full transition-colors disabled:opacity-60"
+                      >
+                        <Check size={13} />
+                        Reactivate
                       </button>
                     )}
                     <button
