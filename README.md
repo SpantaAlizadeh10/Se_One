@@ -170,8 +170,10 @@ lib/
   typically middleware.ts checking a session cookie, or a client-side
   redirect in each dashboard layout that calls `fetchCurrentUser()` on
   mount and bounces to `/login` on a 401.
-- **"Forget Password", social login buttons (Google/Facebook/Apple)**:
-  still decorative — no OAuth or reset-flow wired up.
+- **Google sign-in/sign-up** is not enabled until the ASP.NET backend provides
+  its Google OAuth start/callback contract. The buttons remain disabled rather
+  than implying a working sign-in flow. Apple/Facebook sign-in are not offered.
+- **"Forget Password"** still needs its reset flow wired to the backend.
 - **Deep dashboard mock content** (assignment titles, chat messages,
   course names inside the dashboards) is still English-only; the
   chrome (nav, titles, buttons) is fully bilingual. See the previous

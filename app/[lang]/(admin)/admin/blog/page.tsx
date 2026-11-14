@@ -191,7 +191,7 @@ export default function AdminBlogPage() {
   const getStatusBadge = (status: BlogPost["status"]) => {
     const styles = {
       published: "bg-sage text-sageDeep",
-      draft: "bg-[#FDEFE0] text-[#B8792E]",
+      draft: "bg-[#FDEFE0] text-goldDeep",
     };
     const labels = {
       published: "Published",
@@ -232,7 +232,7 @@ export default function AdminBlogPage() {
         </div>
         <div className="bg-white border border-line rounded-md p-4 shadow-card">
           <div className="text-[11px] text-muted mb-1">Drafts</div>
-          <div className="font-serif text-[22px] font-semibold text-[#B8792E]">
+          <div className="font-serif text-[22px] font-semibold text-goldDeep">
             {stats.draft}
           </div>
         </div>

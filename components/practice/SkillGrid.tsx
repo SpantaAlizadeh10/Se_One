@@ -57,8 +57,8 @@ const skills = [
     descriptionEn: "Develop clearer sentences and stronger written ideas.",
     descriptionFa: "جمله‌های روشن‌تر و ایده‌های نوشتاری قوی‌تر بساز.",
     Icon: PenLine,
-    tone: "bg-[#FFF0E6] text-[#B66A36]",
-    glow: "group-hover:border-[#B66A36]/35",
+    tone: "bg-[#FFF0E6] text-peachDeep",
+    glow: "group-hover:border-peachDeep/35",
   },
   {
     id: "grammar",
@@ -77,8 +77,8 @@ const skills = [
     descriptionEn: "Grow your vocabulary and use new words naturally.",
     descriptionFa: "دایره واژگان را گسترش بده و واژه‌های تازه را به‌کار ببر.",
     Icon: Volume2,
-    tone: "bg-[#FFF4D9] text-[#9A6A09]",
-    glow: "group-hover:border-[#9A6A09]/35",
+    tone: "bg-[#FFF4D9] text-goldDeep",
+    glow: "group-hover:border-goldDeep/35",
   },
 ] as const;
 

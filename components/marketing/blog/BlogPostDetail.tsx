@@ -81,12 +81,12 @@ export default function BlogPostDetail({ postId }: { postId: string }) {
         setError(
           reason instanceof ApiError && reason.status === 404
             ? fa
-              ? "این مقاله پیدا نشد یا منتشر نشده است."
+              ? "این مقاله پیدا نشد یا هنوز منتشر نشده است."
               : "This article was not found or is not published."
             : reason instanceof Error
               ? reason.message
               : fa
-                ? "مقاله بارگذاری نشد."
+                ? "بارگذاری مقاله با مشکل روبه‌رو شد."
                 : "Could not load this article.",
         );
       })
@@ -105,7 +105,7 @@ export default function BlogPostDetail({ postId }: { postId: string }) {
       className="mb-6 inline-flex items-center gap-2 text-sm font-semibold text-blue"
     >
       {fa ? <ArrowRight size={16} /> : <ArrowLeft size={16} />}
-      {fa ? "بازگشت به بلاگ" : "Back to blog"}
+      {fa ? "بازگشت به وبلاگ" : "Back to blog"}
     </Link>
   );
 
@@ -114,7 +114,7 @@ export default function BlogPostDetail({ postId }: { postId: string }) {
       <main className="mx-auto max-w-4xl px-5 py-12 sm:px-8 sm:py-16">
         {backLink}
         <p className="rounded-2xl border border-line bg-white p-8 text-center text-sm text-muted">
-          {fa ? "در حال بارگذاری مقاله…" : "Loading article…"}
+          {fa ? "مقاله در حال بارگذاری است…" : "Loading article…"}
         </p>
       </main>
     );

@@ -13,7 +13,7 @@ export default function MissionVision() {
         {m.eyebrow}
       </span>
       <div className="text-center max-w-[620px] mx-auto mb-10">
-        <h2 className="font-serif text-[28px] sm:text-[32px] font-semibold mb-3.5">
+        <h2 className="font-serif text-[28px] sm:text-[32px] font-semibold mb-3">
           {m.prefix && <>{m.prefix} </>}
           <span className="text-goldDeep">{m.part1}</span> {m.mid} <span className="text-goldDeep">{m.part2}</span>
           {m.suffix && <> {m.suffix}</>}
@@ -60,14 +60,14 @@ export default function MissionVision() {
             <ChevronRight size={14} />
           </div>
           <div className="flex-1 w-0 border-s-2 border-dashed border-line my-3" />
-          <div className="w-8 h-8 rounded-full bg-gold text-white flex items-center justify-center shrink-0">
+          <div className="w-8 h-8 rounded-full bg-gold text-ink flex items-center justify-center shrink-0">
             <Leaf size={14} />
           </div>
         </div>
 
         <div className="bg-white rounded-lg shadow-card p-7 sm:p-8 mt-5 lg:mt-0">
           <div className="flex items-center gap-4 mb-3.5">
-            <div className="w-[46px] h-[46px] rounded-full bg-gold text-white flex items-center justify-center shrink-0">
+            <div className="w-[46px] h-[46px] rounded-full bg-gold text-ink flex items-center justify-center shrink-0">
               <Leaf size={20} />
             </div>
             <h3 className="text-[19px] font-semibold underline underline-offset-4">{m.visionTitle}</h3>

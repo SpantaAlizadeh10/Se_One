@@ -6,6 +6,7 @@ import TeacherSidebar from "@/components/teacher-layout/TeacherSidebar";
 import TeacherTopbar from "@/components/teacher-layout/TeacherTopbar";
 import DailyProverb from "@/components/shared/DailyProverb";
 import DashboardMobileNav from "@/components/shared/DashboardMobileNav";
+import { useLanguage } from "@/lib/i18n/LanguageProvider";
 
 export default function TeacherAppShell({
   children,
@@ -14,6 +15,7 @@ export default function TeacherAppShell({
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const pathname = usePathname();
+  const { lang } = useLanguage();
 
   useEffect(() => {
     setSidebarOpen(false);
@@ -45,8 +47,8 @@ export default function TeacherAppShell({
           <button
             type="button"
             onClick={() => setSidebarOpen(false)}
-            aria-label="Close navigation menu"
-            className="fixed inset-0 z-40 bg-ink/40 lg:hidden"
+            aria-label={lang === "fa" ? "بستن منوی ناوبری" : "Close navigation menu"}
+            className="fixed inset-0 z-40 bg-ink/25 backdrop-blur-[2px] lg:hidden"
           />
         )}
 

@@ -17,9 +17,9 @@ export default function Testimonials() {
 
   return (
     <section className="max-w-7xl mx-auto px-5 sm:px-8 py-14 sm:py-16">
-      <div className="flex items-end justify-between gap-4 flex-wrap mb-8">
+      <div className="flex items-end justify-between gap-6 flex-wrap mb-8">
         <div>
-          <h2 className="font-serif text-[28px] sm:text-[32px] font-semibold mb-2">{t("home.testimonials.heading")}</h2>
+          <h2 className="font-serif text-[28px] sm:text-[32px] font-semibold mb-3">{t("home.testimonials.heading")}</h2>
           <p className="text-ink70 text-[14px] max-w-[480px]">{t("home.testimonials.sub")}</p>
         </div>
         <div className="hidden sm:flex gap-2 shrink-0">
@@ -39,9 +39,9 @@ export default function Testimonials() {
       </div>
 
       {/* mobile: horizontal snap-scroll through every testimonial */}
-      <div className="flex sm:hidden gap-4 overflow-x-auto snap-x snap-mandatory -mx-5 px-5 thin-scroll">
+      <div className="flex snap-x snap-mandatory gap-4 overflow-x-auto px-5 pb-4 -mx-5 thin-scroll sm:hidden">
         {items.map((t2) => (
-          <div key={t2.name} className="bg-white border border-line rounded-lg p-6 shadow-card relative shrink-0 w-[80%] snap-start">
+          <div key={t2.name} className="relative w-[84%] shrink-0 snap-start rounded-[24px] border border-line/80 bg-white p-6 shadow-card">
             <Quote size={26} className="absolute top-5 end-5 text-gold/40" />
             <div className="flex items-center gap-3 mb-4">
               <div className="w-11 h-11 rounded-full bg-sage text-sageDeep flex items-center justify-center shrink-0">
@@ -60,7 +60,7 @@ export default function Testimonials() {
       {/* sm and up: paginated grid using the prev/next buttons above */}
       <div className="hidden sm:grid sm:grid-cols-2 xl:grid-cols-3 gap-5">
         {shown.map((t2) => (
-          <div key={t2.name} className="bg-white border border-line rounded-lg p-6 shadow-card relative">
+          <div key={t2.name} className="relative rounded-2xl border border-line/80 bg-white p-6 shadow-card">
             <Quote size={26} className="absolute top-5 end-5 text-gold/40" />
             <div className="flex items-center gap-3 mb-4">
               <div className="w-11 h-11 rounded-full bg-sage text-sageDeep flex items-center justify-center shrink-0">

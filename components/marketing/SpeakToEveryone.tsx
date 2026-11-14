@@ -19,15 +19,15 @@ export default function SpeakToEveryone() {
         </div>
 
         <div className="order-1 lg:order-2">
-          <h2 className="font-serif text-[26px] sm:text-[32px] font-semibold mb-4 leading-tight">
+          <h2 className="font-serif text-[26px] sm:text-[32px] font-semibold mb-3 leading-tight">
             <span className="text-goldDeep">{t("home.speak.titleGold")}</span>{" "}
             {t("home.speak.titleRest")}
           </h2>
-          <p className="text-ink70 text-[14.5px] leading-relaxed max-w-[440px] mb-6">
+          <p className="text-ink70 text-[14.5px] leading-relaxed max-w-[440px] mb-5">
             {t("home.speak.lead")}
           </p>
 
-          <div className="grid grid-cols-2 gap-x-6 gap-y-3.5 mb-7 max-w-[380px]">
+          <div className="grid grid-cols-2 gap-x-6 gap-y-3.5 mb-6 max-w-[380px]">
             {checklist.map((item) => (
               <div
                 key={item}

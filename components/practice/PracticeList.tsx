@@ -22,7 +22,7 @@ const kindStyles = {
   listen: { bg: "bg-sage", text: "text-sageDeep", Icon: Headphones },
   read: { bg: "bg-[#F1EAFE]", text: "text-[#7653B5]", Icon: BookOpenCheck },
   grammar: { bg: "bg-sage", text: "text-sageDeep", Icon: BookOpen },
-  vocabulary: { bg: "bg-[#FFF4D9]", text: "text-[#9A6A09]", Icon: Volume2 },
+  vocabulary: { bg: "bg-[#FFF4D9]", text: "text-goldDeep", Icon: Volume2 },
   write: { bg: "bg-goldSoft", text: "text-goldDeep", Icon: PenLine },
 } as const;
 

@@ -117,7 +117,7 @@ export default function Footer() {
                   href={itemHref}
                   className={`group flex flex-col items-center justify-center gap-1 rounded-[18px] px-1.5 py-2.5 text-[9px] font-semibold transition-all duration-200 ${
                     isActive
-                      ? "bg-white text-[#182163] shadow-sm"
+                      ? "bg-white/95 text-[#182163] shadow-sm"
                       : "text-white hover:bg-white/20"
                   }`}
                 >
@@ -234,7 +234,7 @@ export default function Footer() {
                   target={i === 3 ? "_blank" : undefined}
                   rel={i === 3 ? "noopener noreferrer" : undefined}
                   aria-label={i === 3 ? "SE ONE YouTube channel" : undefined}
-                  className="w-10 h-10 rounded-full bg-white/10 text-white flex items-center justify-center hover:bg-gold hover:text-white transition-all duration-300 transform hover:scale-110"
+                  className="w-10 h-10 rounded-full bg-white/10 text-white flex items-center justify-center hover:bg-goldDeep hover:text-white transition-all duration-300 transform hover:scale-110"
                 >
                   <Icon size={16} />
                 </a>

@@ -31,7 +31,7 @@ export default function CourseCard({
           In Progress
         </span>
         {course.price && (
-          <span className="absolute top-3 end-3 bg-gold text-white text-[11px] font-bold px-2.5 py-1 rounded-full">
+          <span className="absolute top-3 end-3 bg-gold text-ink text-[11px] font-bold px-2.5 py-1 rounded-full">
             {course.price}
           </span>
         )}

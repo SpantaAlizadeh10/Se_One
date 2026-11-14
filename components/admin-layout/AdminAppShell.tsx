@@ -19,7 +19,7 @@ export default function AdminAppShell({
   const [isLoading, setIsLoading] = useState(true);
   const pathname = usePathname();
   const router = useRouter();
-  const { href } = useLanguage();
+  const { href, lang } = useLanguage();
 
   useEffect(() => {
     setIsAuthenticated(isAdminAuthenticated());
@@ -76,9 +76,9 @@ export default function AdminAppShell({
       {sidebarOpen && (
         <button
           type="button"
-          aria-label="Close navigation menu"
+          aria-label={lang === "fa" ? "بستن منوی ناوبری" : "Close navigation menu"}
           onClick={() => setSidebarOpen(false)}
-          className="fixed inset-0 z-40 bg-ink/40 lg:hidden"
+          className="fixed inset-0 z-40 bg-ink/25 backdrop-blur-[2px] lg:hidden"
         />
       )}
 

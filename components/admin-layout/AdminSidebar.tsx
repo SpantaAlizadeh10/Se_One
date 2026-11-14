@@ -47,7 +47,7 @@ export default function AdminSidebar({
   const pathname = usePathname();
   const currentPath = stripLocale(pathname || "/");
   const router = useRouter();
-  const { t, href, dir } = useLanguage();
+  const { t, href, dir, lang } = useLanguage();
 
   const dashboardItems = adminNavItems.filter((i) => i.group === "dashboard");
   const profileItems = adminNavItems.filter((i) => i.group === "profile");
@@ -70,7 +70,7 @@ export default function AdminSidebar({
         onClick={onClose}
         className={`flex items-center gap-3 rounded-[11px] px-3 py-2.5 mb-0.5 text-[14.5px] font-medium transition-colors ${
           active
-            ? "bg-ink text-white font-semibold"
+            ? "bg-[#2A3650] text-white font-semibold"
             : "text-ink70 hover:bg-cream hover:text-ink"
         }`}
       >
@@ -92,9 +92,11 @@ export default function AdminSidebar({
   return (
     <aside
       id="admin-dashboard-sidebar"
-      style={{ insetInlineStart: 0, insetInlineEnd: "auto" }}
-      className={`fixed inset-y-0 z-50 flex w-[248px] max-w-[85vw] shrink-0 flex-col self-stretch overscroll-contain overflow-y-auto border-e border-line bg-white px-4 py-6 thin-scroll transition-transform duration-300 ease-in-out sm:px-5 lg:sticky lg:top-0 lg:z-auto lg:h-screen lg:max-w-none lg:translate-x-0 lg:py-7 lg:shadow-none
-        ${isOpen ? "translate-x-0 shadow-2xl" : dir === "rtl" ? "translate-x-full" : "-translate-x-full"}`}
+      role="navigation"
+      aria-label={lang === "fa" ? "ناوبری داشبورد مدیر" : "Admin dashboard navigation"}
+      className={`fixed start-3 top-16 z-50 flex max-h-[min(76dvh,36rem)] w-[272px] max-w-[calc(100vw-1.5rem)] origin-top-left shrink-0 flex-col self-stretch overscroll-contain overflow-y-auto rounded-[24px] border border-line bg-white px-4 py-5 shadow-xl thin-scroll transition-[transform,opacity,visibility] duration-300 ease-out rtl:origin-top-right sm:px-5
+        lg:sticky lg:start-0 lg:top-0 lg:z-auto lg:h-screen lg:max-h-none lg:w-[248px] lg:max-w-none lg:rounded-none lg:border-0 lg:border-e lg:py-7 lg:shadow-none lg:!translate-x-0 lg:!scale-100 lg:!opacity-100 lg:visible lg:pointer-events-auto
+        ${isOpen ? "visible translate-y-0 scale-100 opacity-100 shadow-2xl" : "invisible pointer-events-none translate-y-2 scale-[0.96] opacity-0"}`}
     >
       <div className="flex items-center justify-between mb-6 lg:mb-7">
         <Link
@@ -110,8 +112,8 @@ export default function AdminSidebar({
             event.stopPropagation();
             onClose();
           }}
-          aria-label="Close menu"
-          className="relative z-[60] lg:hidden w-10 h-10 rounded-full flex items-center justify-center text-ink70 hover:bg-cream active:bg-line"
+          aria-label={lang === "fa" ? "بستن منو" : "Close menu"}
+          className="relative z-[60] grid h-11 w-11 place-items-center rounded-2xl border border-line bg-[#F4F2EC] text-ink70 transition-colors hover:bg-[#ECE9E0] active:bg-line lg:hidden"
         >
           <X size={18} />
         </button>

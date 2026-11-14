@@ -59,14 +59,16 @@ export default function PlacementTestPage() {
               <CheckCircle2 size={28} />
             </span>
             <p className="mb-2 text-sm font-semibold text-blue">
-              {fa ? "نتیجه آزمون تعیین سطح" : "Your placement test result"}
+              {fa ? "نتیجهٔ آزمون تعیین سطح" : "Your placement test result"}
             </p>
             <h1 className="mb-3 text-3xl font-bold">
-              {fa ? `سطح پیشنهادی شما ${result.level} است` : `Your recommended level is ${result.level}`}
+              {fa
+                ? `سطح مناسب شما ${result.level} است`
+                : `Your recommended level is ${result.level}`}
             </h1>
             <p className="mb-7 text-sm text-ink70">
               {fa
-                ? `شما ${result.score} پاسخ درست از ${placementQuestions.length} پرسش داشتید. این نتیجه یک تخمین نوشتاری است و مهارت گفتاری و شنیداری را نمی‌سنجد.`
+                ? `از ${placementQuestions.length} پرسش، به ${result.score} پرسش پاسخ درست دادید. این نتیجه فقط بر پایهٔ مهارت‌های نوشتاری است و مهارت گفتاری و شنیداری را نمی‌سنجد.`
                 : `You answered ${result.score} of ${placementQuestions.length} questions correctly. This is a written estimate and does not assess speaking or listening.`}
             </p>
             <div className="mx-auto mb-7 grid max-w-lg grid-cols-3 gap-2">
@@ -78,7 +80,7 @@ export default function PlacementTestPage() {
                   <p className="mb-1 text-[11px] font-medium text-muted">
                     {fa
                       ? skill === "grammar"
-                        ? "دستور زبان"
+                        ? "گرامر"
                         : skill === "vocabulary"
                           ? "واژگان"
                           : "درک مطلب"
@@ -108,7 +110,7 @@ export default function PlacementTestPage() {
                 className="inline-flex items-center gap-2 rounded-full border border-line px-5 py-3 text-sm font-semibold text-ink70 hover:bg-surface"
               >
                 <RotateCcw size={15} />
-                {fa ? "آزمون دوباره" : "Retake test"}
+                {fa ? "شرکت دوباره در آزمون" : "Retake test"}
               </button>
             </div>
           </div>
@@ -124,7 +126,7 @@ export default function PlacementTestPage() {
                 </h1>
                 <p className="m-0 text-sm leading-6 text-ink70">
                   {fa
-                    ? "به ۲۵ پرسش در دستور زبان، واژگان و درک مطلب پاسخ دهید. آزمون حدود ۶ تا ۸ دقیقه طول می‌کشد."
+                    ? "به ۲۵ پرسش گرامر، واژگان و درک مطلب پاسخ دهید. تکمیل آزمون حدود ۶ تا ۸ دقیقه زمان می‌برد."
                     : "Answer 25 grammar, vocabulary, and reading questions. The test takes about 6–8 minutes."}
                 </p>
               </div>
@@ -153,7 +155,7 @@ export default function PlacementTestPage() {
             <p className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-blue">
               {fa
                 ? question.skill === "grammar"
-                  ? "دستور زبان"
+                  ? "گرامر"
                   : question.skill === "vocabulary"
                     ? "واژگان"
                     : "درک مطلب"
@@ -191,7 +193,7 @@ export default function PlacementTestPage() {
                     ? "دیدن نتیجه"
                     : "See result"
                   : fa
-                    ? "پرسش بعدی"
+                    ? "پرسش بعد"
                     : "Next question"}
                 <ArrowRight size={15} className="rtl:rotate-180" />
               </button>

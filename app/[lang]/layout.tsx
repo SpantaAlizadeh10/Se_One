@@ -4,6 +4,7 @@ import "../globals.css";
 import { LanguageProvider } from "@/lib/i18n/LanguageProvider";
 import { locales, defaultLocale, isLocale } from "@/lib/i18n/locales";
 import CookieConsent from "@/components/shared/CookieConsent";
+import NetworkStatusNotice from "@/components/shared/NetworkStatusNotice";
 
 const fraunces = Fraunces({
   subsets: ["latin"],
@@ -13,13 +14,13 @@ const fraunces = Fraunces({
 
 const inter = Inter({
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
+  weight: ["400", "500", "600", "700"],
   variable: "--font-inter",
 });
 
 const vazir = Vazirmatn({
   subsets: ["arabic"],
-  weight: ["400", "500", "600", "700", "800"],
+  weight: ["400", "500", "600", "700"],
   variable: "--font-vazir",
 });
 
@@ -77,10 +78,16 @@ export default function LangLayout({
   return (
     <html lang={lang} dir={dir}>
       <body
-        className={`${fraunces.variable} ${inter.variable} ${vazir.variable} font-sans antialiased bg-cream text-ink`}
+        className={`${lang === "fa" ? vazir.variable : `${fraunces.variable} ${inter.variable}`} font-sans antialiased bg-cream text-ink`}
       >
         <LanguageProvider initialLang={lang}>
-          {children}
+          <a className="skip-to-content" href="#main-content">
+            {lang === "fa" ? "رفتن به محتوای اصلی" : "Skip to main content"}
+          </a>
+          <div id="main-content" tabIndex={-1}>
+            {children}
+          </div>
+          <NetworkStatusNotice lang={lang} />
           <CookieConsent />
         </LanguageProvider>
       </body>

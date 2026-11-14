@@ -38,7 +38,7 @@ export default function TeacherTopbar({
 }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { t, href } = useLanguage();
+  const { t, href, lang } = useLanguage();
   const current = teacherNavItems.find(
     (i) => i.href === stripLocale(pathname || "/"),
   );
@@ -173,18 +173,24 @@ export default function TeacherTopbar({
   return (
     <div className="flex items-center justify-between gap-3 mb-6 lg:mb-7">
       <div className="flex items-center gap-3 min-w-0">
-        {!isMenuOpen && (
-          <button
-            onClick={onMenuClick}
-            type="button"
-            aria-label="Open menu"
-            aria-controls="teacher-dashboard-sidebar"
-            aria-expanded={false}
-            className="relative z-[60] lg:hidden w-10 h-10 shrink-0 rounded-full bg-white border border-line flex items-center justify-center text-ink70 shadow-sm"
-          >
-            <Menu size={18} />
-          </button>
-        )}
+        <button
+          onClick={onMenuClick}
+          type="button"
+          aria-label={
+            lang === "fa"
+              ? isMenuOpen
+                ? "بستن منو"
+                : "بازکردن منو"
+              : isMenuOpen
+                ? "Close menu"
+                : "Open menu"
+          }
+          aria-controls="teacher-dashboard-sidebar"
+          aria-expanded={isMenuOpen}
+          className={`relative z-[60] grid h-12 w-12 shrink-0 place-items-center rounded-2xl border shadow-card transition-all lg:hidden ${isMenuOpen ? "border-blue bg-blue text-white" : "border-line bg-gradient-to-br from-[#FCFBF8] to-[#F0F2F9] text-blue hover:border-blue/40 hover:shadow-md"}`}
+        >
+          {isMenuOpen ? <X size={19} /> : <Menu size={20} />}
+        </button>
         <h1 className="text-[19px] sm:text-[22px] font-semibold m-0 truncate">
           {current ? t(current.titleKey) : t("teacherNav.titles.overview")}
         </h1>

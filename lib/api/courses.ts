@@ -9,7 +9,7 @@ export type Course = {
   category?: string;
   desc: string;
   lessons: number;
-  students: number;
+  students?: number;
   price: string;
   basePrice?: number;
   currency?: string;
@@ -39,6 +39,13 @@ function text(record: ApiRecord, ...keys: string[]): string {
 function numberValue(record: ApiRecord, ...keys: string[]): number {
   const result = Number(value(record, ...keys) ?? 0);
   return Number.isFinite(result) ? result : 0;
+}
+
+function optionalNumberValue(record: ApiRecord, ...keys: string[]): number | undefined {
+  const raw = value(record, ...keys);
+  if (raw === undefined) return undefined;
+  const result = Number(raw);
+  return Number.isFinite(result) && result >= 0 ? result : undefined;
 }
 
 function unwrap(response: unknown): unknown[] {
@@ -93,7 +100,7 @@ function normalizeCourse(raw: unknown, index: number): Course | null {
       "lessonCount",
       "LessonCount",
     ),
-    students: numberValue(
+    students: optionalNumberValue(
       record,
       "students",
       "Students",

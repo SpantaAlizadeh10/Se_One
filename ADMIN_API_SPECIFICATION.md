@@ -189,6 +189,30 @@ group-specific `startsAt`, `endsAt`, `classType`, `capacity`, `basePrice`,
 whose availability does not cover the whole slot or who have a conflicting
 confirmed class assignment.
 
+When adding a student from the course editor, the admin must select a scheduled
+class and the frontend uses
+`POST /api/admin/class-slots/{slotId}/enrollments` with
+`{ "studentId": "student-id" }`. The backend must validate that the slot is
+active, belongs to a course, and has capacity. It creates or reactivates the
+student's enrollment in that slot, ensures the ordinary enrollment for the
+slot's course remains available for lessons and progress, and cancels that
+student's active enrollment in any other slot for the same course. Repeating
+the request or moving the student to another slot must not create duplicate
+active memberships. After saving, reconcile the selected and previous class
+groups so their member lists reflect the change. A successful response returns
+the class enrollment:
+
+```json
+{
+  "id": "class-enrollment-id",
+  "slotId": "class-slot-id",
+  "studentId": "student-id",
+  "finalPrice": 990000,
+  "status": "confirmed",
+  "enrolledAt": "2026-11-01T10:00:00Z"
+}
+```
+
 `GET /api/student/class-slots` must return each confirmed teacher-slot pair as
 a separate student-facing option. Each item must include its slot-specific
 `courseId`, `assignmentId`, schedule, capacity and enrollment counts,
@@ -218,13 +242,17 @@ course, including student display information:
 
 In the course editor, admins can search active students with
 `GET /api/admin/students?page=1&pageSize=20&search={name-or-email}` and add
-them using the existing
+them to a selected class using the class-slot enrollment endpoint above. The
+course enrollment list remains course-wide. The generic
 `POST /api/admin/students/{studentId}/enrollments` request with
-`{ "courseId": "course-id", "waivePayment": true }`. Removing a student uses
-the existing
+`{ "courseId": "course-id", "waivePayment": true }` remains available for
+course-only enrollment flows, but does not choose a class group. Removing a
+student from the course uses the existing
 `DELETE /api/admin/students/{studentId}/enrollments/{enrollmentId}` endpoint.
-The backend must reject duplicate active enrollments and ensure the
-enrollment belongs to both the specified course and student before removal.
+The backend must verify the enrollment belongs to the specified student,
+cancel that student's active class-slot enrollments for the same course, and
+reconcile the affected class groups. Preserve learning history and progress
+when cancelling enrollment records.
 
 ### PATCH /api/admin/courses/{courseId}/pricing
 

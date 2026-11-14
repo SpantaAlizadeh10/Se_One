@@ -2,10 +2,12 @@ import type { Metadata } from "next";
 import Hero from "@/components/marketing/Hero";
 import FeatureCards from "@/components/marketing/FeatureCards";
 import LatestCourses from "@/components/marketing/LatestCourses";
-import TeacherShowcase from "@/components/marketing/TeacherShowcase";
-import YouTubeVideos from "@/components/marketing/YouTubeVideos";
+import EnglishLevel from "@/components/marketing/courses/EnglishLevel";
+import GermanLevel from "@/components/marketing/courses/GermanLevel";
+import DeferredHomeSections from "@/components/marketing/DeferredHomeSections";
 import Testimonials from "@/components/marketing/Testimonials";
 import NewsletterCTA from "@/components/marketing/NewsletterCTA";
+import HomeLatestArticles from "@/components/marketing/HomeLatestArticles";
 
 export const metadata: Metadata = {
   title: "Home",
@@ -18,9 +20,11 @@ export default function HomePage() {
     <main>
       <Hero />
       <LatestCourses />
+      <EnglishLevel />
+      <GermanLevel />
       <FeatureCards />
-      <TeacherShowcase />
-      <YouTubeVideos />
+      <DeferredHomeSections />
+      <HomeLatestArticles />
       <Testimonials />
       <NewsletterCTA />
     </main>

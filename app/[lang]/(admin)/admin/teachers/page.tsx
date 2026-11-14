@@ -200,7 +200,7 @@ export default function AdminTeachersPage() {
   const getStatusBadge = (status: TeacherWithStatus["status"]) => {
     const styles = {
       active: "bg-sage text-sageDeep",
-      pending: "bg-[#FDEFE0] text-[#B8792E]",
+      pending: "bg-[#FDEFE0] text-goldDeep",
       suspended: "bg-danger/10 text-danger",
     };
     const labels = {

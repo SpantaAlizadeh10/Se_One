@@ -1,10 +1,12 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { useLanguage } from "@/lib/i18n/LanguageProvider";
 
 export default function OtpInput({ length = 6, onChange }: { length?: number; onChange?: (code: string) => void }) {
   const [values, setValues] = useState<string[]>(Array(length).fill(""));
   const inputsRef = useRef<(HTMLInputElement | null)[]>([]);
+  const { lang } = useLanguage();
 
   const update = (next: string[]) => {
     setValues(next);
@@ -38,6 +40,12 @@ export default function OtpInput({ length = 6, onChange }: { length?: number; on
           type="text"
           inputMode="numeric"
           maxLength={1}
+          autoComplete={i === 0 ? "one-time-code" : "off"}
+          aria-label={
+            lang === "fa"
+              ? `رقم ${i + 1} از ${length} کد تأیید`
+              : `Verification code digit ${i + 1} of ${length}`
+          }
           value={v}
           onChange={(e) => handleChange(i, e.target.value)}
           onKeyDown={(e) => handleKeyDown(i, e)}

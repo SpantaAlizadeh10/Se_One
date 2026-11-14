@@ -70,13 +70,13 @@ export default function YouTubeVideos() {
           ))}
         </div>
       ) : videos.length > 0 ? (
-        <div className="flex snap-x snap-mandatory gap-4 overflow-x-auto pb-2 thin-scroll lg:grid lg:grid-cols-3 lg:overflow-visible">
+        <div className="flex snap-x snap-mandatory gap-4 overflow-x-auto pb-4 thin-scroll lg:grid lg:grid-cols-3 lg:overflow-visible lg:pb-0">
           {videos.map((video) => (
             <article
               key={video.videoId}
               className="w-[86%] min-w-[270px] shrink-0 snap-start overflow-hidden rounded-2xl border border-line bg-white shadow-card sm:w-[360px] lg:w-auto lg:min-w-0"
             >
-              <div className="aspect-video bg-[#101010]">
+              <div className="aspect-video bg-[#292B31]">
                 <iframe
                   src={`https://www.youtube-nocookie.com/embed/${video.videoId}`}
                   title={video.title}

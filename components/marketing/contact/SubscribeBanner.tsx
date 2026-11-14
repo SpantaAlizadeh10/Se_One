@@ -17,28 +17,34 @@ export default function SubscribeBanner() {
   };
 
   return (
-    <section className="max-w-7xl mx-auto px-5 sm:px-8 py-10 sm:py-14">
-      <div className="bg-blue rounded-lg p-6 sm:p-8 flex items-center gap-6 flex-wrap justify-center sm:justify-between text-center sm:text-start">
-        <div className="flex flex-col sm:flex-row items-center gap-4">
+    <section className="mx-auto max-w-7xl px-5 py-10 sm:px-8 sm:py-14">
+      <div className="flex min-w-0 flex-col items-stretch gap-6 rounded-lg bg-blue p-5 text-center sm:p-8 sm:text-start md:flex-row md:items-center md:justify-between">
+        <div className="flex min-w-0 flex-col items-center gap-4 sm:flex-row sm:items-center">
           <div className="w-16 h-16 rounded-2xl bg-white/15 flex items-center justify-center shrink-0">
             <FileText size={30} className="text-white" strokeWidth={1.6} />
           </div>
-          <div>
+          <div className="sm:text-start">
             <h3 className="text-white text-[19px] font-semibold mb-1.5">{s.title}</h3>
             <p className="text-white/85 text-[13px] max-w-[360px]">{s.lead}</p>
           </div>
         </div>
-        <form onSubmit={submit} className="flex bg-white rounded-full overflow-hidden shrink-0 w-full sm:w-auto">
+        <form
+          onSubmit={submit}
+          className="flex min-h-11 w-full min-w-0 flex-col gap-1.5 rounded-[24px] bg-white p-1.5 sm:flex-row sm:items-center sm:rounded-full md:w-[min(100%,360px)] md:shrink-0"
+        >
           <input
             type="email"
             required
-            dir="ltr"
+            dir="auto"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder={s.placeholder}
-            className="flex-1 sm:w-[200px] border-none outline-none px-4.5 py-3 text-[13.5px]"
+            className="min-h-11 min-w-0 flex-1 rounded-full border-none bg-transparent px-4 py-3 text-start text-[13.5px] text-ink placeholder:text-ink70 placeholder:opacity-100 outline-none sm:w-[200px]"
           />
-          <button type="submit" className="bg-gold text-white px-5.5 py-3 text-[13.5px] font-bold whitespace-nowrap hover:bg-goldDeep transition-colors">
+          <button
+            type="submit"
+            className="min-h-11 shrink-0 rounded-full bg-goldDeep px-5 text-[13.5px] font-bold whitespace-nowrap text-white transition-colors hover:bg-[#644400]"
+          >
             {subscribed ? s.subscribed : s.cta}
           </button>
         </form>

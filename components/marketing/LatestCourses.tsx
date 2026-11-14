@@ -36,9 +36,11 @@ type Variant = "latest" | "popular" | "popular-cta";
 export default function LatestCourses({
   variant = "latest",
   filterQuery,
+  filterLevel,
 }: {
   variant?: Variant;
   filterQuery?: string;
+  filterLevel?: string;
 }) {
   const { t, href, lang } = useLanguage();
   const [wishlist, setWishlist] = useState<string[]>([]);
@@ -71,24 +73,77 @@ export default function LatestCourses({
   } = useCourses(lang);
 
   const q = filterQuery?.trim().toLowerCase() ?? "";
+  const selectedLevel = filterLevel?.trim().toLowerCase() ?? "";
   const categoryAliases: Record<string, string[]> = {
-    "free discussion": ["free discussion", "فری دیسکاشن"],
+    "free discussion": ["free discussion", "گفت‌وگوی آزاد", "فری دیسکاشن"],
     private: ["private", "خصوصی"],
     kids: ["kids", "children", "کودکان", "کودک"],
     general: ["general", "عمومی"],
   };
-  const courses = q
-    ? allCourses.filter(
-        (c) =>
-          c.title.toLowerCase().includes(q) ||
-          c.level.toLowerCase().includes(q) ||
-          c.desc.toLowerCase().includes(q) ||
-          categoryAliases[q]?.some((alias) =>
-            c.category?.toLowerCase().includes(alias),
-          ) ||
-          c.category?.toLowerCase().includes(q),
-      )
-    : allCourses;
+  const levelAliases: Record<string, string[]> = {
+    مبتدی: ["beginner", "مبتدی", "a1", "zero", "صفر"],
+    beginner: ["beginner", "مبتدی", "a1", "zero", "صفر"],
+    متوسط: ["intermediate", "متوسط", "a2"],
+    intermediate: ["intermediate", "متوسط", "a2"],
+    پیشرفته: ["advanced", "پیشرفته", "b1", "c1"],
+    advanced: ["advanced", "پیشرفته", "b1", "c1"],
+    "آماده آیلتس": ["ielts", "آیلتس"],
+    "ielts ready": ["ielts", "آیلتس"],
+    "آلمانی a1": ["german a1", "آلمانی a1"],
+    "german a1": ["german a1", "آلمانی a1"],
+    "آلمانی a2": ["german a2", "آلمانی a2"],
+    "german a2": ["german a2", "آلمانی a2"],
+    "آلمانی b1": ["german b1", "آلمانی b1"],
+    "german b1": ["german b1", "آلمانی b1"],
+    "گفت‌وگوی آزاد": [
+      "free discussion",
+      "open conversation",
+      "گفت‌وگوی آزاد",
+      "مکالمه آزاد",
+    ],
+    "free discussion": [
+      "free discussion",
+      "open conversation",
+      "گفت‌وگوی آزاد",
+      "مکالمه آزاد",
+    ],
+  };
+  const broadLevelFilters = [
+    "مبتدی",
+    "beginner",
+    "متوسط",
+    "intermediate",
+    "پیشرفته",
+    "advanced",
+  ];
+  const matchesLevel = (course: (typeof allCourses)[number]) => {
+    if (!selectedLevel) return true;
+    const aliases = levelAliases[selectedLevel] ?? [selectedLevel];
+    const courseInfo = [
+      course.id,
+      course.title,
+      course.level,
+      course.language,
+      course.category,
+    ]
+      .join(" ")
+      .toLowerCase();
+    const isGermanLevel = broadLevelFilters.includes(selectedLevel);
+    if (isGermanLevel && /german|آلمانی/.test(courseInfo)) return false;
+    return aliases.some((alias) => courseInfo.includes(alias));
+  };
+  const courses = allCourses.filter(
+    (c) =>
+      matchesLevel(c) &&
+      (!q ||
+        c.title.toLowerCase().includes(q) ||
+        c.level.toLowerCase().includes(q) ||
+        c.desc.toLowerCase().includes(q) ||
+        categoryAliases[q]?.some((alias) =>
+          c.category?.toLowerCase().includes(alias),
+        ) ||
+        c.category?.toLowerCase().includes(q)),
+  );
   const displayedCourses = variant === "latest" ? courses.slice(0, 4) : courses;
 
   const heading =
@@ -129,13 +184,13 @@ export default function LatestCourses({
 
       {loading ? (
         <p className="py-10 text-center text-[14px] text-ink70">
-          {lang === "fa" ? "در حال دریافت دوره‌ها..." : "Loading courses..."}
+          {lang === "fa" ? "دوره‌ها در حال بارگذاری‌اند..." : "Loading courses..."}
         </p>
       ) : coursesError ? (
         <div role="alert" className="py-10 text-center">
           <p className="mb-2 text-[14px] text-danger">
             {lang === "fa"
-              ? "ارتباط با API دوره‌ها برقرار نشد."
+              ? "اتصال به سرویس دوره‌ها برقرار نشد."
               : "Could not connect to the courses API."}
           </p>
           <p className="mb-4 text-xs text-muted" dir="ltr">
@@ -143,7 +198,7 @@ export default function LatestCourses({
           </p>
           <p className="mb-4 text-xs text-muted">
             {lang === "fa"
-              ? "آدرس NEXT_PUBLIC_API_BASE_URL باید آدرس فعال بک‌اند باشد، نه آدرس سایت فرانت‌اند."
+              ? "نشانی API باید به سرویس فعال دوره‌ها اشاره کند، نه به نشانی وب‌سایت."
               : "NEXT_PUBLIC_API_BASE_URL must point to the active backend API, not the frontend website."}
           </p>
           <button
@@ -151,7 +206,7 @@ export default function LatestCourses({
             onClick={reloadCourses}
             className="rounded-full border border-line px-4 py-2 text-sm font-semibold text-ink70 hover:bg-surface"
           >
-            {lang === "fa" ? "تلاش دوباره" : "Try again"}
+            {lang === "fa" ? "دوباره تلاش کنید" : "Try again"}
           </button>
         </div>
       ) : displayedCourses.length === 0 ? (
@@ -159,7 +214,7 @@ export default function LatestCourses({
           {t("common.noCoursesFound")}
         </p>
       ) : (
-        <div className="grid grid-cols-2 xl:grid-cols-4 gap-3.5 sm:gap-5">
+        <div className="grid grid-cols-2 gap-3.5 sm:gap-5 md:grid-cols-3 xl:grid-cols-4">
           {displayedCourses.map((course) => (
             <Link
               key={course.id}
@@ -215,9 +270,12 @@ export default function LatestCourses({
                     {course.duration ??
                       `${course.lessons} ${t("common.lessons")}`}
                   </span>
-                  <span className="flex items-center gap-1">
-                    <Users size={11} /> {course.students} {t("common.students")}
-                  </span>
+                  {course.students !== undefined && (
+                    <span className="flex items-center gap-1">
+                      <Users size={11} /> {course.students}{" "}
+                      {t("common.students")}
+                    </span>
+                  )}
                 </div>
                 {(() => {
                   const discountPercent = course.discountPercent ?? 0;
@@ -274,7 +332,7 @@ export default function LatestCourses({
         <div className="text-center mt-8">
           <Link
             href={href("/signup")}
-            className="inline-flex items-center gap-2 bg-gold text-white px-8 py-3.5 rounded-full text-[14px] font-semibold hover:bg-goldDeep transition-colors"
+            className="inline-flex items-center gap-2 bg-goldDeep text-white px-8 py-3.5 rounded-full text-[14px] font-semibold hover:bg-[#644400] transition-colors"
           >
             {bottomButtonLabel}
           </Link>

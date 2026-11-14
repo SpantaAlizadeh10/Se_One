@@ -16,7 +16,7 @@ type AssignmentRow = {
 const filters = ["All", "Pending", "Submitted", "Graded"] as const;
 
 const statusStyles: Record<AssignmentRow["status"], { bg: string; text: string; label: string }> = {
-  pending: { bg: "bg-[#FDEFE0]", text: "text-[#B8792E]", label: "Pending" },
+  pending: { bg: "bg-[#FDEFE0]", text: "text-goldDeep", label: "Pending" },
   submitted: { bg: "bg-[#E4ECFF]", text: "text-blue", label: "Submitted" },
   graded: { bg: "bg-sage", text: "text-sageDeep", label: "Graded" }
 };
@@ -63,7 +63,7 @@ export default function AssignmentsTable() {
     <div>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4.5 mb-6" style={{ gap: 18 }}>
         <div className="bg-white border border-line rounded-md p-4.5 shadow-card flex items-center gap-3.5" style={{ padding: "18px 20px" }}>
-          <div className="w-[42px] h-[42px] rounded-[11px] bg-[#FDEFE0] text-[#B8792E] flex items-center justify-center shrink-0">
+          <div className="w-[42px] h-[42px] rounded-[11px] bg-[#FDEFE0] text-goldDeep flex items-center justify-center shrink-0">
             <Clock size={19} />
           </div>
           <div>

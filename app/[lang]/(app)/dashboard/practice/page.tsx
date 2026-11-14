@@ -40,13 +40,13 @@ export default function PracticePage() {
             <span className="text-2xl" aria-hidden="true">✦</span>
           </span>
           <div>
-            <p className="mb-1 text-[11px] font-bold uppercase tracking-[0.16em] text-white/70">
+            <p className="mb-1 text-[11px] font-bold uppercase tracking-[0.16em] text-white">
               SE ONE AI
             </p>
             <h1 className="mb-1 text-xl font-bold sm:text-2xl">
               {lang === "fa" ? "تمرین هوشمند زبان" : "AI Language Practice"}
             </h1>
-            <p className="m-0 max-w-2xl text-[12px] leading-6 text-white/80">
+            <p className="m-0 max-w-2xl text-[12px] leading-6 text-white">
               {lang === "fa"
                 ? "مهارت دلخواهت را انتخاب کن؛ همه بخش‌ها باز هستند و می‌توانی تمرین‌های موجود را شروع کنی."
                 : "Choose any skill. Every area is open, and you can start any available exercise."}

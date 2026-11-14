@@ -10,6 +10,7 @@ import JourneyBanner from "@/components/marketing/courses/JourneyBanner";
 
 export default function CoursesPage() {
   const [query, setQuery] = useState("");
+  const [selectedLevel, setSelectedLevel] = useState("");
 
   useEffect(() => {
     const initialSearch = new URLSearchParams(window.location.search).get(
@@ -20,8 +21,17 @@ export default function CoursesPage() {
 
   return (
     <main>
-      <CoursesHero query={query} onQueryChange={setQuery} />
-      <LatestCourses variant="popular-cta" filterQuery={query} />
+      <CoursesHero
+        query={query}
+        onQueryChange={setQuery}
+        selectedLevel={selectedLevel}
+        onLevelChange={setSelectedLevel}
+      />
+      <LatestCourses
+        variant="popular-cta"
+        filterQuery={query}
+        filterLevel={selectedLevel}
+      />
       <EnglishLevel />
       <GermanLevel />
       <WhyLearn />

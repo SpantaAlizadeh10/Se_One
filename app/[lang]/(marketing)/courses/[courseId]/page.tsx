@@ -125,9 +125,12 @@ export default function CourseDetailPage({
               <BookOpen size={15} />{" "}
               {course.duration ?? `${course.lessons} ${t("common.lessons")}`}
             </span>
-            <span className="flex items-center gap-1.5">
-              <Users size={15} /> {course.students} {t("common.students")}
-            </span>
+            {course.students !== undefined && (
+              <span className="flex items-center gap-1.5">
+                <Users size={15} /> {course.students}{" "}
+                {t("common.students")}
+              </span>
+            )}
           </div>
 
           <h2 className="text-[17px] font-semibold mb-3.5">{c.whatYouLearn}</h2>

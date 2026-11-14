@@ -15,7 +15,7 @@ export default function OurStory() {
           <Users size={110} className="text-white/95" strokeWidth={1.3} />
         </div>
         <div>
-          <h2 className="font-serif text-[28px] sm:text-[32px] font-semibold mb-4">
+          <h2 className="font-serif text-[28px] sm:text-[32px] font-semibold mb-3">
             {s.titleOur} <span className="text-goldDeep">{s.titleGold}</span>
           </h2>
           <p className="text-ink70 text-[14.5px] leading-[1.8] max-w-[440px] mb-6">{s.lead}</p>

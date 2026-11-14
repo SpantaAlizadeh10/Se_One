@@ -12,6 +12,130 @@ body {
   box-sizing: border-box;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  min-width: 320px;
+}
+
+:focus-visible {
+  outline: 3px solid #2563eb;
+  outline-offset: 3px;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: #c6952e !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+[class~="focus-within:border-blue"]:focus-within,
+label:focus-within {
+  border-color: #c6952e !important;
+  box-shadow: none !important;
+}
+
+button:disabled,
+[aria-disabled="true"] {
+  cursor: not-allowed;
+}
+
+button:disabled {
+  opacity: 0.58;
+}
+
+button:not(:disabled) {
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease,
+    color 150ms ease,
+    box-shadow 150ms ease,
+    filter 150ms ease,
+    transform 100ms ease;
+}
+
+button:not(:disabled):active {
+  transform: translateY(1px) scale(0.97);
+  box-shadow: inset 0 2px 4px rgb(28 43 68 / 16%);
+}
+
+@media (pointer: coarse) {
+  button,
+  [role="button"] {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  select,
+  textarea {
+    min-height: 44px;
+  }
+}
+
+input:disabled,
+select:disabled,
+textarea:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+button:not(:disabled):hover {
+  filter: brightness(0.94);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+.skip-to-content {
+  position: fixed;
+  inset-block-start: 0.75rem;
+  inset-inline-start: 0.75rem;
+  z-index: 100;
+  transform: translateY(-200%);
+  border-radius: 0.75rem;
+  background: #182163;
+  padding: 0.75rem 1rem;
+  color: #fff;
+  font-weight: 700;
+}
+
+.skip-to-content:focus {
+  transform: translateY(0);
+}
+
+.network-status {
+  position: fixed;
+  inset-inline: 1rem;
+  inset-block-end: 6rem;
+  z-index: 90;
+  margin-inline: auto;
+  max-width: 40rem;
+  border-radius: 0.75rem;
+  background: #182163;
+  padding: 0.75rem 1rem;
+  color: #fff;
+  box-shadow: 0 8px 24px rgb(15 23 42 / 18%);
+}
+
+@media (min-width: 1024px) {
+  .network-status {
+    inset-block-end: 1rem;
+  }
+}
+
 /* A calm, child-friendly palette is enabled only for authenticated students under 14. */
 .student-child-mode {
   background-color: #fffaf0;
@@ -40,13 +164,94 @@ body {
 }
 
 /* thin, quiet scrollbars for scrollable panels */
+.thin-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(48 77 182 / 24%) transparent;
+}
+
 .thin-scroll::-webkit-scrollbar {
-  width: 6px;
+  width: 4px;
+  height: 4px;
+}
+
+.thin-scroll::-webkit-scrollbar-track {
+  background: transparent;
 }
 
 .thin-scroll::-webkit-scrollbar-thumb {
-  background: #ede8de;
+  background: rgb(48 77 182 / 24%);
   border-radius: 20px;
+}
+
+.thin-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgb(48 77 182 / 42%);
+}
+
+.thin-scroll::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+.hide-scrollbar {
+  scrollbar-width: none;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.scroll-reveal-enabled .scroll-reveal:not(.is-visible) {
+  opacity: 0;
+  transform: translate3d(0, 30px, 0) scale(0.985);
+  filter: blur(3px);
+  transition:
+    opacity 750ms cubic-bezier(0.16, 1, 0.3, 1)
+      var(--scroll-reveal-delay, 0ms),
+    transform 850ms cubic-bezier(0.16, 1, 0.3, 1)
+      var(--scroll-reveal-delay, 0ms),
+    filter 750ms ease var(--scroll-reveal-delay, 0ms);
+}
+
+.scroll-reveal-enabled .scroll-reveal.is-visible {
+  opacity: 1;
+  transform: translate3d(0, 0, 0) scale(1);
+  filter: blur(0);
+}
+
+.scroll-reveal-enabled .scroll-reveal.is-visible:not(:first-child) > div > * {
+  animation: scroll-content-reveal 650ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.scroll-reveal-enabled
+  .scroll-reveal.is-visible:not(:first-child)
+  > div
+  > *:nth-child(2) {
+  animation-delay: 70ms;
+}
+
+.scroll-reveal-enabled
+  .scroll-reveal.is-visible:not(:first-child)
+  > div
+  > *:nth-child(3) {
+  animation-delay: 130ms;
+}
+
+.scroll-reveal-enabled
+  .scroll-reveal.is-visible:not(:first-child)
+  > div
+  > *:nth-child(4) {
+  animation-delay: 190ms;
+}
+
+@keyframes scroll-content-reveal {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 14px, 0) scale(0.99);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
 }
 
 /* Persian (default) uses Vazirmatn everywhere, including headings —
@@ -88,5 +293,11 @@ html[dir="ltr"] body {
   body {
     padding-left: max(0px, env(safe-area-inset-left));
     padding-right: max(0px, env(safe-area-inset-right));
+  }
+}
+
+@layer utilities {
+  .bg-white {
+    background-color: #fcfbf8;
   }
 }

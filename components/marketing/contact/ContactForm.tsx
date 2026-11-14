@@ -28,7 +28,7 @@ export default function ContactForm() {
         email: String(formData.get("email") || "").trim(),
         subject:
           String(formData.get("subject") || "").trim() ||
-          (lang === "fa" ? "پیام از فرم تماس" : "Contact form message"),
+          (lang === "fa" ? "پیام از صفحهٔ تماس با ما" : "Contact form message"),
         message: String(formData.get("message") || "").trim(),
       });
       form.reset();
@@ -38,7 +38,7 @@ export default function ContactForm() {
         reason instanceof Error
           ? reason.message
           : lang === "fa"
-            ? "ارسال پیام انجام نشد. لطفاً دوباره تلاش کنید."
+            ? "پیامتان ارسال نشد. لطفاً دوباره تلاش کنید."
             : "Your message could not be sent. Please try again.",
       );
     } finally {
@@ -47,45 +47,83 @@ export default function ContactForm() {
   };
 
   const fieldClass =
-    "w-full border border-line bg-white rounded-2xl px-5 py-3.5 text-[14px] outline-none focus:border-blue transition-colors placeholder:text-muted";
+    "w-full border border-line bg-white rounded-2xl px-5 py-3.5 text-[14px] outline-none focus:border-blue transition-colors placeholder:text-muted/60";
 
   return (
-    <section className="max-w-[820px] mx-auto px-5 sm:px-8 py-10 sm:py-14">
-      <h2 className="font-serif text-[26px] sm:text-[28px] font-semibold mb-2">
-        {f.heading}
-      </h2>
-      <div className="w-16 h-[3px] bg-gold rounded mb-7" />
-
-      <form onSubmit={submit} className="flex flex-col gap-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <input
-            name="name"
-            type="text"
-            required
-            placeholder={f.name}
-            className={fieldClass}
-          />
-          <input
-            name="email"
-            type="email"
-            required
-            placeholder={f.email}
-            className={fieldClass}
-          />
+    <section className="mx-auto max-w-6xl px-5 py-10 sm:px-8 sm:py-14">
+      <div className="flex flex-col gap-3">
+        <div className="text-center sm:text-start">
+          <h2 className="mb-2 font-serif text-[26px] font-semibold sm:text-[28px]">
+            {f.heading}
+          </h2>
+          <div className="mx-auto mb-4 h-[3px] w-16 rounded bg-gold sm:mx-0" />
         </div>
-        <input
-          name="subject"
-          type="text"
-          placeholder={f.subject}
-          className={fieldClass}
-        />
-        <textarea
-          name="message"
-          required
-          placeholder={f.message}
-          rows={6}
-          className={`${fieldClass} resize-y`}
-        />
+
+        <form
+          onSubmit={submit}
+          aria-busy={isSubmitting}
+          className="flex flex-col gap-4 rounded-2xl border border-line bg-white p-4 shadow-card sm:p-6 md:p-7"
+        >
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <label
+            htmlFor="contact-name"
+            className="flex flex-col gap-2 text-start text-[13px] font-semibold text-ink"
+          >
+            {f.name}
+            <input
+              id="contact-name"
+              name="name"
+              type="text"
+              required
+              autoComplete="name"
+              placeholder={f.name}
+              className={fieldClass}
+            />
+          </label>
+          <label
+            htmlFor="contact-email"
+            className="flex flex-col gap-2 text-start text-[13px] font-semibold text-ink"
+          >
+            {f.email}
+            <input
+              id="contact-email"
+              name="email"
+              type="email"
+              required
+              autoComplete="email"
+              dir={lang === "fa" ? "rtl" : "ltr"}
+              className={`${fieldClass} text-start`}
+              placeholder={f.email}
+            />
+          </label>
+        </div>
+        <label
+          htmlFor="contact-subject"
+          className="flex flex-col gap-2 text-start text-[13px] font-semibold text-ink"
+        >
+          {f.subject}
+          <input
+            id="contact-subject"
+            name="subject"
+            type="text"
+            placeholder={f.subject}
+            className={fieldClass}
+          />
+        </label>
+        <label
+          htmlFor="contact-message"
+          className="flex flex-col gap-2 text-start text-[13px] font-semibold text-ink"
+        >
+          {f.message}
+          <textarea
+            id="contact-message"
+            name="message"
+            required
+            placeholder={f.message}
+            rows={6}
+            className={`${fieldClass} resize-y`}
+          />
+        </label>
         {(error || sent) && (
           <p
             role={error ? "alert" : "status"}
@@ -98,6 +136,7 @@ export default function ContactForm() {
         <button
           type="submit"
           disabled={isSubmitting}
+          aria-busy={isSubmitting}
           className="w-full bg-blue text-white rounded-full py-4 text-[14.5px] font-bold flex items-center justify-center gap-2 hover:bg-blueDeep transition-colors disabled:cursor-not-allowed disabled:opacity-60"
         >
           {isSubmitting
@@ -107,7 +146,8 @@ export default function ContactForm() {
             : f.send}
           {!isSubmitting && <ArrowRight size={15} className="rtl:rotate-180" />}
         </button>
-      </form>
+        </form>
+      </div>
     </section>
   );
 }

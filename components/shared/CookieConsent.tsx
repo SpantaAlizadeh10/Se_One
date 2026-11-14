@@ -33,7 +33,7 @@ export default function CookieConsent() {
             {c.message}{" "}
             <Link
               href={href("/privacy-policy")}
-              className="underline underline-offset-2 text-gold"
+              className="underline underline-offset-2 text-goldDeep"
             >
               {c.learnMore}
             </Link>
@@ -42,7 +42,7 @@ export default function CookieConsent() {
         <button
           type="button"
           onClick={accept}
-          className="bg-gold text-white px-3.5 py-2 sm:px-6 sm:py-2.5 rounded-full text-[11px] sm:text-[13px] font-semibold hover:bg-goldDeep transition-colors shrink-0 w-auto sm:w-auto"
+          className="bg-goldDeep text-white px-3.5 py-2 sm:px-6 sm:py-2.5 rounded-full text-[11px] sm:text-[13px] font-semibold hover:bg-[#644400] transition-colors shrink-0 w-auto sm:w-auto"
         >
           {c.accept}
         </button>

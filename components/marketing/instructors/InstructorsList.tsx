@@ -14,7 +14,7 @@ export default function InstructorsList() {
   return (
     <main className="max-w-6xl mx-auto px-5 sm:px-8 py-12 sm:py-16">
       <div className="text-center max-w-[600px] mx-auto mb-10">
-        <h1 className="font-serif text-[28px] sm:text-[34px] font-semibold mb-3">
+        <h1 className="font-serif text-[28px] sm:text-[34px] font-semibold mb-2">
           {p.heading}
         </h1>
         <p className="text-ink70 text-[14.5px] leading-relaxed">{p.lead}</p>
@@ -28,19 +28,19 @@ export default function InstructorsList() {
         <p className="text-[12px] text-muted">{p.directoryHint}</p>
       </div>
 
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4 mb-14">
+      <div className="mb-14 grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
         {teachers.map((teacher) => (
           <TeacherCard key={teacher.id} teacher={teacher} />
         ))}
       </div>
 
       <div className="bg-blue rounded-lg p-8 sm:p-10 text-center">
-        <h2 className="font-serif text-[20px] sm:text-[22px] font-semibold text-white mb-5">
+        <h2 className="font-serif text-[20px] sm:text-[22px] font-semibold text-white mb-6">
           {p.ctaTitle}
         </h2>
         <Link
           href={href("/teachers")}
-          className="inline-flex items-center gap-2 bg-gold text-white px-7 py-3.5 rounded-full text-[14px] font-semibold hover:bg-goldDeep transition-colors"
+          className="inline-flex items-center gap-2 bg-goldDeep text-white px-7 py-3.5 rounded-full text-[14px] font-semibold hover:bg-[#644400] transition-colors"
         >
           {p.ctaButton} <ArrowRight size={15} className="rtl:rotate-180" />
         </Link>

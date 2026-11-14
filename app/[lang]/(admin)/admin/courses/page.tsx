@@ -30,7 +30,6 @@ import {
   uploadCourseImage,
   listAdminStudents,
   getAdminCourseEnrollments,
-  adminEnrollStudent,
   adminCancelStudentEnrollment,
   type AdminCourse,
   type AdminCourseEnrollment,
@@ -46,7 +45,10 @@ import {
   updateAdminClassSlot,
   toDateTimeLocalValue,
   listAdminClassSlots,
+  addAdminStudentToClass,
+  listAdminClassEnrollments,
   type AdminClassSlot,
+  type AdminClassEnrollment,
   type ClassType,
 } from "@/lib/api/class-scheduling";
 
@@ -150,6 +152,12 @@ export default function AdminCoursesPage() {
   const [courseEnrollments, setCourseEnrollments] = useState<
     AdminCourseEnrollment[]
   >([]);
+  const [selectedEnrollmentSlotId, setSelectedEnrollmentSlotId] = useState("");
+  const [selectedSlotEnrollments, setSelectedSlotEnrollments] = useState<
+    AdminClassEnrollment[]
+  >([]);
+  const [loadingSelectedSlotEnrollments, setLoadingSelectedSlotEnrollments] =
+    useState(false);
   const [courseStudentSearch, setCourseStudentSearch] = useState("");
   const [courseStudentCandidates, setCourseStudentCandidates] = useState<
     AdminStudent[]
@@ -198,6 +206,40 @@ export default function AdminCoursesPage() {
       )
       .finally(() => setClassSlotsLoading(false));
   }, []);
+
+  useEffect(() => {
+    if (!showCreateModal || !editingCourseId || !selectedEnrollmentSlotId) {
+      setSelectedSlotEnrollments([]);
+      setLoadingSelectedSlotEnrollments(false);
+      return;
+    }
+
+    let cancelled = false;
+    setLoadingSelectedSlotEnrollments(true);
+
+    listAdminClassEnrollments(selectedEnrollmentSlotId)
+      .then((items) => {
+        if (!cancelled) setSelectedSlotEnrollments(items);
+      })
+      .catch((error) => {
+        if (!cancelled) {
+          setApiError(
+            error instanceof Error
+              ? error.message
+              : lang === "fa"
+                ? "فهرست اعضای گروه بارگذاری نشد."
+                : "Could not load the selected class roster.",
+          );
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingSelectedSlotEnrollments(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [showCreateModal, editingCourseId, selectedEnrollmentSlotId, lang]);
 
   const setDraft = (id: string, value: string) =>
     setDrafts((prev) => ({ ...prev, [id]: value }));
@@ -287,6 +329,11 @@ export default function AdminCoursesPage() {
       return;
     }
     const courseSlots = classSlots.filter((slot) => slot.courseId === course.id);
+    const selectableCourseSlots = courseSlots.filter(
+      (slot) => slot.status === "active",
+    );
+    setSelectedEnrollmentSlotId(selectableCourseSlots[0]?.id ?? "");
+    setSelectedSlotEnrollments([]);
     setClassSlotDrafts(
       Object.fromEntries(
         courseSlots.map((slot) => [
@@ -586,11 +633,27 @@ export default function AdminCoursesPage() {
 
   const addStudentToCourse = async (student: AdminStudent) => {
     if (!editingCourseId) return;
+    if (!selectedEnrollmentSlotId) {
+      setApiError(
+        lang === "fa"
+          ? "ابتدا گروه زمانی موردنظر را انتخاب کنید."
+          : "Select a scheduled class before adding the student.",
+      );
+      return;
+    }
     setUpdatingEnrollmentId(student.id);
     setApiError(null);
     try {
-      await adminEnrollStudent(student.id, editingCourseId);
-      setCourseEnrollments(await getAdminCourseEnrollments(editingCourseId));
+      await addAdminStudentToClass(selectedEnrollmentSlotId, student.id);
+
+      const [updatedCourseEnrollments, updatedSlotEnrollments] =
+        await Promise.all([
+          getAdminCourseEnrollments(editingCourseId),
+          listAdminClassEnrollments(selectedEnrollmentSlotId),
+        ]);
+
+      setCourseEnrollments(updatedCourseEnrollments);
+      setSelectedSlotEnrollments(updatedSlotEnrollments);
       setCourseStudentCandidates((current) =>
         current.filter((candidate) => candidate.id !== student.id),
       );
@@ -599,8 +662,8 @@ export default function AdminCoursesPage() {
         error instanceof Error
           ? error.message
           : lang === "fa"
-            ? "افزودن دانش‌آموز به دوره انجام نشد."
-            : "Could not add student to the course.",
+            ? "افزودن دانش‌آموز به گروه انتخاب‌شده انجام نشد."
+            : "Could not add the student to the selected class.",
       );
     } finally {
       setUpdatingEnrollmentId("");
@@ -627,6 +690,9 @@ export default function AdminCoursesPage() {
       setCourseEnrollments((current) =>
         current.filter((item) => item.id !== enrollment.id),
       );
+      setSelectedSlotEnrollments((current) =>
+        current.filter((item) => item.studentId !== enrollment.studentId),
+      );
     } catch (error) {
       setApiError(
         error instanceof Error
@@ -641,13 +707,16 @@ export default function AdminCoursesPage() {
   };
 
   const closeCourseModal = () => {
-    if (creating) return;
+    if (creating || updatingEnrollmentId) return;
     courseEnrollmentLoadRequest.current += 1;
     setShowCreateModal(false);
     setEditingCourseId(null);
     setNewCourse(emptyCourseDraft);
     setClassSlotDrafts({});
     setCourseEnrollments([]);
+    setSelectedEnrollmentSlotId("");
+    setSelectedSlotEnrollments([]);
+    setLoadingSelectedSlotEnrollments(false);
     setCourseStudentCandidates([]);
   };
 
@@ -1251,6 +1320,52 @@ export default function AdminCoursesPage() {
                     </span>
                   </div>
 
+                  <label className="block space-y-1 text-[12px] font-semibold text-ink70">
+                    <span>
+                      {lang === "fa"
+                        ? "گروهی که دانش‌آموز باید به آن اضافه شود"
+                        : "Scheduled class for this student"}
+                    </span>
+                    <select
+                      value={selectedEnrollmentSlotId}
+                      disabled={Boolean(updatingEnrollmentId)}
+                      onChange={(event) => {
+                        setSelectedEnrollmentSlotId(event.target.value);
+                        setSelectedSlotEnrollments([]);
+                        setLoadingSelectedSlotEnrollments(
+                          Boolean(event.target.value),
+                        );
+                      }}
+                      className="w-full rounded-lg border border-line bg-white px-3 py-2.5 text-[12px] outline-none focus:border-blue"
+                    >
+                      <option value="">
+                        {lang === "fa"
+                          ? "ابتدا یک گروه را انتخاب کنید"
+                          : "Select a class group"}
+                      </option>
+                      {classSlots
+                        .filter(
+                          (slot) =>
+                            slot.courseId === editingCourseId &&
+                            slot.status === "active",
+                        )
+                        .map((slot) => (
+                          <option key={slot.id} value={slot.id}>
+                            {slot.title} —{" "}
+                            {new Intl.DateTimeFormat(
+                              lang === "fa" ? "fa-IR" : "en-US",
+                              { dateStyle: "medium", timeStyle: "short" },
+                            ).format(new Date(slot.startsAt))}
+                          </option>
+                        ))}
+                    </select>
+                    <span className="block font-normal text-muted">
+                      {lang === "fa"
+                        ? "دانش‌آموز فقط عضو گروه انتخاب‌شده می‌شود."
+                        : "The student will join only the selected class group."}
+                    </span>
+                  </label>
+
                   <div className="flex flex-col gap-2 sm:flex-row">
                     <label className="flex min-w-0 flex-1 items-center gap-2 rounded-lg border border-line bg-white px-3">
                       <Search size={15} className="shrink-0 text-muted" />
@@ -1294,11 +1409,12 @@ export default function AdminCoursesPage() {
                   {courseStudentCandidates.length > 0 && (
                     <div className="max-h-40 space-y-2 overflow-y-auto rounded-lg border border-line bg-white p-2">
                       {courseStudentCandidates.map((student) => {
-                        const alreadyEnrolled = courseEnrollments.some(
-                          (enrollment) =>
-                            enrollment.studentId === student.id &&
-                            enrollment.status === "active",
-                        );
+                        const alreadyInSelectedClass =
+                          selectedSlotEnrollments.some(
+                            (enrollment) =>
+                              enrollment.studentId === student.id &&
+                              enrollment.status !== "cancelled",
+                          );
                         return (
                           <div
                             key={student.id}
@@ -1316,28 +1432,38 @@ export default function AdminCoursesPage() {
                               type="button"
                               onClick={() => void addStudentToCourse(student)}
                               disabled={
-                                alreadyEnrolled ||
-                                Boolean(updatingEnrollmentId)
+                                !selectedEnrollmentSlotId ||
+                                alreadyInSelectedClass ||
+                                Boolean(updatingEnrollmentId) ||
+                                loadingSelectedSlotEnrollments
                               }
                               className="inline-flex shrink-0 items-center gap-1 rounded-full bg-blue px-2.5 py-1.5 text-[11px] font-semibold text-white hover:bg-blueDeep disabled:cursor-not-allowed disabled:opacity-50"
                             >
                               <UserPlus size={13} />
-                              {alreadyEnrolled
+                              {alreadyInSelectedClass
                                 ? lang === "fa"
-                                  ? "عضو دوره"
-                                  : "Enrolled"
+                                  ? "عضو این گروه"
+                                  : "In this group"
                                 : updatingEnrollmentId === student.id
                                   ? lang === "fa"
                                     ? "در حال افزودن..."
                                     : "Adding..."
                                   : lang === "fa"
-                                    ? "افزودن"
-                                    : "Add"}
+                                    ? "افزودن به این گروه"
+                                    : "Add to this class"}
                             </button>
                           </div>
                         );
                       })}
                     </div>
+                  )}
+
+                  {loadingSelectedSlotEnrollments && (
+                    <p className="text-[11px] text-muted">
+                      {lang === "fa"
+                        ? "در حال بارگذاری اعضای گروه انتخاب‌شده..."
+                        : "Loading selected class members..."}
+                    </p>
                   )}
 
                   <div className="space-y-2">

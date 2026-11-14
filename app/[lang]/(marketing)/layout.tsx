@@ -1,6 +1,7 @@
 import Navbar from "@/components/marketing/Navbar";
 import Footer from "@/components/marketing/Footer";
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
+import ScrollReveal from "@/components/marketing/ScrollReveal";
 
 export default function MarketingLayout({
   children,
@@ -10,7 +11,7 @@ export default function MarketingLayout({
   return (
     <div className="min-h-screen pb-[88px] lg:pb-0">
       <Navbar />
-      {children}
+      <ScrollReveal>{children}</ScrollReveal>
       <Footer />
       <PWAInstallPrompt />
     </div>

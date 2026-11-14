@@ -13,11 +13,11 @@ export default function EnglishLevel() {
       <h2 className="font-serif text-[26px] sm:text-[28px] font-semibold mb-2">{lv.heading}</h2>
       <div className="w-16 h-[3px] bg-gold rounded mb-7" />
 
-      <div className="bg-white rounded-lg shadow-card p-6 sm:p-8 grid grid-cols-1 lg:grid-cols-[1fr_1.15fr] gap-8 items-center">
+      <div className="grid grid-cols-1 items-center gap-8 rounded-lg bg-white p-6 shadow-card sm:p-8 md:grid-cols-[0.8fr_1.2fr] lg:grid-cols-[1fr_1.15fr]">
         <div>
-          <span className="block text-blue font-bold text-[12px] uppercase tracking-wide mb-2.5">{lv.eyebrow}</span>
-          <h3 className="text-[22px] font-semibold mb-3.5">{lv.title}</h3>
-          <p className="text-ink70 text-[13.5px] leading-relaxed max-w-[340px] mb-5">{lv.lead}</p>
+          <span className="block text-blue font-bold text-[12px] uppercase tracking-wide mb-2">{lv.eyebrow}</span>
+          <h3 className="text-[22px] font-semibold mb-3">{lv.title}</h3>
+          <p className="text-ink70 text-[13.5px] leading-relaxed max-w-[340px] mb-6">{lv.lead}</p>
           <Link
             href={href("/level-test")}
             className="inline-flex items-center gap-2 bg-blue text-white px-6 py-3.5 rounded-full text-[14px] font-semibold hover:bg-blueDeep transition-colors"
@@ -26,8 +26,8 @@ export default function EnglishLevel() {
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
-          <div className="rounded-2xl p-5 sm:p-4 text-center bg-[#EDEAE0]">
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <div className="rounded-2xl bg-[#EDEAE0] p-4 text-center sm:p-4">
             <h4 className="text-[16px] sm:text-[13px] font-bold mb-1 sm:mb-0.5">{lv.beginner}</h4>
             <div className="text-[13px] sm:text-[11px] text-ink70 mb-4 sm:mb-3.5">A1 - A2</div>
             <div className="flex items-end justify-center gap-1.5 sm:gap-1 h-8 sm:h-6">

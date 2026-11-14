@@ -182,7 +182,7 @@ export default function AdminStudentsPage() {
   const getStatusBadge = (status: StudentWithStatus["status"]) => {
     const styles = {
       active: "bg-sage text-sageDeep",
-      suspended: "bg-[#FDEFE0] text-[#B8792E]",
+      suspended: "bg-[#FDEFE0] text-goldDeep",
       banned: "bg-danger/10 text-danger",
     };
     const labels = {
@@ -225,7 +225,7 @@ export default function AdminStudentsPage() {
         </div>
         <div className="bg-white border border-line rounded-md p-4 shadow-card">
           <div className="text-[11px] text-muted mb-1">Suspended</div>
-          <div className="font-serif text-[22px] font-semibold text-[#B8792E]">
+          <div className="font-serif text-[22px] font-semibold text-goldDeep">
             {stats.suspended}
           </div>
         </div>
@@ -334,7 +334,7 @@ export default function AdminStudentsPage() {
                       <>
                         <button
                           onClick={() => suspendStudent(st.id)}
-                          className="inline-flex items-center gap-1 text-[12px] font-bold text-[#B8792E] bg-[#FDEFE0] hover:bg-[#FDEFE0]/80 px-3 py-1.5 rounded-full transition-colors"
+                          className="inline-flex items-center gap-1 text-[12px] font-bold text-goldDeep bg-[#FDEFE0] hover:bg-[#FDEFE0]/80 px-3 py-1.5 rounded-full transition-colors"
                           title="Suspend"
                         >
                           <Ban size={13} />

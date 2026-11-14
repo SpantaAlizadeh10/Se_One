@@ -13,15 +13,15 @@ export default function TeacherShowcase() {
 
   return (
     <section className="max-w-7xl mx-auto px-5 sm:px-8 py-14 sm:py-16">
-      <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
+      <div className="mb-8 flex flex-wrap items-end justify-between gap-6">
         <div>
-          <div className="mb-2 inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-goldDeep">
+          <div className="mb-2 flex w-fit items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-goldDeep">
             <Sparkles size={13} /> {section.eyebrow}
           </div>
-          <h2 className="font-serif text-[28px] sm:text-[32px] font-semibold mb-2 relative inline-block after:content-[''] after:absolute after:start-0 after:-bottom-2 after:w-16 after:h-[3px] after:bg-gold after:rounded">
+          <h2 className="relative mb-2 block font-serif text-[28px] font-semibold after:absolute after:-bottom-2 after:start-0 after:h-[3px] after:w-16 after:rounded after:bg-gold sm:text-[32px]">
             {section.heading}
           </h2>
-          <p className="mt-3 max-w-[480px] text-[14px] text-ink70">
+          <p className="mt-4 max-w-[480px] text-[14px] text-ink70">
             {section.sub}
           </p>
         </div>
@@ -33,7 +33,7 @@ export default function TeacherShowcase() {
         </Link>
       </div>
 
-      <div className="flex gap-5 overflow-x-auto snap-x snap-mandatory -mx-5 px-5 thin-scroll sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 xl:grid-cols-4">
+      <div className="flex snap-x snap-mandatory gap-4 overflow-x-auto px-5 pb-4 -mx-5 thin-scroll sm:mx-0 sm:grid sm:grid-cols-2 sm:gap-5 sm:overflow-visible sm:px-0 sm:pb-0 md:grid-cols-3 xl:grid-cols-4">
         {teachers.map((teacher) => (
           <div
             key={teacher.id}

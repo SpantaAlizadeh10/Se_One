@@ -120,7 +120,7 @@ export default function AdminOverviewPage() {
       value: values.pendingTeachers,
       icon: Clock,
       bg: "bg-[#FFF1D6]",
-      text: "text-[#B8792E]",
+      text: "text-goldDeep",
     },
   ];
 

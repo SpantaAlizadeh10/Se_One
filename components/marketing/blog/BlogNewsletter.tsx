@@ -18,10 +18,10 @@ export default function BlogNewsletter() {
   return (
     <section className="max-w-7xl mx-auto px-5 sm:px-8 py-12">
       <div className="bg-gradient-to-br from-blue to-blueDeep rounded-3xl p-8 sm:p-12 text-center">
-        <h2 className="font-serif text-[28px] sm:text-[32px] font-semibold text-white mb-4">
+        <h2 className="font-serif text-[28px] sm:text-[32px] font-semibold text-white mb-2">
           {t("blog.newsletter.title")}
         </h2>
-        <p className="text-blue-100 text-[15px] sm:text-[16px] leading-relaxed max-w-2xl mx-auto mb-8">
+        <p className="text-blue-100 text-[15px] sm:text-[16px] leading-relaxed max-w-2xl mx-auto mb-6">
           {t("blog.newsletter.lead")}
         </p>
         
@@ -37,7 +37,7 @@ export default function BlogNewsletter() {
             />
             <button
               type="submit"
-              className="bg-gold text-white px-6 py-3.5 rounded-full text-[14px] font-semibold hover:bg-goldDeep transition-colors whitespace-nowrap"
+              className="bg-goldDeep text-white px-6 py-3.5 rounded-full text-[14px] font-semibold hover:bg-[#644400] transition-colors whitespace-nowrap"
             >
               {isSubmitted ? t("blog.newsletter.sent") : t("blog.newsletter.send")}
             </button>

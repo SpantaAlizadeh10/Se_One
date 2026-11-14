@@ -20,6 +20,23 @@ export default function CourseReviews({ courseId }: { courseId: string }) {
   const r = t("courseReviews");
   const [reviews, setReviews] = useState<Review[]>([]);
   const [summary, setSummary] = useState<CourseRatingSummary | null>(null);
+  const ratedReviews = reviews.filter(
+    (review) => review.rating >= 1 && review.rating <= 5,
+  );
+  const apiRatingIsValid =
+    summary !== null &&
+    summary.totalReviews > 0 &&
+    summary.averageRating >= 1 &&
+    summary.averageRating <= 5;
+  const averageRating = apiRatingIsValid
+    ? summary.averageRating
+    : ratedReviews.length > 0
+      ? ratedReviews.reduce((sum, review) => sum + review.rating, 0) /
+        ratedReviews.length
+      : null;
+  const reviewCount = apiRatingIsValid
+    ? summary.totalReviews
+    : ratedReviews.length;
 
   useEffect(() => {
     let active = true;
@@ -46,10 +63,15 @@ export default function CourseReviews({ courseId }: { courseId: string }) {
       <div className="flex items-center gap-3 mb-5 flex-wrap">
         <h2 className="text-[17px] font-semibold m-0">{r.heading}</h2>
         <div className="flex items-center gap-2">
-          <Stars rating={summary?.averageRating ?? 0} />
-          <span className="text-[13px] text-ink70">
-            {summary?.averageRating ?? 0} · {r.basedOn} {summary?.totalReviews ?? reviews.length} {r.reviewsWord}
-          </span>
+          {averageRating !== null && reviewCount > 0 && (
+            <div className="flex items-center gap-2">
+              <Stars rating={averageRating} />
+              <span className="text-[13px] text-ink70">
+                {averageRating.toFixed(1)} · {r.basedOn} {reviewCount}{" "}
+                {r.reviewsWord}
+              </span>
+            </div>
+          )}
         </div>
       </div>
 

@@ -11,22 +11,27 @@ const config: Config = {
         ink: "#1C2B44",
         ink70: "#4A5670",
         gold: "#C6952E",
-        goldDeep: "#A67A1E",
+        goldDeep: "#795300",
         goldSoft: "#F3E4C2",
         sage: "#E7F0E2",
-        sageDeep: "#4E7D5C",
+        sageDeep: "#315A3D",
         peach: "#FBEAD8",
-        peachDeep: "#E7A467",
+        peachDeep: "#9A4F24",
         cream: "#FAF8F3",
         line: "#EDE8DE",
-        muted: "#8A8171",
-        blue: "#3D5FE0",
+        muted: "#6E665A",
+        blue: "#304DB6",
         blueDeep: "#2E48B8",
-        danger: "#D95A4B"
+        danger: "#B42318"
       },
       fontFamily: {
-        serif: ["var(--font-fraunces)", "Georgia", "serif"],
-        sans: ["var(--font-inter)", "Helvetica", "Arial", "sans-serif"]
+        serif: ["var(--font-fraunces, Georgia)", "Georgia", "serif"],
+        sans: [
+          "var(--font-inter, var(--font-vazir, Helvetica))",
+          "Helvetica",
+          "Arial",
+          "sans-serif"
+        ]
       },
       borderRadius: {
         lg: "22px",

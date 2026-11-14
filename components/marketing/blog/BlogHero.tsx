@@ -6,13 +6,17 @@ export default function BlogHero() {
   const { t } = useLanguage();
 
   return (
-    <section className="max-w-7xl mx-auto px-5 sm:px-8 pt-12 sm:pt-16 pb-10">
-      <div className="text-center max-w-3xl mx-auto">
-        <h1 className="font-serif text-[36px] sm:text-[48px] leading-[1.15] font-semibold mb-5">
-          {t("blog.hero.title1")} <span className="text-blue">{t("blog.hero.title2")}</span>
+    <section className="mx-auto max-w-7xl px-5 pb-8 pt-12 sm:px-8 sm:pt-16">
+      <div className="mx-auto max-w-4xl text-center">
+        <p className="mb-3 text-xs font-bold uppercase tracking-[0.18em] text-goldDeep">
+          {t("blog.hero.eyebrow")}
+        </p>
+        <h1 className="mb-3 font-serif text-4xl font-semibold leading-tight sm:text-5xl">
+          {t("blog.hero.title1")}{" "}
+          <span className="text-blue">{t("blog.hero.title2")}</span>
         </h1>
-        <div className="w-[74px] h-[3px] bg-gold rounded mx-auto my-5" />
-        <p className="text-ink70 text-[15px] sm:text-[16px] leading-relaxed mb-7">
+        <div className="mx-auto my-4 h-[3px] w-[74px] rounded bg-gold" />
+        <p className="mx-auto max-w-2xl text-[15px] leading-relaxed text-ink70 sm:text-base">
           {t("blog.hero.lead")}
         </p>
       </div>

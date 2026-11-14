@@ -3,11 +3,11 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Mail, Lock, Phone, AlertCircle } from "lucide-react";
+import { Mail, Lock, Phone, AlertCircle, LoaderCircle } from "lucide-react";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 import { storeAuth, dashboardPathFor, type Role } from "@/lib/auth-client";
+import { getAuthErrorMessage } from "@/lib/auth-error-message";
 import { login, requestOtp, verifyOtp } from "@/lib/api/auth";
-import { ApiError } from "@/lib/api/client";
 import FormField from "@/components/marketing/auth/FormField";
 import OtpInput from "@/components/marketing/auth/OtpInput";
 import LoginHeroStrip from "@/components/marketing/auth/LoginHeroStrip";
@@ -16,7 +16,7 @@ type Mode = "phone" | "email";
 type PhoneStep = "input" | "otp";
 
 export default function LoginPage() {
-  const { t, href } = useLanguage();
+  const { t, href, lang } = useLanguage();
   const l = t("auth.login");
   const router = useRouter();
 
@@ -42,7 +42,7 @@ export default function LoginPage() {
       storeAuth(auth);
       goToDashboard(auth.user.role);
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : String(err));
+      setError(getAuthErrorMessage(err, lang));
       setLoading(false);
     }
   };
@@ -55,7 +55,7 @@ export default function LoginPage() {
       await requestOtp(phone);
       setPhoneStep("otp");
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : String(err));
+      setError(getAuthErrorMessage(err, lang));
     } finally {
       setLoading(false);
     }
@@ -70,7 +70,7 @@ export default function LoginPage() {
       storeAuth(auth);
       goToDashboard(auth.user.role);
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : String(err));
+      setError(getAuthErrorMessage(err, lang));
       setLoading(false);
     }
   };
@@ -94,7 +94,11 @@ export default function LoginPage() {
         <p className="text-center text-[15px] font-semibold mb-5">{l.ready}</p>
 
         {error && (
-          <div className="flex items-center gap-2.5 bg-danger/10 text-danger text-[13px] font-semibold rounded-xl px-4 py-3 mb-5">
+          <div
+            role="alert"
+            aria-live="assertive"
+            className="flex items-center gap-2.5 bg-danger/10 text-danger text-[13px] font-semibold rounded-xl px-4 py-3 mb-5"
+          >
             <AlertCircle size={16} className="shrink-0" />
             {error}
           </div>
@@ -103,6 +107,8 @@ export default function LoginPage() {
         <div className="flex bg-cream rounded-full p-1 mb-6">
           <button
             type="button"
+            aria-pressed={mode === "phone"}
+            disabled={loading}
             onClick={() => switchMode("phone")}
             className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-full text-[13px] font-semibold transition-colors ${
               mode === "phone" ? "bg-white shadow-sm text-ink" : "text-muted"
@@ -112,6 +118,8 @@ export default function LoginPage() {
           </button>
           <button
             type="button"
+            aria-pressed={mode === "email"}
+            disabled={loading}
             onClick={() => switchMode("email")}
             className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-full text-[13px] font-semibold transition-colors ${
               mode === "email" ? "bg-white shadow-sm text-ink" : "text-muted"
@@ -122,20 +130,23 @@ export default function LoginPage() {
         </div>
 
         {mode === "phone" && phoneStep === "input" && (
-          <form onSubmit={submitPhone}>
+          <form onSubmit={submitPhone} aria-busy={loading}>
             <div className="relative mb-6">
-              <span
+              <label
+                htmlFor="login-phone"
                 className="absolute -top-2.5 start-4.5 bg-white px-2 text-[12px] font-bold text-ink z-10"
                 style={{ insetInlineStart: 18 }}
               >
                 {l.phoneLabel}
-              </span>
+              </label>
               <div className="flex items-center gap-2.5 border border-line rounded-2xl bg-cream px-4 py-3.5 focus-within:border-blue transition-colors">
                 <span className="text-[13px] font-bold text-ink70 shrink-0 border-e border-line pe-2.5">
                   {l.countryCode}
                 </span>
                 <input
+                  id="login-phone"
                   type="tel"
+                  autoComplete="tel"
                   required
                   dir="ltr"
                   value={phone}
@@ -148,15 +159,23 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
+              aria-busy={loading}
               className="w-full bg-blue text-white rounded-2xl py-4 text-[15px] font-bold hover:bg-blueDeep transition-colors disabled:opacity-70"
             >
-              {loading ? t("common.loading") : l.continueBtn}
+              {loading ? (
+                <span className="inline-flex items-center justify-center gap-2">
+                  <LoaderCircle size={18} className="animate-spin" aria-hidden="true" />
+                  {t("common.loading")}
+                </span>
+              ) : (
+                l.continueBtn
+              )}
             </button>
           </form>
         )}
 
         {mode === "phone" && phoneStep === "otp" && (
-          <form onSubmit={submitOtp}>
+          <form onSubmit={submitOtp} aria-busy={loading}>
             <p className="text-[13px] font-semibold text-ink70 mb-3.5">
               {l.enterCode}
             </p>
@@ -166,19 +185,28 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading || otp.length < 6}
+              aria-busy={loading}
               className="w-full bg-blue text-white rounded-2xl py-4 text-[15px] font-bold hover:bg-blueDeep transition-colors disabled:opacity-70"
             >
-              {loading ? t("common.loading") : l.submit}
+              {loading ? (
+                <span className="inline-flex items-center justify-center gap-2">
+                  <LoaderCircle size={18} className="animate-spin" aria-hidden="true" />
+                  {t("common.loading")}
+                </span>
+              ) : (
+                l.submit
+              )}
             </button>
           </form>
         )}
 
         {mode === "email" && (
-          <form onSubmit={submitEmail}>
+          <form onSubmit={submitEmail} aria-busy={loading}>
             <FormField
               label={l.email}
               icon={<Mail size={18} />}
               type="email"
+              autoComplete="email"
               placeholder={l.emailPh}
               required
               value={email}
@@ -188,6 +216,7 @@ export default function LoginPage() {
               label={l.password}
               icon={<Lock size={18} />}
               isPassword
+              autoComplete="current-password"
               placeholder={l.passwordPh}
               required
               value={password}
@@ -202,9 +231,17 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
+              aria-busy={loading}
               className="w-full bg-blue text-white rounded-2xl py-4 text-[15px] font-bold hover:bg-blueDeep transition-colors disabled:opacity-70"
             >
-              {loading ? t("common.loading") : l.submit}
+              {loading ? (
+                <span className="inline-flex items-center justify-center gap-2">
+                  <LoaderCircle size={18} className="animate-spin" aria-hidden="true" />
+                  {t("common.loading")}
+                </span>
+              ) : (
+                l.submit
+              )}
             </button>
           </form>
         )}
@@ -218,8 +255,10 @@ export default function LoginPage() {
         <div className="flex justify-center gap-4 mb-1">
           <button
             type="button"
-            className="w-[46px] h-[46px] rounded-full bg-white border border-line shadow-card flex items-center justify-center"
-            aria-label="google"
+            disabled
+            aria-describedby="google-signin-unavailable"
+            className="w-12 h-12 rounded-full bg-white border border-line shadow-card flex items-center justify-center"
+            aria-label={lang === "fa" ? "ورود با گوگل" : "Sign in with Google"}
           >
             <svg width="19" height="19" viewBox="0 0 24 24">
               <path
@@ -228,16 +267,12 @@ export default function LoginPage() {
               />
             </svg>
           </button>
-          <button
-            type="button"
-            className="w-[46px] h-[46px] rounded-full bg-white border border-line shadow-card flex items-center justify-center"
-            aria-label="apple"
-          >
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="#000">
-              <path d="M16.4 1c.1 1.1-.3 2.2-1 3-.7.8-1.9 1.5-3 1.4-.1-1.1.4-2.2 1-3C14.1 1.6 15.3 1 16.4 1zM20.7 17.2c-.5 1.1-.7 1.6-1.4 2.6-1 1.4-2.3 3.1-4 3.1-1.5 0-1.9-1-3.9-1s-2.5 1-4 1c-1.7 0-2.9-1.6-3.9-3-2.7-3.8-3-8.3-1.3-10.7 1.2-1.7 3-2.7 4.7-2.7 1.7 0 2.8 1.1 4.2 1.1 1.4 0 2.2-1.1 4.2-1.1 1.5 0 3.1.8 4.2 2.2-3.7 2-3.1 7.3 1.2 8.5z" />
-            </svg>
-          </button>
         </div>
+        <p id="google-signin-unavailable" className="mt-2 text-center text-xs text-muted">
+          {lang === "fa"
+            ? "ورود با گوگل پس از راه‌اندازی اتصال بک‌اند در دسترس خواهد بود."
+            : "Google sign-in will be available after the backend integration is configured."}
+        </p>
       </div>
 
       <p className="text-center text-[13.5px] text-ink70 mt-6">

@@ -10,6 +10,7 @@ import {
   StudentExperienceProvider,
   useStudentExperience,
 } from "@/components/shared/StudentExperienceProvider";
+import { useLanguage } from "@/lib/i18n/LanguageProvider";
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   return (
@@ -21,6 +22,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
 function StudentAppShell({ children }: { children: React.ReactNode }) {
   const { isChildMode } = useStudentExperience();
+  const { lang } = useLanguage();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const pathname = usePathname();
 
@@ -55,8 +57,8 @@ function StudentAppShell({ children }: { children: React.ReactNode }) {
           <button
             type="button"
             onClick={() => setSidebarOpen(false)}
-            aria-label="Close navigation menu"
-            className="fixed inset-0 z-40 bg-ink/40 lg:hidden"
+            aria-label={lang === "fa" ? "بستن منوی ناوبری" : "Close navigation menu"}
+            className="fixed inset-0 z-40 bg-ink/25 backdrop-blur-[2px] lg:hidden"
           />
         )}
 

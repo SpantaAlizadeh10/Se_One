@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import {
   ArrowRight,
   CalendarDays,
@@ -34,20 +35,25 @@ export default function TeacherCard({
       >
         <div className="absolute -end-10 -top-14 h-44 w-44 rounded-full border-[18px] border-white/25" />
         <div className="absolute -bottom-16 -start-8 h-36 w-36 rounded-full bg-gold/20" />
-        <img
+        <Image
           src={teacher.avatar}
           alt={copy.name}
           width={196}
           height={196}
+          sizes={compact ? "(max-width: 640px) 160px, 196px" : "196px"}
+          loading="lazy"
+          unoptimized={teacher.avatar.startsWith("http")}
           className={`absolute bottom-[-8px] left-1/2 -translate-x-1/2 rounded-full border-4 border-white object-cover object-center shadow-lg transition-transform duration-300 group-hover:scale-105 ${compact ? "h-[160px] w-[160px] sm:h-[196px] sm:w-[196px]" : "h-[196px] w-[196px]"}`}
         />
         <span className="absolute start-4 top-4 inline-flex items-center gap-1 rounded-full bg-white/90 px-2.5 py-1 text-[10px] font-bold text-sageDeep shadow-sm">
           <CheckCircle2 size={12} /> {labels.verified}
         </span>
-        <span className="absolute end-4 top-4 inline-flex items-center gap-1 rounded-full bg-ink/80 px-2.5 py-1 text-[10px] font-semibold text-white">
-          <Star size={11} fill="currentColor" className="text-gold" />{" "}
-          {teacher.rating.toFixed(1)}
-        </span>
+        {teacher.rating > 0 && teacher.rating <= 5 && (
+          <span className="absolute end-4 top-4 inline-flex items-center gap-1 rounded-full bg-ink/80 px-2.5 py-1 text-[10px] font-semibold text-white">
+            <Star size={11} fill="currentColor" className="text-gold" />{" "}
+            {teacher.rating.toFixed(1)}
+          </span>
+        )}
       </div>
 
       <div className={compact ? "p-4 sm:p-5" : "p-5"}>

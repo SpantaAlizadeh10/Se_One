@@ -155,7 +155,7 @@ export default function AdminWithdrawalsPage() {
                       {request.teacherName || d.teacherFallback}
                     </h3>
                     <span
-                      className={`rounded-full px-2.5 py-1 text-[10.5px] font-bold ${request.status === "pending" ? "bg-[#FFF1D6] text-[#B8792E]" : request.status === "approved" ? "bg-sage text-sageDeep" : "bg-danger/10 text-danger"}`}
+                      className={`rounded-full px-2.5 py-1 text-[10.5px] font-bold ${request.status === "pending" ? "bg-[#FFF1D6] text-goldDeep" : request.status === "approved" ? "bg-sage text-sageDeep" : "bg-danger/10 text-danger"}`}
                     >
                       {d[request.status]}
                     </span>

@@ -86,7 +86,7 @@ export default function StreakBanner() {
                   ? "bg-gold text-ink"
                   : day.today
                     ? "bg-white/10 text-white ring-2 ring-gold ring-offset-2 ring-offset-ink"
-                    : "bg-white/10 text-[#9AA5BE]"
+                    : "bg-white/10 text-[#B8C2D8]"
               }`}
             >
               {day.label}

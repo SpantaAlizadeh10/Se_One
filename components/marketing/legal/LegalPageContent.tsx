@@ -12,7 +12,7 @@ export default function LegalPageContent({ pageKey }: { pageKey: "privacy" | "te
   return (
     <main className="max-w-[760px] mx-auto px-5 sm:px-8 py-12 sm:py-16">
       <h1 className="font-serif text-[30px] sm:text-[36px] font-semibold mb-2">{page.title}</h1>
-      <p className="text-[12.5px] text-muted mb-6">{page.lastUpdated}</p>
+      <p className="text-[12.5px] text-muted mb-8">{page.lastUpdated}</p>
 
       <div className="flex items-start gap-2.5 bg-goldSoft/60 border border-gold/30 rounded-xl px-4 py-3 mb-8">
         <AlertTriangle size={16} className="text-goldDeep shrink-0 mt-0.5" />
