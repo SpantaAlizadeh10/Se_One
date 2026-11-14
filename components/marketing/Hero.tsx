@@ -54,7 +54,7 @@ export default function Hero() {
             <span className="text-ink">/</span>{" "}
             <span className="text-goldDeep">{t("home.hero.german")}</span>
           </h1>
-          <p className="mx-auto mb-7 max-w-[320px] text-[15px] leading-[1.85] text-ink70 sm:mx-0 sm:max-w-[430px] sm:text-[16px]">
+          <p className="mx-auto mb-7 max-w-[320px] whitespace-pre-line text-[15px] leading-[1.85] text-ink70 sm:mx-0 sm:max-w-[430px] sm:text-[16px]">
             {t("home.hero.lead")}
           </p>
 
@@ -105,21 +105,33 @@ export default function Hero() {
           />
 
           <div className="absolute top-2 sm:top-4 left-0 sm:left-2 bg-white shadow-card rounded-2xl px-4 py-3 flex items-center gap-2.5">
-            <Languages size={16} className="shrink-0 text-blue" aria-hidden="true" />
+            <Languages
+              size={16}
+              className="shrink-0 text-blue"
+              aria-hidden="true"
+            />
             <span className="max-w-[100px] text-[10px] font-semibold leading-snug text-ink">
               {t("home.hero.highlights.languages")}
             </span>
           </div>
 
           <div className="absolute top-16 sm:top-20 right-0 sm:right-2 bg-white shadow-card rounded-2xl px-4 py-3 flex items-center gap-2.5">
-            <CalendarDays size={16} className="shrink-0 text-goldDeep" aria-hidden="true" />
+            <CalendarDays
+              size={16}
+              className="shrink-0 text-goldDeep"
+              aria-hidden="true"
+            />
             <span className="max-w-[100px] text-[10px] font-semibold leading-snug text-ink">
               {t("home.hero.highlights.schedule")}
             </span>
           </div>
 
           <div className="absolute bottom-4 sm:bottom-8 left-4 sm:left-10 bg-white shadow-card rounded-2xl px-4 py-3 flex items-center gap-2.5">
-            <Target size={16} className="shrink-0 text-sageDeep" aria-hidden="true" />
+            <Target
+              size={16}
+              className="shrink-0 text-sageDeep"
+              aria-hidden="true"
+            />
             <span className="max-w-[100px] text-[10px] font-semibold leading-snug text-ink">
               {t("home.hero.highlights.learning")}
             </span>
@@ -142,9 +154,7 @@ export default function Hero() {
                 return;
               }
 
-              router.push(
-                href(`/courses?search=${encodeURIComponent(query)}`),
-              );
+              router.push(href(`/courses?search=${encodeURIComponent(query)}`));
             }}
             className="flex w-full gap-2 sm:max-w-[500px]"
           >

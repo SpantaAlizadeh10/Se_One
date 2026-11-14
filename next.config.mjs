@@ -1,4 +1,4 @@
-import withPWA from 'next-pwa';
+import withPWA from "next-pwa";
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -11,21 +11,13 @@ const nextConfig = {
 };
 
 export default withPWA({
-  dest: 'public',
+  dest: "public",
   register: true,
   skipWaiting: true,
   cacheStartUrl: false,
   dynamicStartUrl: false,
   cacheOnFrontEndNav: false,
   runtimeCaching: [
-    {
-      urlPattern: ({ url }) => url.pathname.startsWith("/_next/static/"),
-      handler: "CacheFirst",
-      options: {
-        cacheName: "next-static-assets",
-        expiration: { maxEntries: 128, maxAgeSeconds: 31536000 },
-      },
-    },
     {
       urlPattern: ({ url }) => url.pathname.startsWith("/images/"),
       handler: "StaleWhileRevalidate",
@@ -54,5 +46,5 @@ export default withPWA({
       },
     },
   ],
-  disable: process.env.NODE_ENV === 'development',
+  disable: process.env.NODE_ENV === "development",
 })(nextConfig);

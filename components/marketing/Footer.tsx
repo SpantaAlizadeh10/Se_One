@@ -18,7 +18,30 @@ import { useLanguage } from "@/lib/i18n/LanguageProvider";
 import { stripLocale } from "@/lib/i18n/paths";
 
 export default function Footer() {
-  const { t, href } = useLanguage();
+  const { t, href, lang } = useLanguage();
+  const description = t("footer.desc") as string;
+  const highlightedPhrases =
+    lang === "fa"
+      ? ["روش‌های آموزشی نو", "با اطمینان"]
+      : ["build confidence", "modern teaching methods"];
+  const descriptionParts = description.split(
+    lang === "fa"
+      ? /(روش‌های آموزشی نو|با اطمینان)/g
+      : /(build confidence|modern teaching methods)/g,
+  );
+  const renderDescription = () =>
+    descriptionParts.map((part, index) =>
+      highlightedPhrases.includes(part) ? (
+        <span
+          key={index}
+          className="underline decoration-gold decoration-1 underline-offset-4"
+        >
+          {part}
+        </span>
+      ) : (
+        part
+      ),
+    );
   const courseLinks: string[] = t("footer.courseLinks");
   const germanLinks: string[] = t("footer.germanLinks");
   const aboutLinks: string[] = t("footer.aboutLinks");
@@ -106,7 +129,9 @@ export default function Footer() {
 
   return (
     <>
-      <nav className={`fixed inset-x-0 bottom-0 z-50 px-3 pb-[max(env(safe-area-inset-bottom),12px)] pt-2 lg:hidden ${signupFormFocused ? "hidden" : ""}`}>
+      <nav
+        className={`fixed inset-x-0 bottom-0 z-50 px-3 pb-[max(env(safe-area-inset-bottom),12px)] pt-2 lg:hidden ${signupFormFocused ? "hidden" : ""}`}
+      >
         <div className="mx-auto max-w-md rounded-[24px] border border-white/20 bg-[#182163]/95 p-2 shadow-[0_-8px_24px_rgba(15,23,42,0.08)] backdrop-blur-xl">
           <div className="grid grid-cols-5 gap-1">
             {mobileNavItems.map(({ label, href: itemHref, icon: Icon }) => {
@@ -134,7 +159,7 @@ export default function Footer() {
         </div>
       </nav>
 
-      <footer className="border-t border-line mt-6 pb-[84px] lg:pb-0 bg-gradient-to-br from-[#182163] via-[#1a2e5a] to-[#182163]">
+      <footer className="border-t border-line mt-6 bg-gradient-to-br from-[#182163] via-[#1a2e5a] to-[#182163]">
         <div className="max-w-7xl mx-auto px-5 sm:px-8 py-12 sm:py-14">
           {/* mobile / tablet: brand first, then all four link sections in one row */}
           <div className="lg:hidden">
@@ -153,15 +178,14 @@ export default function Footer() {
                 />
               </Link>
               <p className="text-[13px] text-white/80 leading-relaxed mt-4 max-w-[320px]">
-                {t("footer.desc")}
+                {renderDescription()}
               </p>
             </div>
             <div className="mt-8 grid grid-cols-4 gap-2 sm:gap-8">
               {columns.map((col) => (
                 <div key={col.heading} className="min-w-0">
-                  <h4 className="font-serif text-[10px] sm:text-[15px] font-semibold mb-3 sm:mb-4 text-white relative inline-block leading-snug">
+                  <h4 className="font-serif text-[10px] sm:text-[15px] font-semibold mb-3 sm:mb-4 text-white inline-block leading-snug">
                     {col.heading}
-                    <span className="absolute bottom-0 left-0 w-8 h-0.5 bg-gold rounded-full"></span>
                   </h4>
                   <ul className="flex flex-col gap-2 sm:gap-2.5">
                     {col.links.map((link, i) => (
@@ -197,15 +221,14 @@ export default function Footer() {
                 />
               </Link>
               <p className="text-[13px] text-white/80 leading-relaxed mt-4 max-w-[260px]">
-                {t("footer.desc")}
+                {renderDescription()}
               </p>
             </div>
 
             {columns.map((col) => (
               <div key={col.heading}>
-                <h4 className="font-serif text-[15.5px] font-semibold mb-4 text-white relative inline-block">
+                <h4 className="font-serif text-[15.5px] font-semibold mb-4 text-white inline-block">
                   {col.heading}
-                  <span className="absolute bottom-0 left-0 w-8 h-0.5 bg-gold rounded-full"></span>
                 </h4>
                 <ul className="flex flex-col gap-2.5">
                   {col.links.map((link, i) => (

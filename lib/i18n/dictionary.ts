@@ -886,7 +886,8 @@ export const dictionary = {
       totalSlots: "کل زمان‌های اعلام‌شده",
       openSlots: "زمان‌های در دسترس برای بررسی",
       weeklyList: "برنامه هفتگی شما",
-      weeklyListHint: "این زمان‌ها برای بررسی و تخصیص کلاس در اختیار ادمین قرار می‌گیرند.",
+      weeklyListHint:
+        "این زمان‌ها برای بررسی و تخصیص کلاس در اختیار ادمین قرار می‌گیرند.",
       slotsLabel: "زمان",
       slotPreview: "پیش‌نمایش",
       invalidTimeRange: "ساعت پایان باید بعد از ساعت شروع باشد.",
@@ -1433,7 +1434,7 @@ export const dictionary = {
         title1: "A Smarter Way to",
         title2: "Learn English",
         german: "German",
-        lead: "Learn English and German with confidence through interactive lessons, experienced teachers, and personalized learning paths.",
+        lead: "English and German, taught by experts\nwith lessons built around you.",
         checklist: [
           "Expert Teachers",
           "Flexible Schedule",
@@ -2158,7 +2159,8 @@ export const dictionary = {
       totalSlots: "Total published slots",
       openSlots: "Slots available for review",
       weeklyList: "Your weekly schedule",
-      weeklyListHint: "These times are available for admin review and class assignment.",
+      weeklyListHint:
+        "These times are available for admin review and class assignment.",
       slotsLabel: "slots",
       slotPreview: "Preview",
       invalidTimeRange: "The end time must be later than the start time.",
